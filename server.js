@@ -18,7 +18,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('MongoDB Connected Successfully!');
-        // Call Center Team Auto-Setup
         const team = [
             { name: 'Ruchit', phone: '7600082217' },
             { name: 'Mital', phone: '9558591212' },
@@ -97,23 +96,20 @@ app.post('/api/campaign/shoot', async (req, res) => {
                 expiryDate: new Date(expiryDate)
             });
 
-        // --- TEMPLATE MAPPING LOGIC ---
+            // LATEST TEMPLATE NAMES
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon',
                 'Doctor_20': 'temp_20_doctor_coupon',
-                'Doctor_30': 'temp_doctor_30_dis_new',    // <-- Doctor ka naya naam
+                'Doctor_30': 'temp_doctor_30_dis_new',
                 'Patient_10': 'patient_10_dis_temp',
                 'Patient_20': 'patient_20_dis_temp',
-                'Patient_30': 'patient_30_temp_new_dis'   // <-- Patient ka naya naam
+                'Patient_30': 'patient_30_temp_new_dis'
             };
 
             const templateKey = `${audienceType}_${discount}`;
             const templateName = templateMap[templateKey];
 
-            if (!templateName) {
-                console.error(`Template not found for ${templateKey}`);
-                continue; // Skip this record if template name is missing
-            }
+            if (!templateName) continue;
 
             const params = [
                 { name: 'name', value: target.name }, 
@@ -157,8 +153,10 @@ app.post('/api/wati/webhook', async (req, res) => {
             const discount = lastCoupon ? lastCoupon.discountPercentage : 10;
             const audience = lastCoupon ? lastCoupon.audienceType : 'Doctor';
             let newCodes = [];
+            
+            // 1 Month Expiry Logic
             const expiry = new Date(); 
-            expiry.setDate(expiry.getDate() + 7);
+            expiry.setMonth(expiry.getMonth() + 1); 
             
             for(let i=0; i<5; i++) {
                 const c = await generateUniqueCode();
@@ -175,8 +173,9 @@ app.post('/api/wati/webhook', async (req, res) => {
                 });
                 newCodes.push(c);
             }
-            // Make sure 'extra_coupons_template' matches your WATI template name
-            await sendWatiMessage(waId, 'extra_coupons_template', [
+
+            // UPDATED TEMPLATE NAME: more_final_code_temp_dis
+            await sendWatiMessage(waId, 'more_final_code_temp_dis', [
                 { name: 'codes', value: newCodes.join(', ') }, 
                 { name: 'expiry', value: expiry.toLocaleDateString('en-GB') }
             ]);
@@ -207,72 +206,53 @@ app.post('/api/wati/webhook', async (req, res) => {
         }
         res.sendStatus(200);
     } catch (error) { 
-        console.error("Webhook Error:", error);
         res.sendStatus(500); 
     }
 });
 
 // -----------------------------------------
-// 4. RECEPTION / USER API (Validate & Redeem)
+// 4. RECEPTION / USER API
 // -----------------------------------------
 app.post('/api/coupon/validate', async (req, res) => {
     try {
         const { code } = req.body;
         const coupon = await Coupon.findOne({ code });
-        if (!coupon) return res.status(404).json({ valid: false, message: "Invalid Code! (Not Found)" });
-        if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Coupon already redeemed!" });
-        if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "This coupon has expired!" });
+        if (!coupon) return res.status(404).json({ valid: false, message: "Invalid Code!" });
+        if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Already redeemed!" });
+        if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "Expired!" });
         
-        res.json({ 
-            valid: true, 
-            discount: coupon.discountPercentage, 
-            name: coupon.targetName || 'Unknown', 
-            type: coupon.audienceType 
-        });
-    } catch (e) { 
-        res.status(500).json({ error: "Server error" }); 
-    }
+        res.json({ valid: true, discount: coupon.discountPercentage, name: coupon.targetName || 'Unknown', type: coupon.audienceType });
+    } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
 app.post('/api/coupon/redeem', async (req, res) => {
     try {
         const { code } = req.body;
         const coupon = await Coupon.findOne({ code });
-        if (!coupon || coupon.isUsed || new Date() > coupon.expiryDate) {
-            return res.status(400).json({ success: false, message: "Cannot redeem." });
-        }
+        if (!coupon || coupon.isUsed) return res.status(400).json({ success: false });
         coupon.isUsed = true;
         coupon.redeemedAt = new Date();
         await coupon.save();
-        res.json({ success: true, message: "Coupon redeemed successfully!" });
-    } catch (e) { 
-        res.status(500).json({ error: "Server error" }); 
-    }
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
 // -----------------------------------------
 // 5. ADMIN DASHBOARD API
 // -----------------------------------------
 app.get('/api/agents', async (req, res) => res.json(await Agent.find().sort({ name: 1 })));
-
 app.post('/api/agents/toggle', async (req, res) => {
     await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
     res.json({ success: true });
 });
-
 app.get('/api/admin/dashboard-stats', async (req, res) => {
     const total = await Coupon.countDocuments();
     const redeemed = await Coupon.countDocuments({ isUsed: true });
     res.json({ totalSent: total, usedCount: redeemed });
 });
-
-app.get('/api/admin/logs', async (req, res) => {
-    res.json(await Coupon.find().sort({ createdAt: -1 }).limit(100));
-});
-
+app.get('/api/admin/logs', async (req, res) => res.json(await Coupon.find().sort({ createdAt: -1 }).limit(100)));
 app.get('/api/user/redeemed-today', async (req, res) => {
-    const start = new Date(); 
-    start.setHours(0,0,0,0);
+    const start = new Date(); start.setHours(0,0,0,0);
     const logs = await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 });
     res.json(logs);
 });
