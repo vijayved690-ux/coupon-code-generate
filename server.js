@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // -----------------------------------------
-// DATABASE CONNECTION & AUTO-SETUP
+// DATABASE CONNECTION
 // -----------------------------------------
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
@@ -96,7 +96,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
                 expiryDate: new Date(expiryDate)
             });
 
-            // LATEST TEMPLATE NAMES
+            // TEMPLATE MAPPING
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon',
                 'Doctor_20': 'temp_20_doctor_coupon',
@@ -111,6 +111,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             if (!templateName) continue;
 
+            // Variables for your specific template: {{1}}=Name, {{2}}=Code, {{3}}=Expiry
             const params = [
                 { name: 'name', value: target.name }, 
                 { name: 'code', value: code }, 
@@ -147,16 +148,15 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
         } 
-        // B. Doctor Button -> More Coupon
-        else if (btn === 'I Want More Coupon' || btn === 'I want to More Coupon') {
+        // B. Doctor Button -> More Coupon (Spelling match: "I want to More Coupon")
+        else if (btn === 'I want to More Coupon' || btn === 'I Want More Coupon') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             const discount = lastCoupon ? lastCoupon.discountPercentage : 10;
             const audience = lastCoupon ? lastCoupon.audienceType : 'Doctor';
             let newCodes = [];
             
-            // 1 Month Expiry Logic
             const expiry = new Date(); 
-            expiry.setMonth(expiry.getMonth() + 1); 
+            expiry.setMonth(expiry.getMonth() + 1); // 1 Month Expiry
             
             for(let i=0; i<5; i++) {
                 const c = await generateUniqueCode();
@@ -173,8 +173,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 });
                 newCodes.push(c);
             }
-
-            // UPDATED TEMPLATE NAME: more_final_code_temp_dis
+            // Using template: more_final_code_temp_dis
             await sendWatiMessage(waId, 'more_final_code_temp_dis', [
                 { name: 'codes', value: newCodes.join(', ') }, 
                 { name: 'expiry', value: expiry.toLocaleDateString('en-GB') }
@@ -211,7 +210,7 @@ app.post('/api/wati/webhook', async (req, res) => {
 });
 
 // -----------------------------------------
-// 4. RECEPTION / USER API
+// 4. RECEPTION / ADMIN / DASHBOARD APIs
 // -----------------------------------------
 app.post('/api/coupon/validate', async (req, res) => {
     try {
@@ -220,7 +219,6 @@ app.post('/api/coupon/validate', async (req, res) => {
         if (!coupon) return res.status(404).json({ valid: false, message: "Invalid Code!" });
         if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Already redeemed!" });
         if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "Expired!" });
-        
         res.json({ valid: true, discount: coupon.discountPercentage, name: coupon.targetName || 'Unknown', type: coupon.audienceType });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
@@ -237,9 +235,6 @@ app.post('/api/coupon/redeem', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
-// -----------------------------------------
-// 5. ADMIN DASHBOARD API
-// -----------------------------------------
 app.get('/api/agents', async (req, res) => res.json(await Agent.find().sort({ name: 1 })));
 app.post('/api/agents/toggle', async (req, res) => {
     await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
@@ -257,5 +252,5 @@ app.get('/api/user/redeemed-today', async (req, res) => {
     res.json(logs);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Server live on ${PORT}`));
