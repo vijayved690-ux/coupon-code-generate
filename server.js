@@ -12,10 +12,13 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database Connection & Call Center Team Auto-Setup
+// -----------------------------------------
+// DATABASE CONNECTION & AUTO-SETUP
+// -----------------------------------------
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('MongoDB Connected Successfully!');
+        // Call Center Team Auto-Setup
         const team = [
             { name: 'Ruchit', phone: '7600082217' },
             { name: 'Mital', phone: '9558591212' },
@@ -30,7 +33,9 @@ mongoose.connect(process.env.MONGODB_URI)
     })
     .catch(err => console.error('MongoDB Error:', err));
 
-// Helpers
+// -----------------------------------------
+// HELPERS
+// -----------------------------------------
 async function generateUniqueCode() {
     let isUnique = false;
     let code;
@@ -45,14 +50,20 @@ async function generateUniqueCode() {
 async function sendWatiMessage(phone, templateName, params) {
     try {
         await axios.post(`${process.env.WATI_API_ENDPOINT}/api/v1/sendTemplateMessage?whatsappNumber=${phone}`, {
-            template_name: templateName, broadcast_name: 'UIC_Campaign', parameters: params
-        }, { headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` } });
-    } catch (err) { console.error(`WATI Error:`, err.message); }
+            template_name: templateName, 
+            broadcast_name: 'UIC_Campaign', 
+            parameters: params
+        }, { 
+            headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` } 
+        });
+    } catch (err) { 
+        console.error(`WATI Error for ${phone}:`, err.response?.data || err.message); 
+    }
 }
 
-// ---------------- API ROUTES ----------------
-
-// 1. AUTHENTICATION
+// -----------------------------------------
+// 1. AUTHENTICATION API
+// -----------------------------------------
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     if (username === 'admin' && password === (process.env.ADMIN_PASS || 'UicAdmin@2026')) {
@@ -64,7 +75,9 @@ app.post('/api/login', (req, res) => {
     res.status(401).json({ success: false, message: "Invalid Credentials" });
 });
 
-// 2. SHOOT CAMPAIGN
+// -----------------------------------------
+// 2. SHOOT CAMPAIGN API
+// -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
         const { targetList, discount, expiryDate, audienceType } = req.body;
@@ -72,22 +85,53 @@ app.post('/api/campaign/shoot', async (req, res) => {
         
         for (let target of targetList) {
             const code = await generateUniqueCode();
+            
             await Coupon.create({ 
-                code, discountPercentage: discount, targetName: target.name,
-                doctorPhone: target.phone, location: target.location || 'Ahmedabad',
-                proPhone: target.proNumber || null, audienceType: audienceType, 
+                code, 
+                discountPercentage: discount, 
+                targetName: target.name,
+                doctorPhone: target.phone, 
+                location: target.location || 'Ahmedabad',
+                proPhone: target.proNumber || null, 
+                audienceType: audienceType, 
                 expiryDate: new Date(expiryDate)
             });
-            const templateName = audienceType === 'Doctor' ? `uic_promo_${discount}` : `patient_promo_${discount}`;
-            await sendWatiMessage(target.phone, templateName, [
-                { name: 'name', value: target.name }, { name: 'code', value: code }, { name: 'expiry', value: formattedDate }
-            ]);
+
+            // --- TEMPLATE MAPPING LOGIC ---
+            const templateMap = {
+                'Doctor_10': 'temp_10_doctor_coupon',
+                'Doctor_20': 'temp_20_doctor_coupon',
+                'Doctor_30': 'temp_30_doctor_coupon',
+                'Patient_10': 'patient_10_dis_temp',
+                'Patient_20': 'patient_20_dis_temp',
+                'Patient_30': 'patient_30_dis_temp'
+            };
+
+            const templateKey = `${audienceType}_${discount}`;
+            const templateName = templateMap[templateKey];
+
+            if (!templateName) {
+                console.error(`Template not found for ${templateKey}`);
+                continue; // Skip this record if template name is missing
+            }
+
+            const params = [
+                { name: 'name', value: target.name }, 
+                { name: 'code', value: code }, 
+                { name: 'expiry', value: formattedDate }
+            ];
+            
+            await sendWatiMessage(target.phone, templateName, params);
         }
         res.json({ success: true });
-    } catch (error) { res.status(500).json({ error: error.message }); }
+    } catch (error) { 
+        res.status(500).json({ error: error.message }); 
+    }
 });
 
-// 3. WATI WEBHOOK (Intelligence)
+// -----------------------------------------
+// 3. WATI WEBHOOK (INTELLIGENCE & CALLING)
+// -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
     try {
         const { waId, buttonText, text } = req.body;
@@ -99,30 +143,42 @@ app.post('/api/wati/webhook', async (req, res) => {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             if (lastCoupon && lastCoupon.proPhone) {
                 await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
-                    agent_number: lastCoupon.proPhone, destination_number: waId, caller_id: "07969690921"
+                    agent_number: lastCoupon.proPhone, 
+                    destination_number: waId, 
+                    caller_id: "07969690921"
                 }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
+                
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
         } 
         // B. Doctor Button -> More Coupon
-        else if (btn === 'I Want More Coupon') {
+        else if (btn === 'I Want More Coupon' || btn === 'I want to More Coupon') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             const discount = lastCoupon ? lastCoupon.discountPercentage : 10;
             const audience = lastCoupon ? lastCoupon.audienceType : 'Doctor';
             let newCodes = [];
-            const expiry = new Date(); expiry.setDate(expiry.getDate() + 7);
+            const expiry = new Date(); 
+            expiry.setDate(expiry.getDate() + 7);
             
             for(let i=0; i<5; i++) {
                 const c = await generateUniqueCode();
                 await Coupon.create({ 
-                    code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Requested',
-                    doctorPhone: waId, audienceType: audience, source: 'Requested', expiryDate: expiry,
-                    proPhone: lastCoupon?.proPhone, location: lastCoupon?.location
+                    code: c, 
+                    discountPercentage: discount, 
+                    targetName: lastCoupon?.targetName || 'Requested',
+                    doctorPhone: waId, 
+                    audienceType: audience, 
+                    source: 'Requested', 
+                    expiryDate: expiry,
+                    proPhone: lastCoupon?.proPhone, 
+                    location: lastCoupon?.location
                 });
                 newCodes.push(c);
             }
+            // Make sure 'extra_coupons_template' matches your WATI template name
             await sendWatiMessage(waId, 'extra_coupons_template', [
-                { name: 'codes', value: newCodes.join(', ') }, { name: 'expiry', value: expiry.toLocaleDateString('en-GB') }
+                { name: 'codes', value: newCodes.join(', ') }, 
+                { name: 'expiry', value: expiry.toLocaleDateString('en-GB') }
             ]);
         }
         // C. Patient Buttons -> Round Robin Call Center
@@ -132,21 +188,33 @@ app.post('/api/wati/webhook', async (req, res) => {
             } else {
                 const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
                 if (nextAgent) {
-                    nextAgent.lastCalledAt = new Date(); await nextAgent.save();
+                    nextAgent.lastCalledAt = new Date(); 
+                    await nextAgent.save();
+                    
                     try {
                         await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
-                            agent_number: nextAgent.phone, destination_number: waId, caller_id: "07969690921"
+                            agent_number: nextAgent.phone, 
+                            destination_number: waId, 
+                            caller_id: "07969690921"
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
+                        
                         await sendWatiMessage(waId, 'sales_call_ack_template', []); 
-                    } catch (e) { console.error("Tata Tele Error:", e.message); }
+                    } catch (e) { 
+                        console.error("Tata Tele Error:", e.message); 
+                    }
                 }
             }
         }
         res.sendStatus(200);
-    } catch (error) { res.sendStatus(500); }
+    } catch (error) { 
+        console.error("Webhook Error:", error);
+        res.sendStatus(500); 
+    }
 });
 
+// -----------------------------------------
 // 4. RECEPTION / USER API (Validate & Redeem)
+// -----------------------------------------
 app.post('/api/coupon/validate', async (req, res) => {
     try {
         const { code } = req.body;
@@ -155,8 +223,15 @@ app.post('/api/coupon/validate', async (req, res) => {
         if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Coupon already redeemed!" });
         if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "This coupon has expired!" });
         
-        res.json({ valid: true, discount: coupon.discountPercentage, name: coupon.targetName || 'Unknown', type: coupon.audienceType });
-    } catch (e) { res.status(500).json({ error: "Server error" }); }
+        res.json({ 
+            valid: true, 
+            discount: coupon.discountPercentage, 
+            name: coupon.targetName || 'Unknown', 
+            type: coupon.audienceType 
+        });
+    } catch (e) { 
+        res.status(500).json({ error: "Server error" }); 
+    }
 });
 
 app.post('/api/coupon/redeem', async (req, res) => {
@@ -170,23 +245,34 @@ app.post('/api/coupon/redeem', async (req, res) => {
         coupon.redeemedAt = new Date();
         await coupon.save();
         res.json({ success: true, message: "Coupon redeemed successfully!" });
-    } catch (e) { res.status(500).json({ error: "Server error" }); }
+    } catch (e) { 
+        res.status(500).json({ error: "Server error" }); 
+    }
 });
 
+// -----------------------------------------
 // 5. ADMIN DASHBOARD API
+// -----------------------------------------
 app.get('/api/agents', async (req, res) => res.json(await Agent.find().sort({ name: 1 })));
+
 app.post('/api/agents/toggle', async (req, res) => {
     await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
     res.json({ success: true });
 });
+
 app.get('/api/admin/dashboard-stats', async (req, res) => {
     const total = await Coupon.countDocuments();
     const redeemed = await Coupon.countDocuments({ isUsed: true });
     res.json({ totalSent: total, usedCount: redeemed });
 });
-app.get('/api/admin/logs', async (req, res) => res.json(await Coupon.find().sort({ createdAt: -1 }).limit(100)));
+
+app.get('/api/admin/logs', async (req, res) => {
+    res.json(await Coupon.find().sort({ createdAt: -1 }).limit(100));
+});
+
 app.get('/api/user/redeemed-today', async (req, res) => {
-    const start = new Date(); start.setHours(0,0,0,0);
+    const start = new Date(); 
+    start.setHours(0,0,0,0);
     const logs = await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 });
     res.json(logs);
 });
