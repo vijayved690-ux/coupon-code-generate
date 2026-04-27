@@ -75,7 +75,7 @@ app.post('/api/login', (req, res) => {
 });
 
 // -----------------------------------------
-// 2. SHOOT CAMPAIGN API
+// 2. SHOOT CAMPAIGN API (WITH BLANK TEXT FIX)
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
@@ -111,11 +111,13 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             if (!templateName) continue;
 
-            // Variables for your specific template: {{1}}=Name, {{2}}=Code, {{3}}=Expiry
+            // SAFETY FALLBACK: Agar CSV mein naam khali hai toh "Doctor" bhej dega (WATI error nahi dega)
+            const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
+
             const params = [
-                { name: 'name', value: target.name }, 
-                { name: 'code', value: code }, 
-                { name: 'expiry', value: formattedDate }
+                { name: 'name', value: safeName }, 
+                { name: 'code', value: code.toString() }, 
+                { name: 'expiry', value: formattedDate.toString() }
             ];
             
             await sendWatiMessage(target.phone, templateName, params);
@@ -148,7 +150,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
         } 
-        // B. Doctor Button -> More Coupon (Spelling match: "I want to More Coupon")
+        // B. Doctor Button -> More Coupon
         else if (btn === 'I want to More Coupon' || btn === 'I Want More Coupon') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             const discount = lastCoupon ? lastCoupon.discountPercentage : 10;
@@ -173,7 +175,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 });
                 newCodes.push(c);
             }
-            // Using template: more_final_code_temp_dis
+            
             await sendWatiMessage(waId, 'more_final_code_temp_dis', [
                 { name: 'codes', value: newCodes.join(', ') }, 
                 { name: 'expiry', value: expiry.toLocaleDateString('en-GB') }
