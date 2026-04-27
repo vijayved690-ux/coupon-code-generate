@@ -6,31 +6,31 @@ const axios = require('axios');
 const path = require('path');
 const Coupon = require('./models/Coupon');
 const Agent = require('./models/Agent');
-const Activity = require('./models/Activity'); 
+const Activity = require('./models/Activity');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// -----------------------------------------
-// DB CONNECTION & AGENT SEEDING (ROUND ROBIN)
-// -----------------------------------------
+// DATABASE CONNECTION
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('MongoDB Connected Successfully!');
         const team = [
-            { name: 'Ruchit', phone: '7600082217' }, { name: 'Mital', phone: '9558591212' },
-            { name: 'Aditi', phone: '8488931212' }, { name: 'Jay', phone: '9274682553' },
+            { name: 'Ruchit', phone: '7600082217' },
+            { name: 'Mital', phone: '9558591212' },
+            { name: 'Aditi', phone: '8488931212' },
+            { name: 'Jay', phone: '9274682553' },
             { name: 'Khyati', phone: '7490029085' }
         ];
-        for (let p of team) {
-            const ex = await Agent.findOne({ phone: p.phone });
-            if (!ex) await Agent.create(p);
+        for (let person of team) {
+            const exists = await Agent.findOne({ phone: person.phone });
+            if (!exists) await Agent.create(person);
         }
     }).catch(err => console.error('DB Error:', err));
 
-// --- HELPERS ---
+// HELPERS
 async function generateUniqueCode() {
     let code; let isUnique = false;
     while (!isUnique) {
@@ -46,16 +46,14 @@ async function sendWatiMessage(phone, templateName, params) {
         await axios.post(`${process.env.WATI_API_ENDPOINT}/api/v1/sendTemplateMessage?whatsappNumber=${phone}`, {
             template_name: templateName, broadcast_name: 'UIC_Campaign', parameters: params
         }, { headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` } });
-    } catch (err) { console.error(`WATI Error:`, err.message); }
+    } catch (err) { console.error("WATI Error:", err.message); }
 }
 
 async function logActivity(user, action) {
     try { await Activity.create({ user, action }); } catch (e) { console.error(e); }
 }
 
-// -----------------------------------------
-// APIs (AUTH & ADMIN)
-// -----------------------------------------
+// APIs
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     if (username === 'admin' && password === (process.env.ADMIN_PASS || 'UicAdmin@2026')) return res.json({ success: true, role: 'admin' });
@@ -81,12 +79,11 @@ app.get('/api/admin/activity-logs', async (req, res) => {
     res.json(await Activity.find().sort({ timestamp: -1 }).limit(50));
 });
 
-// --- CAMPAIGN SHOOT (BLANK ROW FILTER INCLUDED) ---
 app.post('/api/campaign/shoot', async (req, res) => {
     const { targetList, discount, expiryDate, audienceType } = req.body;
     const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB');
     for (let t of targetList) {
-        if (!t.phone) continue; // Skip Blank Rows
+        if (!t.phone) continue;
         const code = await generateUniqueCode();
         await Coupon.create({ 
             code, discountPercentage: discount, targetName: t.name, doctorPhone: t.phone, 
@@ -99,12 +96,10 @@ app.post('/api/campaign/shoot', async (req, res) => {
     res.json({ success: true });
 });
 
-// --- WEBHOOK: PRO CALLING & ROUND ROBIN ---
 app.post('/api/wati/webhook', async (req, res) => {
     const { waId, buttonText, text } = req.body;
     const btn = (buttonText || text || "").trim();
 
-    // 1. PRO Calling for Doctors
     if (btn === 'Sales Team Please Call Me') {
         const lastC = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
         if (lastC && lastC.proPhone) {
@@ -114,7 +109,6 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('WATI', `PRO_CALL_FOR_${waId}`);
         }
     } 
-    // 2. More Coupons
     else if (btn === 'I want to More Coupon' || btn === 'I Want More Coupon') {
         const lastC = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
         const disc = lastC?.discountPercentage || 30;
@@ -123,7 +117,6 @@ app.post('/api/wati/webhook', async (req, res) => {
         await Coupon.create({ code, discountPercentage: disc, doctorPhone: waId, audienceType: 'Doctor', expiryDate: exp, proPhone: lastC?.proPhone });
         await sendWatiMessage(waId, 'dis_more_temp_all', [{name:'1', value: `${disc}% Discount`}, {name:'2', value: code}, {name:'3', value: exp.toLocaleDateString('en-GB')}]);
     }
-    // 3. Agent Calling (Round Robin)
     else if (['Need more assistance', 'Book my test', 'I will use the coupon'].includes(btn)) {
         const agent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
         if (agent) {
@@ -131,22 +124,25 @@ app.post('/api/wati/webhook', async (req, res) => {
             await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
                 agent_number: agent.phone, destination_number: waId, caller_id: "07969690921"
             }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
-            await logActivity('WATI', `AGENT_CALL_${agent.name}_TO_${waId}`);
         }
     }
     res.sendStatus(200);
 });
 
-// --- DASHBOARD & AGENTS ---
 app.post('/api/coupon/redeem', async (req, res) => {
     const { code, branch } = req.body;
     const c = await Coupon.findOne({ code });
     if (c) {
         c.isUsed = true; c.branchRedeemed = branch; c.redeemedAt = new Date();
         await c.save();
-        await logActivity(branch, `REDEEMED_${code}`);
         res.json({ success: true });
     } else res.status(404).send();
+});
+
+app.post('/api/coupon/validate', async (req, res) => {
+    const c = await Coupon.findOne({ code: req.body.code });
+    if(!c) return res.json({valid:false, message:"Invalid"});
+    res.json({valid:true, discount: c.discountPercentage, name: c.targetName});
 });
 
 app.get('/api/agents', async (req, res) => res.json(await Agent.find()));
@@ -154,14 +150,16 @@ app.post('/api/agents/toggle', async (req, res) => {
     await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
     res.json({ success: true });
 });
-
 app.get('/api/admin/dashboard-stats', async (req, res) => {
     res.json({ totalSent: await Coupon.countDocuments(), usedCount: await Coupon.countDocuments({isUsed: true}) });
 });
-
 app.get('/api/admin/logs', async (req, res) => res.json(await Coupon.find().sort({createdAt: -1}).limit(100)));
+app.get('/api/user/redeemed-today', async (req, res) => {
+    const s = new Date(); s.setHours(0,0,0,0);
+    res.json(await Coupon.find({isUsed:true, redeemedAt:{$gte:s}}).sort({redeemedAt:-1}));
+});
 
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server live on ${PORT}`));
+app.listen(PORT, () => console.log(`Live on ${PORT}`));
