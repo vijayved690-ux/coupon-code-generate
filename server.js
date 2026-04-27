@@ -75,7 +75,7 @@ app.post('/api/login', (req, res) => {
 });
 
 // -----------------------------------------
-// 2. SHOOT CAMPAIGN API (WITH BLANK TEXT FIX)
+// 2. SHOOT CAMPAIGN API (Fix for Variables 1, 2, 3)
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
@@ -96,7 +96,6 @@ app.post('/api/campaign/shoot', async (req, res) => {
                 expiryDate: new Date(expiryDate)
             });
 
-            // TEMPLATE MAPPING
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon',
                 'Doctor_20': 'temp_20_doctor_coupon',
@@ -106,18 +105,16 @@ app.post('/api/campaign/shoot', async (req, res) => {
                 'Patient_30': 'patient_30_temp_new_dis'
             };
 
-            const templateKey = `${audienceType}_${discount}`;
-            const templateName = templateMap[templateKey];
-
+            const templateName = templateMap[`${audienceType}_${discount}`];
             if (!templateName) continue;
 
-            // SAFETY FALLBACK: Agar CSV mein naam khali hai toh "Doctor" bhej dega (WATI error nahi dega)
             const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
 
+            // WATI REQUIRED FORMAT: Name must match {{1}}, {{2}} explicitly
             const params = [
-                { name: 'name', value: safeName }, 
-                { name: 'code', value: code.toString() }, 
-                { name: 'expiry', value: formattedDate.toString() }
+                { name: '1', value: safeName }, 
+                { name: '2', value: code.toString() }, 
+                { name: '3', value: formattedDate.toString() }
             ];
             
             await sendWatiMessage(target.phone, templateName, params);
@@ -137,7 +134,6 @@ app.post('/api/wati/webhook', async (req, res) => {
         const btn = buttonText || text;
         const patientBtns = ['I will use the coupon', 'I will use the cupon', 'Need more assistance', 'looking for more assistance', 'Book my test', 'book my test'];
 
-        // A. Doctor Button -> Call PRO
         if (btn === 'Sales Team Please Call Me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             if (lastCoupon && lastCoupon.proPhone) {
@@ -150,38 +146,30 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
         } 
-        // B. Doctor Button -> More Coupon
         else if (btn === 'I want to More Coupon' || btn === 'I Want More Coupon') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             const discount = lastCoupon ? lastCoupon.discountPercentage : 10;
             const audience = lastCoupon ? lastCoupon.audienceType : 'Doctor';
             let newCodes = [];
-            
             const expiry = new Date(); 
-            expiry.setMonth(expiry.getMonth() + 1); // 1 Month Expiry
+            expiry.setMonth(expiry.getMonth() + 1); 
             
             for(let i=0; i<5; i++) {
                 const c = await generateUniqueCode();
                 await Coupon.create({ 
-                    code: c, 
-                    discountPercentage: discount, 
-                    targetName: lastCoupon?.targetName || 'Requested',
-                    doctorPhone: waId, 
-                    audienceType: audience, 
-                    source: 'Requested', 
-                    expiryDate: expiry,
-                    proPhone: lastCoupon?.proPhone, 
-                    location: lastCoupon?.location
+                    code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Requested',
+                    doctorPhone: waId, audienceType: audience, source: 'Requested', 
+                    expiryDate: expiry, proPhone: lastCoupon?.proPhone, location: lastCoupon?.location
                 });
                 newCodes.push(c);
             }
             
+            // Fix applied here too: '1' and '2' instead of 'codes' and 'expiry'
             await sendWatiMessage(waId, 'more_final_code_temp_dis', [
-                { name: 'codes', value: newCodes.join(', ') }, 
-                { name: 'expiry', value: expiry.toLocaleDateString('en-GB') }
+                { name: '1', value: newCodes.join(', ') }, 
+                { name: '2', value: expiry.toLocaleDateString('en-GB') }
             ]);
         }
-        // C. Patient Buttons -> Round Robin Call Center
         else if (patientBtns.includes(btn)) {
             if (btn === 'I will use the coupon' || btn === 'I will use the cupon') {
                 await sendWatiMessage(waId, 'patient_thankyou', []);
@@ -193,9 +181,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                     
                     try {
                         await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
-                            agent_number: nextAgent.phone, 
-                            destination_number: waId, 
-                            caller_id: "07969690921"
+                            agent_number: nextAgent.phone, destination_number: waId, caller_id: "07969690921"
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
                         
                         await sendWatiMessage(waId, 'sales_call_ack_template', []); 
