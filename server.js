@@ -6,6 +6,7 @@ const axios = require('axios');
 const path = require('path');
 const Coupon = require('./models/Coupon');
 const Agent = require('./models/Agent');
+const Activity = require('./models/Activity'); // Naya Activity Logger Model
 
 const app = express();
 app.use(express.json());
@@ -60,6 +61,14 @@ async function sendWatiMessage(phone, templateName, params) {
     }
 }
 
+async function logActivity(user, action, details) {
+    try {
+        await Activity.create({ user, action, details });
+    } catch (e) {
+        console.error('Logging Error:', e);
+    }
+}
+
 // -----------------------------------------
 // 1. AUTHENTICATION API
 // -----------------------------------------
@@ -75,17 +84,43 @@ app.post('/api/login', (req, res) => {
 });
 
 // -----------------------------------------
-// 2. SHOOT CAMPAIGN API (With Row Filter)
+// 2. ADMIN SECURE DATA & ACTIVITY APIs
+// -----------------------------------------
+app.post('/api/admin/reset-data', async (req, res) => {
+    const { password } = req.body;
+    if (password !== '456789') {
+        await logActivity('Admin Panel', 'RESET ATTEMPT FAILED', 'Incorrect password used');
+        return res.status(403).json({ success: false, message: "Wrong Reset Password!" });
+    }
+    
+    await Coupon.deleteMany({});
+    await logActivity('Admin Panel', 'DATA RESET SUCCESS', 'All coupon data completely wiped');
+    res.json({ success: true });
+});
+
+app.post('/api/log-action', async (req, res) => {
+    await logActivity(req.body.user || 'Unknown', req.body.action, req.body.details || '');
+    res.json({ success: true });
+});
+
+app.get('/api/admin/activity-logs', async (req, res) => {
+    res.json(await Activity.find().sort({ timestamp: -1 }).limit(50)); // Last 50 actions
+});
+
+// -----------------------------------------
+// 3. SHOOT CAMPAIGN API
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
         const { targetList, discount, expiryDate, audienceType } = req.body;
         const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB'); 
+        let validCount = 0;
         
         for (let target of targetList) {
-            // Skip rows with no phone number to prevent N/A entries
+            // Safety: Skip rows with no phone number to prevent N/A entries
             if (!target.phone || target.phone.toString().trim() === '') continue;
 
+            validCount++;
             const code = await generateUniqueCode();
             
             await Coupon.create({ 
@@ -121,6 +156,8 @@ app.post('/api/campaign/shoot', async (req, res) => {
             
             await sendWatiMessage(target.phone, templateName, params);
         }
+        
+        await logActivity('Admin Panel', 'CAMPAIGN FIRED', `Generated ${validCount} coupons for ${audienceType} (${discount}% OFF)`);
         res.json({ success: true });
     } catch (error) { 
         res.status(500).json({ error: error.message }); 
@@ -128,7 +165,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
 });
 
 // -----------------------------------------
-// 3. WATI WEBHOOK (INTELLIGENCE & CALLING)
+// 4. WATI WEBHOOK (INTELLIGENCE & CALLING)
 // -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
     try {
@@ -199,7 +236,7 @@ app.post('/api/wati/webhook', async (req, res) => {
 });
 
 // -----------------------------------------
-// 4. RECEPTION / ADMIN / DASHBOARD APIs
+// 5. RECEPTION / ADMIN / DASHBOARD APIs
 // -----------------------------------------
 app.post('/api/coupon/validate', async (req, res) => {
     try {
@@ -223,15 +260,18 @@ app.post('/api/coupon/redeem', async (req, res) => {
         coupon.branchRedeemed = branch;
         await coupon.save();
         
+        await logActivity(branch || 'Reception Panel', 'COUPON REDEEMED', `Code ${code} redeemed successfully`);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
 app.get('/api/agents', async (req, res) => res.json(await Agent.find().sort({ name: 1 })));
+
 app.post('/api/agents/toggle', async (req, res) => {
     await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
     res.json({ success: true });
 });
+
 app.get('/api/admin/dashboard-stats', async (req, res) => {
     const total = await Coupon.countDocuments();
     const redeemed = await Coupon.countDocuments({ isUsed: true });
