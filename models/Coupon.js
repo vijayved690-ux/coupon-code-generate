@@ -12,7 +12,7 @@ const couponSchema = new mongoose.Schema({
     expiryDate: { type: Date, required: true },
     isUsed: { type: Boolean, default: false },
     redeemedAt: { type: Date },
-    branchRedeemed: { type: String } // Yeh naya add hua hai
+    branchRedeemed: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Coupon', couponSchema);
