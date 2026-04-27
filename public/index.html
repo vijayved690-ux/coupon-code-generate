@@ -32,7 +32,7 @@
             
             <div id="user-dashboard" class="hidden">
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-8 flex flex-col items-center">
-                    <h2 class="text-xl font-bold mb-4">Validate Coupon Code</h2>
+                    <h2 class="text-xl font-bold mb-4">Validate & Redeem Coupon</h2>
                     <div class="flex gap-4 w-full max-w-md">
                         <input type="text" id="verify-code" placeholder="Enter 5-digit code" maxlength="5" class="w-full border-2 border-slate-300 p-3 rounded-lg text-center text-xl font-bold tracking-widest uppercase focus:border-blue-500 outline-none">
                         <button onclick="verifyCode()" class="bg-slate-800 text-white font-bold px-6 rounded-lg hover:bg-slate-900">Check</button>
@@ -43,7 +43,7 @@
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden max-w-4xl mx-auto">
                     <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold">Recently Redeemed (Today)</h3></div>
                     <table class="w-full text-left text-sm">
-                        <thead><tr class="bg-white border-b text-slate-500"><th class="p-4">Code</th><th class="p-4">Name</th><th class="p-4">Type</th><th class="p-4">Discount</th></tr></thead>
+                        <thead><tr class="bg-white border-b text-slate-500"><th class="p-4">Code</th><th class="p-4">Name</th><th class="p-4">Branch</th><th class="p-4">Time</th></tr></thead>
                         <tbody id="redeemed-list"></tbody>
                     </table>
                 </div>
@@ -59,13 +59,6 @@
                         <p class="text-xs text-slate-500 font-bold uppercase">Total Redeemed</p>
                         <h2 id="stat-redeemed" class="text-2xl font-bold">0</h2>
                     </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="font-bold text-slate-800">🎧 Call Center Agents (Round Robin)</h2>
-                    </div>
-                    <div id="agents-list" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
                 </div>
 
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
@@ -88,39 +81,64 @@
                         <div>
                             <label class="text-xs font-bold text-slate-500">CSV FILE</label>
                             <input type="file" id="csv" class="w-full border p-1.5 rounded text-sm bg-slate-50">
-                            <p class="text-[10px] text-slate-500 mt-1">Headers: name, phone, location, proNumber</p>
                         </div>
                         <button onclick="shoot()" id="btn-shoot" class="bg-blue-600 text-white font-bold p-2 px-6 rounded hover:bg-blue-700">SEND</button>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold">System Logs</h3></div>
-                    <table class="w-full text-left text-sm">
-                        <thead><tr class="border-b text-slate-500"><th class="p-4">Name</th><th class="p-4">Phone</th><th class="p-4">Code</th><th class="p-4">Type</th><th class="p-4">Status</th></tr></thead>
-                        <tbody id="admin-logs"></tbody>
-                    </table>
+                    <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
+                        <h3 class="font-bold">System Logs (Live Data)</h3>
+                        <button onclick="exportCSV()" class="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-green-700">
+                            📊 Export Full CSV
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="border-b text-slate-500 bg-white">
+                                    <th class="p-4">Name</th>
+                                    <th class="p-4">Code</th>
+                                    <th class="p-4">Generated At</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4">Branch Redeemed</th>
+                                    <th class="p-4">Redeemed At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-logs"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- SAMPLE CSV DOWNLOAD ---
-        function downloadSample() {
-            const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217\nPatient Rahul,918888888888,Satellite,919558591212";
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "uic_sample_campaign.csv");
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        // --- CONSTANTS ---
+        const BRANCHES = [
+            'UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 
+            'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 
+            'UIC ISANPUR', 'UIC MORBI'
+        ];
+
+        // --- HELPER FORMAT DATE ---
+        function formatDate(dateString) {
+            if(!dateString) return '-';
+            const d = new Date(dateString);
+            return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
         }
 
-        // --- AUTHENTICATION ---
+        // --- SAMPLE CSV ---
+        function downloadSample() {
+            const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "uic_sample.csv";
+            link.click();
+        }
+
+        // --- AUTH ---
         window.onload = () => {
             const role = localStorage.getItem('role');
             if (role) showApp(role);
@@ -129,9 +147,7 @@
         async function login() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
-            const res = await fetch('/api/login', {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p})
-            });
+            const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) });
             const data = await res.json();
             if(data.success) {
                 localStorage.setItem('role', data.role);
@@ -142,10 +158,7 @@
             }
         }
 
-        function logout() {
-            localStorage.removeItem('role');
-            location.reload();
-        }
+        function logout() { localStorage.removeItem('role'); location.reload(); }
 
         function showApp(role) {
             document.getElementById('login-view').classList.add('hidden');
@@ -164,44 +177,55 @@
 
         // --- USER / RECEPTION LOGIC ---
         let currentValidCode = null;
+
         async function verifyCode() {
             const code = document.getElementById('verify-code').value;
             const resBox = document.getElementById('verify-result');
             if(!code) return;
             
-            const res = await fetch('/api/coupon/validate', {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code})
-            });
+            const res = await fetch('/api/coupon/validate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code}) });
             const data = await res.json();
             resBox.classList.remove('hidden');
 
             if(data.valid) {
                 currentValidCode = code;
-                const typeLabel = data.type === 'Doctor' ? '👨‍⚕️ Doctor Referral' : '🧍 Patient Discount';
+                let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
+                
                 resBox.className = "mt-6 w-full max-w-md p-4 rounded-lg border-2 border-green-500 bg-green-50";
                 resBox.innerHTML = `
                     <p class="text-green-700 font-bold text-lg mb-2">✅ Valid Code</p>
                     <p class="text-slate-800 text-sm"><b>Name:</b> ${data.name}</p>
-                    <p class="text-slate-800 text-sm"><b>Type:</b> ${typeLabel}</p>
                     <p class="text-slate-800 text-sm mb-4"><b>Discount:</b> ${data.discount}% OFF</p>
-                    <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-bold py-2 rounded shadow hover:bg-green-700 transition">Redeem Now</button>
+                    
+                    <label class="text-xs font-bold text-slate-600 block mb-1">SELECT BRANCH FOR REDEMPTION <span class="text-red-500">*</span></label>
+                    <select id="redeem-branch" class="w-full border-2 border-slate-300 p-2 rounded mb-4 focus:outline-none focus:border-green-500 font-bold text-slate-700">
+                        <option value="">-- Choose Branch --</option>
+                        ${branchOptions}
+                    </select>
+
+                    <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-bold py-3 rounded shadow hover:bg-green-700 transition">Confirm & Redeem</button>
                 `;
             } else {
                 currentValidCode = null;
                 resBox.className = "mt-6 w-full max-w-md p-4 rounded-lg border-2 border-red-500 bg-red-50";
-                resBox.innerHTML = `<p class="text-red-700 font-bold">❌ ${data.message}</p>`;
+                resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`;
             }
         }
 
         async function redeemCode() {
             if(!currentValidCode) return;
+            const branch = document.getElementById('redeem-branch').value;
+            if(!branch) return alert("Please select a branch before redeeming!");
+
             await fetch('/api/coupon/redeem', {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode})
+                method: 'POST', headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({code: currentValidCode, branch: branch})
             });
+            
             document.getElementById('verify-code').value = '';
             document.getElementById('verify-result').classList.add('hidden');
             loadUserData();
-            alert("Coupon Successfully Redeemed!");
+            alert(`Success! Coupon redeemed at ${branch}`);
         }
 
         async function loadUserData() {
@@ -211,8 +235,8 @@
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-mono font-bold text-blue-600 tracking-widest">${l.code}</td>
                     <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${l.audienceType}</td>
-                    <td class="p-4 font-bold text-green-600">${l.discountPercentage}%</td>
+                    <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
                 </tr>
             `).join('');
         }
@@ -223,36 +247,39 @@
             document.getElementById('stat-sent').innerText = s.totalSent;
             document.getElementById('stat-redeemed').innerText = s.usedCount;
 
-            const aRes = await fetch('/api/agents');
-            const agents = await aRes.json();
-            document.getElementById('agents-list').innerHTML = agents.map(a => `
-                <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50 border-green-200' : 'bg-slate-50 opacity-60'} transition-all">
-                    <div>
-                        <p class="font-bold text-sm text-slate-800">${a.name}</p>
-                        <p class="text-[10px] text-slate-500 font-mono">${a.phone}</p>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="sr-only peer">
-                        <div class="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-green-500"></div>
-                    </label>
-                </div>
-            `).join('');
-
             const l = await fetch('/api/admin/logs').then(r => r.json());
             document.getElementById('admin-logs').innerHTML = l.map(i => `
                 <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-semibold">${i.targetName || 'N/A'}</td>
-                    <td class="p-4 text-xs">${i.doctorPhone}</td>
+                    <td class="p-4 font-semibold">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-400 font-normal">${i.doctorPhone}</span></td>
                     <td class="p-4 font-mono font-bold text-blue-600">${i.code}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${i.audienceType}</td>
+                    <td class="p-4 text-xs text-slate-600">${formatDate(i.createdAt)}</td>
                     <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-xs bg-green-100 px-2 py-1 rounded">✅ Used</span>' : '<span class="text-blue-600 font-bold text-xs bg-blue-100 px-2 py-1 rounded">⏳ Active</span>'}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
+                    <td class="p-4 text-xs text-slate-600">${formatDate(i.redeemedAt)}</td>
                 </tr>
             `).join('');
         }
 
-        async function toggleAgent(id, isOnline) {
-            await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) });
-            loadAdminData();
+        // --- EXPORT CSV LOGIC ---
+        async function exportCSV() {
+            alert("Fetching data, your download will start shortly...");
+            const data = await fetch('/api/admin/logs?export=true').then(r => r.json());
+            
+            let csv = "Name,Phone,Code,Audience Type,Discount,Status,Generated Time,Redeemed Branch,Redeemed Time\n";
+            data.forEach(i => {
+                const genTime = i.createdAt ? new Date(i.createdAt).toLocaleString('en-IN').replace(/,/g, '') : '';
+                const redTime = i.redeemedAt ? new Date(i.redeemedAt).toLocaleString('en-IN').replace(/,/g, '') : '';
+                const status = i.isUsed ? 'Used' : 'Active';
+                const branch = i.branchRedeemed || '';
+                
+                csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.audienceType}","${i.discountPercentage}%","${status}","${genTime}","${branch}","${redTime}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `UIC_Coupon_Logs_${new Date().toLocaleDateString('en-IN')}.csv`;
+            link.click();
         }
 
         function shoot() {
@@ -265,8 +292,7 @@
             btn.disabled = true;
 
             Papa.parse(f, {
-                header: true,
-                skipEmptyLines: true,
+                header: true, skipEmptyLines: true,
                 complete: async (res) => {
                     try {
                         await fetch('/api/campaign/shoot', {
