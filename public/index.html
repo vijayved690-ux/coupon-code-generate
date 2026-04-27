@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UIC | Coupon Campaign Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body class="bg-slate-50 p-8 font-sans">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">Coupon Campaign Manager</h1>
+                <p class="text-slate-500 mt-1">Usmanpura Imaging Centre (Ahmedabad Only)</p>
+            </div>
+            <div class="text-right text-xs font-semibold text-slate-400">
+                <p>RUNNING MRI CENTRES</p>
+                <p>WE BUY AND SELL</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8" id="stats-container">
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Total Sent</p>
+                <h2 id="stat-total" class="text-2xl font-bold mt-1">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-green-500">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Redeemed</p>
+                <h2 id="stat-used" class="text-2xl font-bold mt-1">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-yellow-500">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Extra Requested</p>
+                <h2 id="stat-req" class="text-2xl font-bold mt-1">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-purple-500">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Active Codes</p>
+                <h2 id="stat-active" class="text-2xl font-bold mt-1">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-500">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Expired</p>
+                <h2 id="stat-expired" class="text-2xl font-bold mt-1">0</h2>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8 border border-slate-100">
+            <h3 class="text-lg font-bold mb-4 text-slate-800">🚀 Shoot New Campaign</h3>
+            <div class="flex flex-wrap gap-5 items-end">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1">Template Discount (%)</label>
+                    <select id="discount-val" class="border border-slate-300 p-2 rounded-md w-32 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="10">10%</option>
+                        <option value="20">20%</option>
+                        <option value="30">30%</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1">Valid Till Date</label>
+                    <input type="date" id="expiry-date" class="border border-slate-300 p-2 rounded-md w-40 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1">Upload Doctors List (CSV)</label>
+                    <input type="file" id="csv-file" accept=".csv" class="border border-slate-300 p-1.5 rounded-md bg-slate-50 text-sm">
+                </div>
+                <button onclick="processAndShoot()" id="btn-shoot" class="bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-700 transition duration-200">
+                    Shoot Messages
+                </button>
+            </div>
+            <p id="status-msg" class="mt-4 text-sm font-medium"></p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
+                <h3 class="font-bold text-slate-700">Recent Generated Coupons</h3>
+                <button onclick="loadDashboard()" class="text-blue-600 text-sm font-semibold hover:underline">Refresh Data</button>
+            </div>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white text-slate-500 text-xs uppercase tracking-wide border-b">
+                        <th class="p-4 font-semibold">Doctor Phone</th>
+                        <th class="p-4 font-semibold">Code</th>
+                        <th class="p-4 font-semibold">Discount</th>
+                        <th class="p-4 font-semibold">Source</th>
+                        <th class="p-4 font-semibold">Expiry Date</th>
+                        <th class="p-4 font-semibold">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-body" class="text-sm">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = ''; // Keep empty if same domain
+
+        // Initial Setup: Set Date picker to today + 30 days
+        document.addEventListener("DOMContentLoaded", () => {
+            const dateInput = document.getElementById('expiry-date');
+            const defaultDate = new Date();
+            defaultDate.setDate(defaultDate.getDate() + 30);
+            dateInput.value = defaultDate.toISOString().split('T')[0];
+            loadDashboard();
+        });
+
+        async function loadDashboard() {
+            try {
+                const statsRes = await fetch(`${API_BASE}/api/admin/dashboard-stats`);
+                const stats = await statsRes.json();
+                document.getElementById('stat-total').innerText = stats.totalSent;
+                document.getElementById('stat-used').innerText = stats.usedCount;
+                document.getElementById('stat-req').innerText = stats.requestedCount;
+                document.getElementById('stat-active').innerText = stats.unusedCount;
+                document.getElementById('stat-expired').innerText = stats.expiredCount;
+
+                const logsRes = await fetch(`${API_BASE}/api/admin/logs`);
+                const logs = await logsRes.json();
+                const body = document.getElementById('logs-body');
+                
+                body.innerHTML = logs.map(log => {
+                    const isExpired = new Date() > new Date(log.expiryDate);
+                    const expiryString = new Date(log.expiryDate).toLocaleDateString('en-GB');
+                    
+                    let statusBadge = '';
+                    if (log.isUsed) {
+                        statusBadge = '<span class="px-2 py-1 rounded text-xs bg-green-100 text-green-700 font-semibold">Redeemed</span>';
+                    } else if (isExpired) {
+                        statusBadge = '<span class="px-2 py-1 rounded text-xs bg-red-100 text-red-700 font-semibold">Expired</span>';
+                    } else {
+                        statusBadge = '<span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 font-semibold">Active</span>';
+                    }
+
+                    return `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100">
+                        <td class="p-4 text-slate-700">${log.doctorPhone}</td>
+                        <td class="p-4 font-mono font-bold text-blue-600 text-base tracking-wider">${log.code}</td>
+                        <td class="p-4 font-semibold text-slate-700">${log.discountPercentage}%</td>
+                        <td class="p-4"><span class="px-2 py-1 rounded text-xs font-semibold ${log.source === 'Campaign' ? 'bg-slate-100 text-slate-600' : 'bg-purple-100 text-purple-700'}">${log.source}</span></td>
+                        <td class="p-4 text-slate-600">${expiryString}</td>
+                        <td class="p-4">${statusBadge}</td>
+                    </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Dashboard Load Error:", err);
+            }
+        }
+
+        function processAndShoot() {
+            const fileInput = document.getElementById('csv-file');
+            const discount = document.getElementById('discount-val').value;
+            const expiryDate = document.getElementById('expiry-date').value;
+            const statusMsg = document.getElementById('status-msg');
+            const btn = document.getElementById('btn-shoot');
+
+            if (!fileInput.files[0]) return alert("Please upload a CSV file with 'name' and 'phone' columns.");
+            if (!expiryDate) return alert("Please select an Expiry Date.");
+
+            btn.disabled = true;
+            btn.classList.add("opacity-50", "cursor-not-allowed");
+            statusMsg.className = "mt-4 text-sm font-medium text-blue-600";
+            statusMsg.innerText = "Processing CSV and Shooting Campaign... Please wait.";
+
+            Papa.parse(fileInput.files[0], {
+                header: true,
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const doctors = results.data;
+                    
+                    try {
+                        const res = await fetch(`${API_BASE}/api/campaign/shoot`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ doctors, discount, expiryDate })
+                        });
+                        
+                        if (res.ok) {
+                            statusMsg.className = "mt-4 text-sm font-medium text-green-600";
+                            statusMsg.innerText = `✅ Success! Messages sent to ${doctors.length} doctors. Codes saved to database.`;
+                            loadDashboard();
+                            fileInput.value = ''; // Reset file input
+                        } else {
+                            const errorData = await res.json();
+                            statusMsg.className = "mt-4 text-sm font-medium text-red-600";
+                            statusMsg.innerText = `❌ Error: ${errorData.error || 'Failed to execute campaign.'}`;
+                        }
+                    } catch (err) {
+                        statusMsg.className = "mt-4 text-sm font-medium text-red-600";
+                        statusMsg.innerText = "❌ Network Error: " + err.message;
+                    } finally {
+                        btn.disabled = false;
+                        btn.classList.remove("opacity-50", "cursor-not-allowed");
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
