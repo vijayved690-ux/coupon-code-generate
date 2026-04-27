@@ -75,7 +75,7 @@ app.post('/api/login', (req, res) => {
 });
 
 // -----------------------------------------
-// 2. SHOOT CAMPAIGN API
+// 2. SHOOT CAMPAIGN API (With Row Filter)
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
@@ -83,6 +83,9 @@ app.post('/api/campaign/shoot', async (req, res) => {
         const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB'); 
         
         for (let target of targetList) {
+            // Skip rows with no phone number to prevent N/A entries
+            if (!target.phone || target.phone.toString().trim() === '') continue;
+
             const code = await generateUniqueCode();
             
             await Coupon.create({ 
@@ -225,12 +228,10 @@ app.post('/api/coupon/redeem', async (req, res) => {
 });
 
 app.get('/api/agents', async (req, res) => res.json(await Agent.find().sort({ name: 1 })));
-
 app.post('/api/agents/toggle', async (req, res) => {
     await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
     res.json({ success: true });
 });
-
 app.get('/api/admin/dashboard-stats', async (req, res) => {
     const total = await Coupon.countDocuments();
     const redeemed = await Coupon.countDocuments({ isUsed: true });
