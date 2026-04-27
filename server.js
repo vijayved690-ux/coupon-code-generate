@@ -5,22 +5,32 @@ const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const Coupon = require('./models/Coupon');
+const Agent = require('./models/Agent');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
-
-// Serve Admin UI
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database Connection
+// Database Connection & Call Center Team Auto-Setup
 mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('MongoDB Connected Successfully!'))
-    .catch(err => console.error('MongoDB Connection Error:', err));
+    .then(async () => {
+        console.log('MongoDB Connected Successfully!');
+        const team = [
+            { name: 'Ruchit', phone: '7600082217' },
+            { name: 'Mital', phone: '9558591212' },
+            { name: 'Aditi', phone: '8488931212' },
+            { name: 'Jay', phone: '9274682553' },
+            { name: 'Khyati', phone: '7490029085' }
+        ];
+        for (let person of team) {
+            const exists = await Agent.findOne({ phone: person.phone });
+            if (!exists) await Agent.create(person);
+        }
+    })
+    .catch(err => console.error('MongoDB Error:', err));
 
-// -----------------------------------------
-// HELPER FUNCTIONS
-// -----------------------------------------
+// Helpers
 async function generateUniqueCode() {
     let isUnique = false;
     let code;
@@ -35,176 +45,151 @@ async function generateUniqueCode() {
 async function sendWatiMessage(phone, templateName, params) {
     try {
         await axios.post(`${process.env.WATI_API_ENDPOINT}/api/v1/sendTemplateMessage?whatsappNumber=${phone}`, {
-            template_name: templateName,
-            broadcast_name: 'UIC_Coupon_Campaign',
-            parameters: params
-        }, {
-            headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` }
-        });
-    } catch (err) {
-        console.error(`WATI Error for ${phone}:`, err.response?.data || err.message);
-    }
+            template_name: templateName, broadcast_name: 'UIC_Campaign', parameters: params
+        }, { headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` } });
+    } catch (err) { console.error(`WATI Error:`, err.message); }
 }
 
-// -----------------------------------------
-// API ROUTES
-// -----------------------------------------
+// ---------------- API ROUTES ----------------
 
-// 1. SHOOT CAMPAIGN
+// 1. AUTHENTICATION
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === 'admin' && password === (process.env.ADMIN_PASS || 'UicAdmin@2026')) {
+        return res.json({ success: true, role: 'admin' });
+    }
+    if (username === 'user' && password === (process.env.USER_PASS || 'UicStaff@2026')) {
+        return res.json({ success: true, role: 'user' });
+    }
+    res.status(401).json({ success: false, message: "Invalid Credentials" });
+});
+
+// 2. SHOOT CAMPAIGN
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
-        const { doctors, discount, expiryDate } = req.body;
+        const { targetList, discount, expiryDate, audienceType } = req.body;
         const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB'); 
         
-        for (let doc of doctors) {
+        for (let target of targetList) {
             const code = await generateUniqueCode();
             await Coupon.create({ 
-                code, 
-                discountPercentage: discount, 
-                doctorPhone: doc.phone,
+                code, discountPercentage: discount, targetName: target.name,
+                doctorPhone: target.phone, location: target.location || 'Ahmedabad',
+                proPhone: target.proNumber || null, audienceType: audienceType, 
                 expiryDate: new Date(expiryDate)
             });
-            
-            // Dynamic template selection based on discount (e.g., uic_promo_10, uic_promo_20)
-            const templateName = `uic_promo_${discount}`;
-            const params = [
-                { name: 'name', value: doc.name },
-                { name: 'code', value: code },
-                { name: 'expiry', value: formattedDate }
-            ];
-            await sendWatiMessage(doc.phone, templateName, params);
+            const templateName = audienceType === 'Doctor' ? `uic_promo_${discount}` : `patient_promo_${discount}`;
+            await sendWatiMessage(target.phone, templateName, [
+                { name: 'name', value: target.name }, { name: 'code', value: code }, { name: 'expiry', value: formattedDate }
+            ]);
         }
-        res.status(200).json({ success: true, message: "Campaign Executed" });
-    } catch (error) {
-        res.status(500).json({ error: 'Campaign execution failed', details: error.message });
-    }
+        res.json({ success: true });
+    } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// 2. WATI WEBHOOK (More Coupon Request)
+// 3. WATI WEBHOOK (Intelligence)
 app.post('/api/wati/webhook', async (req, res) => {
     try {
-        const data = req.body;
-        
-        if (data.buttonText === 'More Coupon' || data.text === 'More Coupon') {
-            const phone = data.waId; 
-            
-            // Limit Check: Max 5 requested per day
-            const startOfDay = new Date();
-            startOfDay.setHours(0, 0, 0, 0);
-            
-            const couponsToday = await Coupon.countDocuments({
-                doctorPhone: phone,
-                source: 'Requested',
-                createdAt: { $gte: startOfDay }
-            });
+        const { waId, buttonText, text } = req.body;
+        const btn = buttonText || text;
+        const patientBtns = ['I will use the coupon', 'I will use the cupon', 'Need more assistance', 'looking for more assistance', 'Book my test', 'book my test'];
 
-            if (couponsToday >= 5) {
-                return res.json({ status: 'limit_reached' });
+        // A. Doctor Button -> Call PRO
+        if (btn === 'Sales Team Please Call Me') {
+            const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            if (lastCoupon && lastCoupon.proPhone) {
+                await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
+                    agent_number: lastCoupon.proPhone, destination_number: waId, caller_id: "07969690921"
+                }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
+                await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
-
-            // --- SMART LOGIC: Check last discount given to this doctor ---
-            const lastCoupon = await Coupon.findOne({ doctorPhone: phone }).sort({ createdAt: -1 });
-            const dynamicDiscount = lastCoupon ? lastCoupon.discountPercentage : 10; // Default to 10% if no history found
-            
-            // Set expiry to 7 days from today for extra requested coupons
-            const extraCouponExpiry = new Date();
-            extraCouponExpiry.setDate(extraCouponExpiry.getDate() + 7);
-            const formattedExpiry = extraCouponExpiry.toLocaleDateString('en-GB');
-
+        } 
+        // B. Doctor Button -> More Coupon
+        else if (btn === 'I Want More Coupon') {
+            const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            const discount = lastCoupon ? lastCoupon.discountPercentage : 10;
+            const audience = lastCoupon ? lastCoupon.audienceType : 'Doctor';
             let newCodes = [];
-            for(let i = 0; i < 5; i++) {
-                const code = await generateUniqueCode();
+            const expiry = new Date(); expiry.setDate(expiry.getDate() + 7);
+            
+            for(let i=0; i<5; i++) {
+                const c = await generateUniqueCode();
                 await Coupon.create({ 
-                    code, 
-                    discountPercentage: dynamicDiscount, 
-                    doctorPhone: phone,
-                    source: 'Requested',
-                    expiryDate: extraCouponExpiry
+                    code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Requested',
+                    doctorPhone: waId, audienceType: audience, source: 'Requested', expiryDate: expiry,
+                    proPhone: lastCoupon?.proPhone, location: lastCoupon?.location
                 });
-                newCodes.push(code);
+                newCodes.push(c);
             }
-
-            // Send WATI message with the 5 new codes
-            const params = [
-                { name: 'codes', value: newCodes.join(', ') },
-                { name: 'expiry', value: formattedExpiry }
-            ];
-            await sendWatiMessage(phone, 'extra_coupons_template', params);
+            await sendWatiMessage(waId, 'extra_coupons_template', [
+                { name: 'codes', value: newCodes.join(', ') }, { name: 'expiry', value: expiry.toLocaleDateString('en-GB') }
+            ]);
+        }
+        // C. Patient Buttons -> Round Robin Call Center
+        else if (patientBtns.includes(btn)) {
+            if (btn === 'I will use the coupon' || btn === 'I will use the cupon') {
+                await sendWatiMessage(waId, 'patient_thankyou', []);
+            } else {
+                const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
+                if (nextAgent) {
+                    nextAgent.lastCalledAt = new Date(); await nextAgent.save();
+                    try {
+                        await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
+                            agent_number: nextAgent.phone, destination_number: waId, caller_id: "07969690921"
+                        }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
+                        await sendWatiMessage(waId, 'sales_call_ack_template', []); 
+                    } catch (e) { console.error("Tata Tele Error:", e.message); }
+                }
+            }
         }
         res.sendStatus(200);
-    } catch (error) {
-        res.sendStatus(500);
-    }
+    } catch (error) { res.sendStatus(500); }
 });
 
-// 3. ADMIN DASHBOARD STATS
-app.get('/api/admin/dashboard-stats', async (req, res) => {
-    try {
-        const totalSent = await Coupon.countDocuments();
-        const usedCount = await Coupon.countDocuments({ isUsed: true });
-        const requestedCount = await Coupon.countDocuments({ source: 'Requested' });
-        
-        const today = new Date();
-        const expiredCount = await Coupon.countDocuments({ expiryDate: { $lt: today }, isUsed: false });
-
-        res.json({
-            totalSent,
-            usedCount,
-            requestedCount,
-            unusedCount: totalSent - usedCount - expiredCount,
-            expiredCount
-        });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to fetch stats" });
-    }
-});
-
-// 4. ADMIN DASHBOARD LOGS
-app.get('/api/admin/logs', async (req, res) => {
-    try {
-        const logs = await Coupon.find().sort({ createdAt: -1 }).limit(100);
-        res.json(logs);
-    } catch (error) {
-        res.status(500).json({ error: "Failed to fetch logs" });
-    }
-});
-
-// 5. VALIDATE COUPON (Portal Check)
+// 4. RECEPTION / USER API (Validate & Redeem)
 app.post('/api/coupon/validate', async (req, res) => {
     try {
         const { code } = req.body;
         const coupon = await Coupon.findOne({ code });
-
-        if (!coupon) return res.status(404).json({ valid: false, message: "Code not found" });
-        if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Coupon already used" });
-
-        if (new Date() > coupon.expiryDate) {
-            return res.status(400).json({ valid: false, message: "This coupon has expired!" });
-        }
-
-        res.json({ valid: true, discountPercentage: coupon.discountPercentage });
-    } catch (error) {
-        res.status(500).json({ error: "Server error during validation" });
-    }
+        if (!coupon) return res.status(404).json({ valid: false, message: "Invalid Code! (Not Found)" });
+        if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Coupon already redeemed!" });
+        if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "This coupon has expired!" });
+        
+        res.json({ valid: true, discount: coupon.discountPercentage, name: coupon.targetName || 'Unknown', type: coupon.audienceType });
+    } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
-// 6. REDEEM COUPON
 app.post('/api/coupon/redeem', async (req, res) => {
     try {
         const { code } = req.body;
         const coupon = await Coupon.findOne({ code });
-
         if (!coupon || coupon.isUsed || new Date() > coupon.expiryDate) {
-            return res.status(400).json({ success: false, message: "Invalid, expired, or already used" });
+            return res.status(400).json({ success: false, message: "Cannot redeem." });
         }
-
         coupon.isUsed = true;
+        coupon.redeemedAt = new Date();
         await coupon.save();
-        res.json({ success: true, message: "Coupon applied successfully" });
-    } catch (error) {
-        res.status(500).json({ error: "Server error during redemption" });
-    }
+        res.json({ success: true, message: "Coupon redeemed successfully!" });
+    } catch (e) { res.status(500).json({ error: "Server error" }); }
+});
+
+// 5. ADMIN DASHBOARD API
+app.get('/api/agents', async (req, res) => res.json(await Agent.find().sort({ name: 1 })));
+app.post('/api/agents/toggle', async (req, res) => {
+    await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
+    res.json({ success: true });
+});
+app.get('/api/admin/dashboard-stats', async (req, res) => {
+    const total = await Coupon.countDocuments();
+    const redeemed = await Coupon.countDocuments({ isUsed: true });
+    res.json({ totalSent: total, usedCount: redeemed });
+});
+app.get('/api/admin/logs', async (req, res) => res.json(await Coupon.find().sort({ createdAt: -1 }).limit(100)));
+app.get('/api/user/redeemed-today', async (req, res) => {
+    const start = new Date(); start.setHours(0,0,0,0);
+    const logs = await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 });
+    res.json(logs);
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server live on ${PORT}`));
