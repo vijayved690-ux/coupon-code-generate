@@ -97,14 +97,14 @@ app.post('/api/campaign/shoot', async (req, res) => {
                 expiryDate: new Date(expiryDate)
             });
 
-         // --- TEMPLATE MAPPING LOGIC ---
+        // --- TEMPLATE MAPPING LOGIC ---
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon',
                 'Doctor_20': 'temp_20_doctor_coupon',
-                'Doctor_30': 'temp_30_doctor_coupon_new', // <-- Naya naam yahan update ho gaya hai
+                'Doctor_30': 'temp_doctor_30_dis_new',    // <-- Doctor ka naya naam
                 'Patient_10': 'patient_10_dis_temp',
                 'Patient_20': 'patient_20_dis_temp',
-                'Patient_30': 'patient_30_dis_temp'
+                'Patient_30': 'patient_30_temp_new_dis'   // <-- Patient ka naya naam
             };
 
             const templateKey = `${audienceType}_${discount}`;
