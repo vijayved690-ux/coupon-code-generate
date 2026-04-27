@@ -10,15 +10,17 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Serve Static Frontend (Admin UI)
+// Serve Admin UI
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MongoDB Connection
+// Database Connection
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('MongoDB Connected Successfully!'))
     .catch(err => console.error('MongoDB Connection Error:', err));
 
-// --- HELPER: 5-Digit Unique Code Generator ---
+// -----------------------------------------
+// HELPER FUNCTIONS
+// -----------------------------------------
 async function generateUniqueCode() {
     let isUnique = false;
     let code;
@@ -30,12 +32,11 @@ async function generateUniqueCode() {
     return code;
 }
 
-// --- HELPER: Send WATI Message ---
 async function sendWatiMessage(phone, templateName, params) {
     try {
         await axios.post(`${process.env.WATI_API_ENDPOINT}/api/v1/sendTemplateMessage?whatsappNumber=${phone}`, {
             template_name: templateName,
-            broadcast_name: 'Doctor_Coupon_Campaign',
+            broadcast_name: 'UIC_Coupon_Campaign',
             parameters: params
         }, {
             headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` }
@@ -45,30 +46,36 @@ async function sendWatiMessage(phone, templateName, params) {
     }
 }
 
-// ==========================================
+// -----------------------------------------
 // API ROUTES
-// ==========================================
+// -----------------------------------------
 
-// 1. SHOOT CAMPAIGN (Triggered from UI)
+// 1. SHOOT CAMPAIGN
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
-        const { doctors, discount } = req.body;
+        const { doctors, discount, expiryDate } = req.body;
+        const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB'); // DD/MM/YYYY
         
         for (let doc of doctors) {
             const code = await generateUniqueCode();
-            await Coupon.create({ code, discountPercentage: discount, doctorPhone: doc.phone });
+            await Coupon.create({ 
+                code, 
+                discountPercentage: discount, 
+                doctorPhone: doc.phone,
+                expiryDate: new Date(expiryDate)
+            });
             
+            const templateName = `uic_promo_${discount}`;
             const params = [
                 { name: 'name', value: doc.name },
-                { name: 'discount', value: `${discount}%` },
-                { name: 'code', value: code }
+                { name: 'code', value: code },
+                { name: 'expiry', value: formattedDate }
             ];
-            // Update 'doctor_promo_with_button' to your exact WATI template name
-            await sendWatiMessage(doc.phone, 'doctor_promo_with_button', params);
+            await sendWatiMessage(doc.phone, templateName, params);
         }
         res.status(200).json({ success: true, message: "Campaign Executed" });
     } catch (error) {
-        res.status(500).json({ error: 'Campaign execution failed' });
+        res.status(500).json({ error: 'Campaign execution failed', details: error.message });
     }
 });
 
@@ -80,7 +87,6 @@ app.post('/api/wati/webhook', async (req, res) => {
         if (data.buttonText === 'More Coupon' || data.text === 'More Coupon') {
             const phone = data.waId; 
             
-            // Check daily limit (Max 5 requested per day)
             const startOfDay = new Date();
             startOfDay.setHours(0, 0, 0, 0);
             
@@ -91,76 +97,107 @@ app.post('/api/wati/webhook', async (req, res) => {
             });
 
             if (couponsToday >= 5) {
-                // Optional: Send limit reached message
                 return res.json({ status: 'limit_reached' });
             }
 
-            // Generate exactly 5 new codes
+            // Set expiry to 7 days from today for requested coupons
+            const extraCouponExpiry = new Date();
+            extraCouponExpiry.setDate(extraCouponExpiry.getDate() + 7);
+            const formattedExpiry = extraCouponExpiry.toLocaleDateString('en-GB');
+
             let newCodes = [];
             for(let i = 0; i < 5; i++) {
                 const code = await generateUniqueCode();
                 await Coupon.create({ 
                     code, 
-                    discountPercentage: 10, // Adjust default requested discount here
+                    discountPercentage: 10, // Default discount for requested
                     doctorPhone: phone,
-                    source: 'Requested'
+                    source: 'Requested',
+                    expiryDate: extraCouponExpiry
                 });
                 newCodes.push(code);
             }
 
-            const params = [{ name: 'codes', value: newCodes.join(', ') }];
-            // Update 'extra_coupons_template' to your exact WATI template name
+            const params = [
+                { name: 'codes', value: newCodes.join(', ') },
+                { name: 'expiry', value: formattedExpiry }
+            ];
             await sendWatiMessage(phone, 'extra_coupons_template', params);
         }
         res.sendStatus(200);
     } catch (error) {
-        console.error("Webhook Error:", error);
         res.sendStatus(500);
     }
 });
 
 // 3. ADMIN DASHBOARD STATS
 app.get('/api/admin/dashboard-stats', async (req, res) => {
-    const totalSent = await Coupon.countDocuments();
-    const usedCount = await Coupon.countDocuments({ isUsed: true });
-    const requestedCount = await Coupon.countDocuments({ source: 'Requested' });
-    
-    res.json({
-        totalSent,
-        usedCount,
-        requestedCount,
-        unusedCount: totalSent - usedCount
-    });
+    try {
+        const totalSent = await Coupon.countDocuments();
+        const usedCount = await Coupon.countDocuments({ isUsed: true });
+        const requestedCount = await Coupon.countDocuments({ source: 'Requested' });
+        
+        const today = new Date();
+        const expiredCount = await Coupon.countDocuments({ expiryDate: { $lt: today }, isUsed: false });
+
+        res.json({
+            totalSent,
+            usedCount,
+            requestedCount,
+            unusedCount: totalSent - usedCount - expiredCount,
+            expiredCount
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch stats" });
+    }
 });
 
 // 4. ADMIN DASHBOARD LOGS
 app.get('/api/admin/logs', async (req, res) => {
-    const logs = await Coupon.find().sort({ createdAt: -1 }).limit(100); // Last 100 logs
-    res.json(logs);
+    try {
+        const logs = await Coupon.find().sort({ createdAt: -1 }).limit(100);
+        res.json(logs);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch logs" });
+    }
 });
 
-// 5. VALIDATE COUPON (For your validation portal)
+// 5. VALIDATE COUPON (Portal Check)
 app.post('/api/coupon/validate', async (req, res) => {
-    const { code } = req.body;
-    const coupon = await Coupon.findOne({ code });
+    try {
+        const { code } = req.body;
+        const coupon = await Coupon.findOne({ code });
 
-    if (!coupon) return res.status(404).json({ valid: false, message: "Code not found" });
-    if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Coupon already used" });
+        if (!coupon) return res.status(404).json({ valid: false, message: "Code not found" });
+        if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Coupon already used" });
 
-    res.json({ valid: true, discountPercentage: coupon.discountPercentage });
+        if (new Date() > coupon.expiryDate) {
+            return res.status(400).json({ valid: false, message: "This coupon has expired!" });
+        }
+
+        res.json({ valid: true, discountPercentage: coupon.discountPercentage });
+    } catch (error) {
+        res.status(500).json({ error: "Server error during validation" });
+    }
 });
 
 // 6. REDEEM COUPON
 app.post('/api/coupon/redeem', async (req, res) => {
-    const { code } = req.body;
-    const coupon = await Coupon.findOneAndUpdate({ code, isUsed: false }, { isUsed: true }, { new: true });
-    
-    if (!coupon) return res.status(400).json({ success: false, message: "Invalid or already used" });
-    res.json({ success: true, message: "Coupon applied successfully" });
+    try {
+        const { code } = req.body;
+        const coupon = await Coupon.findOne({ code });
+
+        if (!coupon || coupon.isUsed || new Date() > coupon.expiryDate) {
+            return res.status(400).json({ success: false, message: "Invalid, expired, or already used" });
+        }
+
+        coupon.isUsed = true;
+        await coupon.save();
+        res.json({ success: true, message: "Coupon applied successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Server error during redemption" });
+    }
 });
 
-// Start Server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
