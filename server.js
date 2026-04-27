@@ -54,7 +54,7 @@ async function sendWatiMessage(phone, templateName, params) {
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
         const { doctors, discount, expiryDate } = req.body;
-        const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB'); // DD/MM/YYYY
+        const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB'); 
         
         for (let doc of doctors) {
             const code = await generateUniqueCode();
@@ -65,6 +65,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
                 expiryDate: new Date(expiryDate)
             });
             
+            // Dynamic template selection based on discount (e.g., uic_promo_10, uic_promo_20)
             const templateName = `uic_promo_${discount}`;
             const params = [
                 { name: 'name', value: doc.name },
@@ -87,6 +88,7 @@ app.post('/api/wati/webhook', async (req, res) => {
         if (data.buttonText === 'More Coupon' || data.text === 'More Coupon') {
             const phone = data.waId; 
             
+            // Limit Check: Max 5 requested per day
             const startOfDay = new Date();
             startOfDay.setHours(0, 0, 0, 0);
             
@@ -100,7 +102,11 @@ app.post('/api/wati/webhook', async (req, res) => {
                 return res.json({ status: 'limit_reached' });
             }
 
-            // Set expiry to 7 days from today for requested coupons
+            // --- SMART LOGIC: Check last discount given to this doctor ---
+            const lastCoupon = await Coupon.findOne({ doctorPhone: phone }).sort({ createdAt: -1 });
+            const dynamicDiscount = lastCoupon ? lastCoupon.discountPercentage : 10; // Default to 10% if no history found
+            
+            // Set expiry to 7 days from today for extra requested coupons
             const extraCouponExpiry = new Date();
             extraCouponExpiry.setDate(extraCouponExpiry.getDate() + 7);
             const formattedExpiry = extraCouponExpiry.toLocaleDateString('en-GB');
@@ -110,7 +116,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 const code = await generateUniqueCode();
                 await Coupon.create({ 
                     code, 
-                    discountPercentage: 10, // Default discount for requested
+                    discountPercentage: dynamicDiscount, 
                     doctorPhone: phone,
                     source: 'Requested',
                     expiryDate: extraCouponExpiry
@@ -118,6 +124,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 newCodes.push(code);
             }
 
+            // Send WATI message with the 5 new codes
             const params = [
                 { name: 'codes', value: newCodes.join(', ') },
                 { name: 'expiry', value: formattedExpiry }
