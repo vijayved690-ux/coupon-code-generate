@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Searvator | Coupon Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body class="bg-slate-50 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold text-slate-800 mb-8">Coupon Campaign Manager</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" id="stats-container">
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-sm text-slate-500 font-semibold">TOTAL SENT</p>
+                <h2 id="stat-total" class="text-2xl font-bold">0</h2>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
+                <p class="text-sm text-slate-500 font-semibold">USED (REDEEMED)</p>
+                <h2 id="stat-used" class="text-2xl font-bold">0</h2>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500">
+                <p class="text-sm text-slate-500 font-semibold">EXTRA REQUESTED</p>
+                <h2 id="stat-req" class="text-2xl font-bold">0</h2>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
+                <p class="text-sm text-slate-500 font-semibold">ACTIVE CODES</p>
+                <h2 id="stat-active" class="text-2xl font-bold">0</h2>
+            </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-xl shadow-sm mb-8">
+            <h3 class="text-xl font-bold mb-4">Shoot New Campaign</h3>
+            <div class="flex flex-wrap gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Discount %</label>
+                    <input type="number" id="discount-val" value="20" class="border p-2 rounded w-24">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Upload CSV (Name, Phone)</label>
+                    <input type="file" id="csv-file" accept=".csv" class="border p-1.5 rounded bg-slate-50">
+                </div>
+                <button onclick="processAndShoot()" id="btn-shoot" class="bg-blue-600 text-white px-6 py-2.5 rounded hover:bg-blue-700 transition">
+                    Shoot Campaign 🚀
+                </button>
+            </div>
+            <p id="status-msg" class="mt-4 text-sm font-medium"></p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-100 border-b flex justify-between items-center">
+                <h3 class="font-bold">Recent Campaign Logs</h3>
+                <button onclick="loadDashboard()" class="text-blue-600 text-sm hover:underline">Refresh Data</button>
+            </div>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-600 text-sm uppercase">
+                        <th class="p-4 border-b">Doctor Phone</th>
+                        <th class="p-4 border-b">Code</th>
+                        <th class="p-4 border-b">Discount</th>
+                        <th class="p-4 border-b">Source</th>
+                        <th class="p-4 border-b">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = ''; // Same domain par hai toh khali chhod dein
+
+        // 1. Dashboard Load Karo
+        async function loadDashboard() {
+            const statsRes = await fetch(`${API_BASE}/api/admin/dashboard-stats`);
+            const stats = await statsRes.json();
+            document.getElementById('stat-total').innerText = stats.totalSent;
+            document.getElementById('stat-used').innerText = stats.usedCount;
+            document.getElementById('stat-req').innerText = stats.requestedCount;
+            document.getElementById('stat-active').innerText = stats.unusedCount;
+
+            const logsRes = await fetch(`${API_BASE}/api/admin/logs`);
+            const logs = await logsRes.json();
+            const body = document.getElementById('logs-body');
+            body.innerHTML = logs.map(log => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-4 border-b">${log.doctorPhone}</td>
+                    <td class="p-4 border-b font-mono font-bold text-blue-600">${log.code}</td>
+                    <td class="p-4 border-b">${log.discountPercentage}%</td>
+                    <td class="p-4 border-b"><span class="px-2 py-1 rounded text-xs ${log.source === 'Campaign' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${log.source}</span></td>
+                    <td class="p-4 border-b">
+                        <span class="px-2 py-1 rounded text-xs ${log.isUsed ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
+                            ${log.isUsed ? 'Used' : 'Active'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 2. CSV Process aur Shoot logic
+        function processAndShoot() {
+            const fileInput = document.getElementById('csv-file');
+            const discount = document.getElementById('discount-val').value;
+            const statusMsg = document.getElementById('status-msg');
+            const btn = document.getElementById('btn-shoot');
+
+            if (!fileInput.files[0]) return alert("Please upload CSV");
+
+            btn.disabled = true;
+            statusMsg.innerText = "Processing CSV and Shooting Campaign...";
+
+            Papa.parse(fileInput.files[0], {
+                header: true,
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const doctors = results.data;
+                    
+                    try {
+                        const res = await fetch(`${API_BASE}/api/campaign/shoot`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ doctors, discount })
+                        });
+                        
+                        if (res.ok) {
+                            statusMsg.className = "mt-4 text-sm font-medium text-green-600";
+                            statusMsg.innerText = "Success! All messages sent and codes saved.";
+                            loadDashboard();
+                        }
+                    } catch (err) {
+                        statusMsg.innerText = "Error: " + err.message;
+                    } finally {
+                        btn.disabled = false;
+                    }
+                }
+            });
+        }
+
+        // Initial Load
+        loadDashboard();
+    </script>
+</body>
+</html>
