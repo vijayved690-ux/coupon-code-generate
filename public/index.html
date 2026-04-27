@@ -2,192 +2,269 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>UIC | Coupon Campaign Manager</title>
+    <title>UIC | System Access</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
-<body class="bg-slate-50 p-8 font-sans">
-    <div class="max-w-7xl mx-auto">
-        <div class="flex justify-between items-end mb-8">
+<body class="bg-slate-100 font-sans h-screen flex flex-col">
+
+    <div id="login-view" class="flex-grow flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-96 text-center">
+            <h1 class="text-2xl font-bold text-blue-700 mb-1">UIC Connect</h1>
+            <p class="text-xs text-slate-500 mb-6 font-semibold">Ahmedabad Only | RUNNING MRI CENTRES<br>WE BUY AND SELL</p>
+            <input type="text" id="username" placeholder="Username" class="w-full border p-3 rounded mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="password" id="password" placeholder="Password" class="w-full border p-3 rounded mb-6 focus:ring-2 focus:ring-blue-500 outline-none">
+            <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition">LOGIN</button>
+            <p id="login-error" class="text-red-500 text-sm mt-3 hidden">Invalid Credentials</p>
+        </div>
+    </div>
+
+    <div id="app-view" class="hidden flex-grow flex flex-col">
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center px-8">
             <div>
-                <h1 class="text-3xl font-bold text-slate-800">Coupon Campaign Manager</h1>
-                <p class="text-slate-500 mt-1">Usmanpura Imaging Centre (Ahmedabad Only)</p>
+                <h1 class="text-xl font-bold text-slate-800">Usmanpura Imaging Centre</h1>
+                <p id="role-badge" class="text-xs font-bold text-white bg-blue-600 px-2 py-0.5 rounded inline-block mt-1">ADMIN</p>
             </div>
-            <div class="text-right text-xs font-semibold text-slate-400">
-                <p>RUNNING MRI CENTRES</p>
-                <p>WE BUY AND SELL</p>
-            </div>
-        </div>
+            <button onclick="logout()" class="text-sm font-bold text-red-500 hover:underline">Logout</button>
+        </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8" id="stats-container">
-            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Total Sent</p>
-                <h2 id="stat-total" class="text-2xl font-bold mt-1">0</h2>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-green-500">
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Redeemed</p>
-                <h2 id="stat-used" class="text-2xl font-bold mt-1">0</h2>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-yellow-500">
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Extra Requested</p>
-                <h2 id="stat-req" class="text-2xl font-bold mt-1">0</h2>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-purple-500">
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Active Codes</p>
-                <h2 id="stat-active" class="text-2xl font-bold mt-1">0</h2>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-500">
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Expired</p>
-                <h2 id="stat-expired" class="text-2xl font-bold mt-1">0</h2>
-            </div>
-        </div>
+        <div class="p-8 max-w-7xl mx-auto w-full">
+            
+            <div id="user-dashboard" class="hidden">
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-8 flex flex-col items-center">
+                    <h2 class="text-xl font-bold mb-4">Validate Coupon Code</h2>
+                    <div class="flex gap-4 w-full max-w-md">
+                        <input type="text" id="verify-code" placeholder="Enter 5-digit code" maxlength="5" class="w-full border-2 border-slate-300 p-3 rounded-lg text-center text-xl font-bold tracking-widest uppercase focus:border-blue-500 outline-none">
+                        <button onclick="verifyCode()" class="bg-slate-800 text-white font-bold px-6 rounded-lg hover:bg-slate-900">Check</button>
+                    </div>
+                    <div id="verify-result" class="mt-6 w-full max-w-md hidden p-4 rounded-lg border"></div>
+                </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm mb-8 border border-slate-100">
-            <h3 class="text-lg font-bold mb-4 text-slate-800">🚀 Shoot New Campaign</h3>
-            <div class="flex flex-wrap gap-5 items-end">
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-1">Template Discount (%)</label>
-                    <select id="discount-val" class="border border-slate-300 p-2 rounded-md w-32 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="10">10%</option>
-                        <option value="20">20%</option>
-                        <option value="30">30%</option>
-                    </select>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden max-w-4xl mx-auto">
+                    <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold">Recently Redeemed (Today)</h3></div>
+                    <table class="w-full text-left text-sm">
+                        <thead><tr class="bg-white border-b text-slate-500"><th class="p-4">Code</th><th class="p-4">Name</th><th class="p-4">Type</th><th class="p-4">Discount</th></tr></thead>
+                        <tbody id="redeemed-list"></tbody>
+                    </table>
                 </div>
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-1">Valid Till Date</label>
-                    <input type="date" id="expiry-date" class="border border-slate-300 p-2 rounded-md w-40 focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-1">Upload Doctors List (CSV)</label>
-                    <input type="file" id="csv-file" accept=".csv" class="border border-slate-300 p-1.5 rounded-md bg-slate-50 text-sm">
-                </div>
-                <button onclick="processAndShoot()" id="btn-shoot" class="bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-700 transition duration-200">
-                    Shoot Messages
-                </button>
             </div>
-            <p id="status-msg" class="mt-4 text-sm font-medium"></p>
-        </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
-                <h3 class="font-bold text-slate-700">Recent Generated Coupons</h3>
-                <button onclick="loadDashboard()" class="text-blue-600 text-sm font-semibold hover:underline">Refresh Data</button>
+            <div id="admin-dashboard" class="hidden">
+                <div class="flex gap-4 mb-6">
+                    <div class="bg-white p-5 rounded-xl shadow-sm flex-1 border-l-4 border-blue-500">
+                        <p class="text-xs text-slate-500 font-bold uppercase">Total Sent</p>
+                        <h2 id="stat-sent" class="text-2xl font-bold">0</h2>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm flex-1 border-l-4 border-green-500">
+                        <p class="text-xs text-slate-500 font-bold uppercase">Total Redeemed</p>
+                        <h2 id="stat-redeemed" class="text-2xl font-bold">0</h2>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-bold text-slate-800">🎧 Call Center Agents (Round Robin)</h2>
+                    </div>
+                    <div id="agents-list" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
+                    <h2 class="font-bold mb-4 text-blue-800">🚀 Shoot Campaign</h2>
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div>
+                            <label class="text-xs font-bold text-slate-500">AUDIENCE</label>
+                            <select id="aud-type" class="w-full border p-2 rounded"><option value="Doctor">Doctors</option><option value="Patient">Patients</option></select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500">DISCOUNT %</label>
+                            <select id="disc" class="w-full border p-2 rounded"><option value="10">10%</option><option value="20">20%</option><option value="30">30%</option></select>
+                        </div>
+                        <div><label class="text-xs font-bold text-slate-500">EXPIRY</label><input type="date" id="exp" class="w-full border p-2 rounded"></div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500">CSV FILE</label>
+                            <input type="file" id="csv" class="w-full border p-1.5 rounded text-sm bg-slate-50">
+                            <p class="text-[10px] text-slate-500 mt-1">Headers: name, phone, location, proNumber</p>
+                        </div>
+                        <button onclick="shoot()" id="btn-shoot" class="bg-blue-600 text-white font-bold p-2 px-6 rounded hover:bg-blue-700">SEND</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold">System Logs</h3></div>
+                    <table class="w-full text-left text-sm">
+                        <thead><tr class="border-b text-slate-500"><th class="p-4">Name</th><th class="p-4">Phone</th><th class="p-4">Code</th><th class="p-4">Type</th><th class="p-4">Status</th></tr></thead>
+                        <tbody id="admin-logs"></tbody>
+                    </table>
+                </div>
             </div>
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-white text-slate-500 text-xs uppercase tracking-wide border-b">
-                        <th class="p-4 font-semibold">Doctor Phone</th>
-                        <th class="p-4 font-semibold">Code</th>
-                        <th class="p-4 font-semibold">Discount</th>
-                        <th class="p-4 font-semibold">Source</th>
-                        <th class="p-4 font-semibold">Expiry Date</th>
-                        <th class="p-4 font-semibold">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="logs-body" class="text-sm">
-                    </tbody>
-            </table>
         </div>
     </div>
 
     <script>
-        const API_BASE = ''; 
+        // --- AUTHENTICATION ---
+        window.onload = () => {
+            const role = localStorage.getItem('role');
+            if (role) showApp(role);
+        };
 
-        document.addEventListener("DOMContentLoaded", () => {
-            const dateInput = document.getElementById('expiry-date');
-            const defaultDate = new Date();
-            defaultDate.setDate(defaultDate.getDate() + 30);
-            dateInput.value = defaultDate.toISOString().split('T')[0];
-            loadDashboard();
-        });
-
-        async function loadDashboard() {
-            try {
-                const statsRes = await fetch(`${API_BASE}/api/admin/dashboard-stats`);
-                const stats = await statsRes.json();
-                document.getElementById('stat-total').innerText = stats.totalSent;
-                document.getElementById('stat-used').innerText = stats.usedCount;
-                document.getElementById('stat-req').innerText = stats.requestedCount;
-                document.getElementById('stat-active').innerText = stats.unusedCount;
-                document.getElementById('stat-expired').innerText = stats.expiredCount;
-
-                const logsRes = await fetch(`${API_BASE}/api/admin/logs`);
-                const logs = await logsRes.json();
-                const body = document.getElementById('logs-body');
-                
-                body.innerHTML = logs.map(log => {
-                    const isExpired = new Date() > new Date(log.expiryDate);
-                    const expiryString = new Date(log.expiryDate).toLocaleDateString('en-GB');
-                    
-                    let statusBadge = '';
-                    if (log.isUsed) {
-                        statusBadge = '<span class="px-2 py-1 rounded text-xs bg-green-100 text-green-700 font-semibold">Redeemed</span>';
-                    } else if (isExpired) {
-                        statusBadge = '<span class="px-2 py-1 rounded text-xs bg-red-100 text-red-700 font-semibold">Expired</span>';
-                    } else {
-                        statusBadge = '<span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 font-semibold">Active</span>';
-                    }
-
-                    return `
-                    <tr class="hover:bg-slate-50 border-b border-slate-100">
-                        <td class="p-4 text-slate-700">${log.doctorPhone}</td>
-                        <td class="p-4 font-mono font-bold text-blue-600 text-base tracking-wider">${log.code}</td>
-                        <td class="p-4 font-semibold text-slate-700">${log.discountPercentage}%</td>
-                        <td class="p-4"><span class="px-2 py-1 rounded text-xs font-semibold ${log.source === 'Campaign' ? 'bg-slate-100 text-slate-600' : 'bg-purple-100 text-purple-700'}">${log.source}</span></td>
-                        <td class="p-4 text-slate-600">${expiryString}</td>
-                        <td class="p-4">${statusBadge}</td>
-                    </tr>
-                    `;
-                }).join('');
-            } catch (err) {
-                console.error("Dashboard Load Error:", err);
+        async function login() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const res = await fetch('/api/login', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p})
+            });
+            const data = await res.json();
+            if(data.success) {
+                localStorage.setItem('role', data.role);
+                document.getElementById('login-error').classList.add('hidden');
+                showApp(data.role);
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
             }
         }
 
-        function processAndShoot() {
-            const fileInput = document.getElementById('csv-file');
-            const discount = document.getElementById('discount-val').value;
-            const expiryDate = document.getElementById('expiry-date').value;
-            const statusMsg = document.getElementById('status-msg');
+        function logout() {
+            localStorage.removeItem('role');
+            location.reload();
+        }
+
+        function showApp(role) {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+            document.getElementById('role-badge').innerText = role.toUpperCase();
+            document.getElementById('role-badge').className = `text-xs font-bold text-white px-2 py-0.5 rounded inline-block mt-1 ${role === 'admin' ? 'bg-red-500' : 'bg-blue-500'}`;
+
+            if(role === 'admin') {
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                loadAdminData();
+            } else {
+                document.getElementById('user-dashboard').classList.remove('hidden');
+                loadUserData();
+            }
+        }
+
+        // --- USER / RECEPTION LOGIC ---
+        let currentValidCode = null;
+        async function verifyCode() {
+            const code = document.getElementById('verify-code').value;
+            const resBox = document.getElementById('verify-result');
+            if(!code) return;
+            
+            const res = await fetch('/api/coupon/validate', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code})
+            });
+            const data = await res.json();
+            resBox.classList.remove('hidden');
+
+            if(data.valid) {
+                currentValidCode = code;
+                const typeLabel = data.type === 'Doctor' ? '👨‍⚕️ Doctor Referral' : '🧍 Patient Discount';
+                resBox.className = "mt-6 w-full max-w-md p-4 rounded-lg border-2 border-green-500 bg-green-50";
+                resBox.innerHTML = `
+                    <p class="text-green-700 font-bold text-lg mb-2">✅ Valid Code</p>
+                    <p class="text-slate-800 text-sm"><b>Name:</b> ${data.name}</p>
+                    <p class="text-slate-800 text-sm"><b>Type:</b> ${typeLabel}</p>
+                    <p class="text-slate-800 text-sm mb-4"><b>Discount:</b> ${data.discount}% OFF</p>
+                    <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-bold py-2 rounded shadow hover:bg-green-700 transition">Redeem Now</button>
+                `;
+            } else {
+                currentValidCode = null;
+                resBox.className = "mt-6 w-full max-w-md p-4 rounded-lg border-2 border-red-500 bg-red-50";
+                resBox.innerHTML = `<p class="text-red-700 font-bold">❌ ${data.message}</p>`;
+            }
+        }
+
+        async function redeemCode() {
+            if(!currentValidCode) return;
+            await fetch('/api/coupon/redeem', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode})
+            });
+            document.getElementById('verify-code').value = '';
+            document.getElementById('verify-result').classList.add('hidden');
+            loadUserData();
+            alert("Coupon Successfully Redeemed!");
+        }
+
+        async function loadUserData() {
+            const res = await fetch('/api/user/redeemed-today');
+            const logs = await res.json();
+            document.getElementById('redeemed-list').innerHTML = logs.map(l => `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-mono font-bold text-blue-600 tracking-widest">${l.code}</td>
+                    <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${l.audienceType}</td>
+                    <td class="p-4 font-bold text-green-600">${l.discountPercentage}%</td>
+                </tr>
+            `).join('');
+        }
+
+        // --- ADMIN LOGIC ---
+        async function loadAdminData() {
+            const s = await fetch('/api/admin/dashboard-stats').then(r => r.json());
+            document.getElementById('stat-sent').innerText = s.totalSent;
+            document.getElementById('stat-redeemed').innerText = s.usedCount;
+
+            const aRes = await fetch('/api/agents');
+            const agents = await aRes.json();
+            document.getElementById('agents-list').innerHTML = agents.map(a => `
+                <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50 border-green-200' : 'bg-slate-50 opacity-60'} transition-all">
+                    <div>
+                        <p class="font-bold text-sm text-slate-800">${a.name}</p>
+                        <p class="text-[10px] text-slate-500 font-mono">${a.phone}</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="sr-only peer">
+                        <div class="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
+                </div>
+            `).join('');
+
+            const l = await fetch('/api/admin/logs').then(r => r.json());
+            document.getElementById('admin-logs').innerHTML = l.map(i => `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-semibold">${i.targetName || 'N/A'}</td>
+                    <td class="p-4 text-xs">${i.doctorPhone}</td>
+                    <td class="p-4 font-mono font-bold text-blue-600">${i.code}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${i.audienceType}</td>
+                    <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-xs bg-green-100 px-2 py-1 rounded">✅ Used</span>' : '<span class="text-blue-600 font-bold text-xs bg-blue-100 px-2 py-1 rounded">⏳ Active</span>'}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function toggleAgent(id, isOnline) {
+            await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) });
+            loadAdminData();
+        }
+
+        function shoot() {
+            const f = document.getElementById('csv').files[0];
             const btn = document.getElementById('btn-shoot');
-
-            if (!fileInput.files[0]) return alert("Please upload a CSV file with 'name' and 'phone' columns.");
-            if (!expiryDate) return alert("Please select an Expiry Date.");
-
+            if(!f) return alert("Upload CSV first!");
+            if(!document.getElementById('exp').value) return alert("Select Expiry Date!");
+            
+            btn.innerText = "SENDING...";
             btn.disabled = true;
-            btn.classList.add("opacity-50", "cursor-not-allowed");
-            statusMsg.className = "mt-4 text-sm font-medium text-blue-600";
-            statusMsg.innerText = "Processing CSV and Shooting Campaign... Please wait.";
 
-            Papa.parse(fileInput.files[0], {
+            Papa.parse(f, {
                 header: true,
                 skipEmptyLines: true,
-                complete: async function(results) {
-                    const doctors = results.data;
-                    
+                complete: async (res) => {
                     try {
-                        const res = await fetch(`${API_BASE}/api/campaign/shoot`, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ doctors, discount, expiryDate })
+                        await fetch('/api/campaign/shoot', {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                targetList: res.data, discount: document.getElementById('disc').value,
+                                expiryDate: document.getElementById('exp').value, audienceType: document.getElementById('aud-type').value
+                            })
                         });
-                        
-                        if (res.ok) {
-                            statusMsg.className = "mt-4 text-sm font-medium text-green-600";
-                            statusMsg.innerText = `✅ Success! Messages sent to ${doctors.length} doctors. Codes saved to database.`;
-                            loadDashboard();
-                            fileInput.value = ''; 
-                        } else {
-                            const errorData = await res.json();
-                            statusMsg.className = "mt-4 text-sm font-medium text-red-600";
-                            statusMsg.innerText = `❌ Error: ${errorData.error || 'Failed to execute campaign.'}`;
-                        }
-                    } catch (err) {
-                        statusMsg.className = "mt-4 text-sm font-medium text-red-600";
-                        statusMsg.innerText = "❌ Network Error: " + err.message;
+                        alert('Campaign Sent Successfully!'); 
+                        document.getElementById('csv').value = '';
+                        loadAdminData();
+                    } catch(e) {
+                        alert('Error sending campaign!');
                     } finally {
+                        btn.innerText = "SEND";
                         btn.disabled = false;
-                        btn.classList.remove("opacity-50", "cursor-not-allowed");
                     }
                 }
             });
