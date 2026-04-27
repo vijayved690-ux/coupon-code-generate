@@ -75,7 +75,7 @@ app.post('/api/login', (req, res) => {
 });
 
 // -----------------------------------------
-// 2. SHOOT CAMPAIGN API (Fix for Variables 1, 2, 3)
+// 2. SHOOT CAMPAIGN API
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
@@ -110,7 +110,6 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
 
-            // WATI REQUIRED FORMAT: Name must match {{1}}, {{2}} explicitly
             const params = [
                 { name: '1', value: safeName }, 
                 { name: '2', value: code.toString() }, 
@@ -164,7 +163,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                 newCodes.push(c);
             }
             
-            // Fix applied here too: '1' and '2' instead of 'codes' and 'expiry'
             await sendWatiMessage(waId, 'more_final_code_temp_dis', [
                 { name: '1', value: newCodes.join(', ') }, 
                 { name: '2', value: expiry.toLocaleDateString('en-GB') }
@@ -213,27 +211,41 @@ app.post('/api/coupon/validate', async (req, res) => {
 
 app.post('/api/coupon/redeem', async (req, res) => {
     try {
-        const { code } = req.body;
+        const { code, branch } = req.body;
         const coupon = await Coupon.findOne({ code });
         if (!coupon || coupon.isUsed) return res.status(400).json({ success: false });
+        
         coupon.isUsed = true;
         coupon.redeemedAt = new Date();
+        coupon.branchRedeemed = branch;
         await coupon.save();
+        
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
 app.get('/api/agents', async (req, res) => res.json(await Agent.find().sort({ name: 1 })));
+
 app.post('/api/agents/toggle', async (req, res) => {
     await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
     res.json({ success: true });
 });
+
 app.get('/api/admin/dashboard-stats', async (req, res) => {
     const total = await Coupon.countDocuments();
     const redeemed = await Coupon.countDocuments({ isUsed: true });
     res.json({ totalSent: total, usedCount: redeemed });
 });
-app.get('/api/admin/logs', async (req, res) => res.json(await Coupon.find().sort({ createdAt: -1 }).limit(100)));
+
+app.get('/api/admin/logs', async (req, res) => {
+    const isExport = req.query.export === 'true';
+    let query = Coupon.find().sort({ createdAt: -1 });
+    if (!isExport) {
+        query = query.limit(100);
+    }
+    res.json(await query.exec());
+});
+
 app.get('/api/user/redeemed-today', async (req, res) => {
     const start = new Date(); start.setHours(0,0,0,0);
     const logs = await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 });
