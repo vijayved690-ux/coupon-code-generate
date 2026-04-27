@@ -6,7 +6,7 @@ const axios = require('axios');
 const path = require('path');
 const Coupon = require('./models/Coupon');
 const Agent = require('./models/Agent');
-const Activity = require('./models/Activity'); // Naya Activity Logger Model
+const Activity = require('./models/Activity'); 
 
 const app = express();
 app.use(express.json());
@@ -104,7 +104,7 @@ app.post('/api/log-action', async (req, res) => {
 });
 
 app.get('/api/admin/activity-logs', async (req, res) => {
-    res.json(await Activity.find().sort({ timestamp: -1 }).limit(50)); // Last 50 actions
+    res.json(await Activity.find().sort({ timestamp: -1 }).limit(50));
 });
 
 // -----------------------------------------
@@ -117,7 +117,6 @@ app.post('/api/campaign/shoot', async (req, res) => {
         let validCount = 0;
         
         for (let target of targetList) {
-            // Safety: Skip rows with no phone number to prevent N/A entries
             if (!target.phone || target.phone.toString().trim() === '') continue;
 
             validCount++;
@@ -183,6 +182,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
                 
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
+                await logActivity('System Webhook', 'SALES CALL REQUESTED', `Doctor ${waId} requested call from PRO`);
             }
         } 
         else if (btn === 'I want to More Coupon' || btn === 'I Want More Coupon') {
@@ -203,10 +203,16 @@ app.post('/api/wati/webhook', async (req, res) => {
                 newCodes.push(c);
             }
             
-            await sendWatiMessage(waId, 'more_final_code_temp_dis', [
-                { name: '1', value: newCodes.join(', ') }, 
-                { name: '2', value: expiry.toLocaleDateString('en-GB') }
+            const discountText = `${discount}% Discount`;
+
+            // Updated Template and 3 Variables as per your requirement
+            await sendWatiMessage(waId, 'more_coupon_with_discount', [
+                { name: '1', value: discountText }, 
+                { name: '2', value: newCodes.join(', ') }, 
+                { name: '3', value: expiry.toLocaleDateString('en-GB') }
             ]);
+
+            await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
         else if (patientBtns.includes(btn)) {
             if (btn === 'I will use the coupon' || btn === 'I will use the cupon') {
@@ -223,6 +229,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
                         
                         await sendWatiMessage(waId, 'sales_call_ack_template', []); 
+                        await logActivity('System Webhook', 'PATIENT CALL CONNECTED', `Patient ${waId} connected to agent ${nextAgent.name}`);
                     } catch (e) { 
                         console.error("Tata Tele Error:", e.message); 
                     }
