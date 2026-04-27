@@ -205,8 +205,8 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             const discountText = `${discount}% Discount`;
 
-            // Updated Template and 3 Variables as per your requirement
-            await sendWatiMessage(waId, 'more_coupon_with_discount', [
+            // YAHAN AAPKA NAYA TEMPLATE NAAM LAGA DIYA HAI
+            await sendWatiMessage(waId, 'dis_more_temp_all', [
                 { name: '1', value: discountText }, 
                 { name: '2', value: newCodes.join(', ') }, 
                 { name: '3', value: expiry.toLocaleDateString('en-GB') }
