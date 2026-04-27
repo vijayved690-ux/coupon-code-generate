@@ -11,9 +11,9 @@
     <div id="login-view" class="flex-grow flex items-center justify-center">
         <div class="bg-white p-8 rounded-xl shadow-lg w-96 text-center">
             <h1 class="text-2xl font-bold text-blue-700 mb-1">UIC Connect</h1>
-            <p class="text-xs text-slate-500 mb-6 font-semibold">UIC | Discount System<br>Generate Coupon Code</p>
-            <input type="text" id="username" placeholder="Username" class="w-full border p-3 rounded mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
-            <input type="password" id="password" placeholder="Password" class="w-full border p-3 rounded mb-6 focus:ring-2 focus:ring-blue-500 outline-none">
+            <p class="text-xs text-slate-500 mb-6 font-semibold">Ahmedabad Only | RUNNING MRI CENTRES<br>WE BUY AND SELL</p>
+            <input type="text" id="username" placeholder="Username" class="w-full border p-3 rounded mb-4 outline-none focus:border-blue-500">
+            <input type="password" id="password" placeholder="Password" class="w-full border p-3 rounded mb-6 outline-none focus:border-blue-500">
             <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition">LOGIN</button>
             <p id="login-error" class="text-red-500 text-sm mt-3 hidden">Invalid Credentials</p>
         </div>
@@ -23,23 +23,98 @@
         <header class="bg-white shadow-sm p-4 flex justify-between items-center px-8">
             <div>
                 <h1 class="text-xl font-bold text-slate-800">Usmanpura Imaging Centre</h1>
-                <p id="role-badge" class="text-xs font-bold text-white bg-blue-600 px-2 py-0.5 rounded inline-block mt-1">ADMIN</p>
+                <p id="role-badge" class="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded inline-block mt-1 tracking-widest">ADMIN</p>
             </div>
             <button onclick="logout()" class="text-sm font-bold text-red-500 hover:underline">Logout</button>
         </header>
 
         <div class="p-8 max-w-7xl mx-auto w-full">
             
-            <div id="user-dashboard" class="hidden">
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-8 flex flex-col items-center">
-                    <h2 class="text-xl font-bold mb-4">Validate & Redeem Coupon</h2>
-                    <div class="flex gap-4 w-full max-w-md">
-                        <input type="text" id="verify-code" placeholder="Enter 5-digit code" maxlength="5" class="w-full border-2 border-slate-300 p-3 rounded-lg text-center text-xl font-bold tracking-widest uppercase focus:border-blue-500 outline-none">
-                        <button onclick="verifyCode()" class="bg-slate-800 text-white font-bold px-6 rounded-lg hover:bg-slate-900">Check</button>
+            <div id="admin-dashboard" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex gap-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 w-40">
+                            <p class="text-[10px] font-bold text-slate-400">TOTAL SENT</p>
+                            <h2 id="stat-sent" class="text-2xl font-bold">0</h2>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 w-40">
+                            <p class="text-[10px] font-bold text-slate-400">REDEEMED</p>
+                            <h2 id="stat-redeemed" class="text-2xl font-bold">0</h2>
+                        </div>
                     </div>
-                    <div id="verify-result" class="mt-6 w-full max-w-md hidden p-4 rounded-lg border"></div>
+                    <button onclick="resetSystemData()" class="bg-red-600 text-white text-xs font-bold px-6 py-3 rounded-lg shadow-md hover:bg-red-700 transition">
+                        ⚠️ RESET ALL DATA
+                    </button>
                 </div>
 
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-bold text-blue-800 text-sm">🚀 SHOOT CAMPAIGN</h2>
+                        <button onclick="downloadSample()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100">
+                            📥 Download Sample CSV
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 block mb-1">AUDIENCE</label>
+                            <select id="aud-type" class="w-full border p-2 rounded text-sm"><option value="Doctor">Doctors</option><option value="Patient">Patients</option></select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 block mb-1">DISCOUNT %</label>
+                            <select id="disc" class="w-full border p-2 rounded text-sm"><option value="30">30%</option><option value="20">20%</option><option value="10">10%</option></select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 block mb-1">EXPIRY</label>
+                            <input type="date" id="exp" class="w-full border p-2 rounded text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 block mb-1">CSV FILE</label>
+                            <input type="file" id="csv" class="w-full border p-1.5 rounded text-sm bg-slate-50">
+                        </div>
+                        <button onclick="shoot()" id="btn-shoot" class="bg-blue-600 text-white font-bold p-2 px-8 rounded hover:bg-blue-700 transition">SEND</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 text-white rounded-xl shadow-lg mb-6 overflow-hidden">
+                    <div class="p-3 bg-slate-900 flex justify-between items-center">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-300">🔴 LIVE ACTIVITY LOGS</h3>
+                        <button onclick="loadActivityLogs()" class="text-[10px] bg-slate-700 px-3 py-1.5 rounded hover:bg-slate-600">Refresh Logs</button>
+                    </div>
+                    <div class="max-h-40 overflow-y-auto">
+                        <table class="w-full text-[11px] text-left">
+                            <tbody id="activity-logs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                        <h3 class="font-bold text-sm">Coupon Database</h3>
+                        <button onclick="exportCSV()" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition">
+                            📊 EXPORT FULL CSV
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs whitespace-nowrap">
+                            <thead>
+                                <tr class="border-b text-slate-400 uppercase font-bold">
+                                    <th class="p-4">Name</th><th class="p-4">Code</th><th class="p-4">Status</th><th class="p-4">Branch Redeemed</th><th class="p-4">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-logs"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="user-dashboard" class="hidden">
+                <div class="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center max-w-lg mx-auto mb-8">
+                    <h2 class="text-2xl font-black text-slate-800 mb-6">REDEEM COUPON</h2>
+                    <input type="text" id="verify-code" placeholder="ENTER 5-DIGIT CODE" maxlength="5" class="w-full border-4 border-slate-200 p-4 rounded-xl text-center text-3xl font-black tracking-[10px] outline-none focus:border-blue-500 transition-all mb-4">
+                    <button onclick="verifyCode()" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-xl hover:bg-slate-900 transition shadow-md">CHECK CODE</button>
+                    <div id="verify-result" class="mt-8 w-full hidden"></div>
+                </div>
+                
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden max-w-4xl mx-auto">
                     <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold">Recently Redeemed (Today)</h3></div>
                     <table class="w-full text-left text-sm">
@@ -49,67 +124,21 @@
                 </div>
             </div>
 
-            <div id="admin-dashboard" class="hidden">
-                <div class="flex gap-4 mb-6">
-                    <div class="bg-white p-5 rounded-xl shadow-sm flex-1 border-l-4 border-blue-500">
-                        <p class="text-xs text-slate-500 font-bold uppercase">Total Sent</p>
-                        <h2 id="stat-sent" class="text-2xl font-bold">0</h2>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl shadow-sm flex-1 border-l-4 border-green-500">
-                        <p class="text-xs text-slate-500 font-bold uppercase">Total Redeemed</p>
-                        <h2 id="stat-redeemed" class="text-2xl font-bold">0</h2>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="font-bold text-blue-800">🚀 Shoot Campaign</h2>
-                        <button onclick="downloadSample()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100 transition">
-                            📥 Download Sample CSV
-                        </button>
-                    </div>
-                    <div class="flex flex-wrap gap-4 items-end">
-                        <div>
-                            <label class="text-xs font-bold text-slate-500">AUDIENCE</label>
-                            <select id="aud-type" class="w-full border p-2 rounded"><option value="Doctor">Doctors</option><option value="Patient">Patients</option></select>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-500">DISCOUNT %</label>
-                            <select id="disc" class="w-full border p-2 rounded"><option value="10">10%</option><option value="20">20%</option><option value="30">30%</option></select>
-                        </div>
-                        <div><label class="text-xs font-bold text-slate-500">EXPIRY</label><input type="date" id="exp" class="w-full border p-2 rounded"></div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-500">CSV FILE</label>
-                            <input type="file" id="csv" class="w-full border p-1.5 rounded text-sm bg-slate-50">
-                        </div>
-                        <button onclick="shoot()" id="btn-shoot" class="bg-blue-600 text-white font-bold p-2 px-6 rounded hover:bg-blue-700">SEND</button>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
-                        <h3 class="font-bold">System Logs (Live Data)</h3>
-                        <button onclick="exportCSV()" class="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-green-700">
-                            📊 Export Full CSV
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead>
-                                <tr class="border-b text-slate-500 bg-white">
-                                    <th class="p-4">Name</th><th class="p-4">Code</th><th class="p-4">Generated At</th><th class="p-4">Status</th><th class="p-4">Branch</th><th class="p-4">Redeemed At</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-logs"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
     <script>
         const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
+
+        // --- BUTTON TRACKING (ONLY ACTIONS, NO TYPED DATA) ---
+        async function logBtnClick(buttonName) {
+            const user = localStorage.getItem('role') === 'admin' ? 'Admin Panel' : (document.getElementById('redeem-branch')?.value || 'Reception Panel');
+            await fetch('/api/log-action', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ user: user, action: `${buttonName} PRESSED`, details: 'Button Click Recorded' }) 
+            });
+        }
 
         function formatDate(dateString) {
             if(!dateString) return '-';
@@ -133,48 +162,64 @@
             const p = document.getElementById('password').value;
             const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) });
             const data = await res.json();
-            if(data.success) { localStorage.setItem('role', data.role); showApp(data.role); } 
-            else { document.getElementById('login-error').classList.remove('hidden'); }
+            if(data.success) { 
+                localStorage.setItem('role', data.role); 
+                showApp(data.role);
+                logBtnClick('LOGIN BUTTON'); // Tracking only the button click
+            } else { 
+                document.getElementById('login-error').classList.remove('hidden'); 
+            }
         }
 
-        function logout() { localStorage.removeItem('role'); location.reload(); }
+        function logout() { 
+            logBtnClick('LOGOUT BUTTON'); 
+            localStorage.removeItem('role'); 
+            location.reload(); 
+        }
 
         function showApp(role) {
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('app-view').classList.remove('hidden');
             document.getElementById('role-badge').innerText = role.toUpperCase();
-            if(role === 'admin') { document.getElementById('admin-dashboard').classList.remove('hidden'); loadAdminData(); } 
-            else { document.getElementById('user-dashboard').classList.remove('hidden'); loadUserData(); }
+            
+            if(role === 'admin') { 
+                document.getElementById('admin-dashboard').classList.remove('hidden'); 
+                loadAdminData(); 
+                loadActivityLogs();
+                setInterval(loadActivityLogs, 5000); // Auto refresh logs every 5 seconds
+            } else { 
+                document.getElementById('user-dashboard').classList.remove('hidden'); 
+                loadUserData();
+            }
         }
 
-        let currentValidCode = null;
-        async function verifyCode() {
-            const code = document.getElementById('verify-code').value;
-            const resBox = document.getElementById('verify-result');
-            if(!code) return;
-            const res = await fetch('/api/coupon/validate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code}) });
+        // --- ADMIN FEATURES ---
+        async function resetSystemData() {
+            logBtnClick('RESET DATA BUTTON'); // Track button click BEFORE password prompt
+            const pass = prompt("Enter RESET PASSWORD to delete ALL coupons:");
+            if(!pass) return;
+            
+            const res = await fetch('/api/admin/reset-data', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password: pass})
+            });
             const data = await res.json();
-            resBox.classList.remove('hidden');
-            if(data.valid) {
-                currentValidCode = code;
-                let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
-                resBox.className = "mt-6 w-full max-w-md p-4 rounded-lg border-2 border-green-500 bg-green-50";
-                resBox.innerHTML = `<p class="text-green-700 font-bold text-lg mb-2">✅ Valid Code</p><p class="text-slate-800 text-sm"><b>Name:</b> ${data.name}</p><p class="text-slate-800 text-sm mb-4"><b>Discount:</b> ${data.discount}% OFF</p><label class="text-xs font-bold text-slate-600 block mb-1">SELECT BRANCH *</label><select id="redeem-branch" class="w-full border-2 border-slate-300 p-2 rounded mb-4 font-bold text-slate-700"><option value="">-- Choose Branch --</option>${branchOptions}</select><button onclick="redeemCode()" class="w-full bg-green-600 text-white font-bold py-3 rounded shadow hover:bg-green-700">Confirm & Redeem</button>`;
-            } else { resBox.className = "mt-6 w-full max-w-md p-4 rounded-lg border-2 border-red-500 bg-red-50"; resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`; }
+            if(data.success) {
+                alert("DATABASE CLEARED SUCCESSFULLY!");
+                loadAdminData();
+                loadActivityLogs();
+            } else { alert(data.message); }
         }
 
-        async function redeemCode() {
-            const branch = document.getElementById('redeem-branch').value;
-            if(!branch) return alert("Select branch!");
-            await fetch('/api/coupon/redeem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode, branch}) });
-            document.getElementById('verify-code').value = ''; document.getElementById('verify-result').classList.add('hidden');
-            loadUserData(); alert(`Redeemed at ${branch}`);
-        }
-
-        async function loadUserData() {
-            const res = await fetch('/api/user/redeemed-today');
+        async function loadActivityLogs() {
+            const res = await fetch('/api/admin/activity-logs');
             const logs = await res.json();
-            document.getElementById('redeemed-list').innerHTML = logs.map(l => `<tr class="border-b"><td class="p-4 font-bold text-blue-600">${l.code}</td><td class="p-4">${l.targetName || 'N/A'}</td><td class="p-4 font-bold">${l.branchRedeemed || '-'}</td><td class="p-4 text-xs">${formatDate(l.redeemedAt)}</td></tr>`).join('');
+            document.getElementById('activity-logs').innerHTML = logs.map(l => `
+                <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
+                    <td class="p-2 text-blue-400 font-bold whitespace-nowrap w-24">${new Date(l.timestamp).toLocaleTimeString()}</td>
+                    <td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td>
+                    <td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td>
+                </tr>
+            `).join('');
         }
 
         async function loadAdminData() {
@@ -182,28 +227,107 @@
             document.getElementById('stat-sent').innerText = s.totalSent;
             document.getElementById('stat-redeemed').innerText = s.usedCount;
             const l = await fetch('/api/admin/logs').then(r => r.json());
-            document.getElementById('admin-logs').innerHTML = l.map(i => `<tr class="border-b"><td class="p-4 font-semibold">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-400">${i.doctorPhone}</span></td><td class="p-4 font-bold text-blue-600">${i.code}</td><td class="p-4 text-xs">${formatDate(i.createdAt)}</td><td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-xs bg-green-100 px-2 py-1 rounded">✅ Used</span>' : '<span class="text-blue-600 font-bold text-xs bg-blue-100 px-2 py-1 rounded">⏳ Active</span>'}</td><td class="p-4 font-bold">${i.branchRedeemed || '-'}</td><td class="p-4 text-xs">${formatDate(i.redeemedAt)}</td></tr>`).join('');
+            document.getElementById('admin-logs').innerHTML = l.map(i => `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-semibold">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-400 font-normal">${i.doctorPhone || '-'}</span></td>
+                    <td class="p-4 font-mono font-bold text-blue-600 tracking-widest">${i.code}</td>
+                    <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ USED</span>' : '<span class="text-blue-600 font-bold text-[10px] bg-blue-100 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
+                    <td class="p-4 text-[10px] text-slate-500">${formatDate(i.createdAt)}</td>
+                </tr>
+            `).join('');
         }
 
         async function exportCSV() {
+            logBtnClick('EXPORT CSV BUTTON'); // Track button click
             const data = await fetch('/api/admin/logs?export=true').then(r => r.json());
             let csv = "Name,Phone,Code,Type,Status,Generated,Branch,RedeemedAt\n";
-            data.forEach(i => { csv += `"${i.targetName}","${i.doctorPhone}","${i.code}","${i.audienceType}","${i.isUsed?'Used':'Active'}","${new Date(i.createdAt).toLocaleString()}","${i.branchRedeemed||''}","${i.redeemedAt?new Date(i.redeemedAt).toLocaleString():''}"\n`; });
+            data.forEach(i => { csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.audienceType}","${i.isUsed?'Used':'Active'}","${new Date(i.createdAt).toLocaleString()}","${i.branchRedeemed||''}","${i.redeemedAt?new Date(i.redeemedAt).toLocaleString():''}"\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "UIC_Logs.csv"; link.click();
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `UIC_Logs_${new Date().toISOString().split('T')[0]}.csv`; link.click();
         }
 
         function shoot() {
             const f = document.getElementById('csv').files[0];
             const btn = document.getElementById('btn-shoot');
-            if(!f || !document.getElementById('exp').value) return alert("Fill all details!");
-            btn.innerText = "SENDING..."; btn.disabled = true;
+            if(!f || !document.getElementById('exp').value) return alert("Upload CSV and select expiry date!");
+            
+            logBtnClick('SHOOT CAMPAIGN BUTTON'); // Track button click
+            
+            btn.innerText = "SENDING..."; 
+            btn.disabled = true;
+            
             Papa.parse(f, { header: true, skipEmptyLines: true, complete: async (res) => {
                 const validTargets = res.data.filter(row => row.phone && row.phone.trim() !== '');
-                if(validTargets.length === 0) { alert("No valid phones!"); btn.innerText = "SEND"; btn.disabled = false; return; }
-                await fetch('/api/campaign/shoot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ targetList: validTargets, discount: document.getElementById('disc').value, expiryDate: document.getElementById('exp').value, audienceType: document.getElementById('aud-type').value }) });
-                alert('Sent!'); document.getElementById('csv').value = ''; loadAdminData(); btn.innerText = "SEND"; btn.disabled = false;
+                if(validTargets.length === 0) { alert("No valid phone numbers found in CSV!"); btn.innerText = "SEND"; btn.disabled = false; return; }
+                
+                try {
+                    await fetch('/api/campaign/shoot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ targetList: validTargets, discount: document.getElementById('disc').value, expiryDate: document.getElementById('exp').value, audienceType: document.getElementById('aud-type').value }) });
+                    alert('Campaign Sent Successfully!'); 
+                    document.getElementById('csv').value = ''; 
+                    loadAdminData(); 
+                } catch(e) {
+                    alert('Error sending campaign!');
+                } finally {
+                    btn.innerText = "SEND"; 
+                    btn.disabled = false;
+                }
             }});
+        }
+
+        // --- USER / RECEPTION FEATURES ---
+        let currentValidCode = null;
+        async function verifyCode() {
+            const code = document.getElementById('verify-code').value;
+            const resBox = document.getElementById('verify-result');
+            if(!code) return;
+            
+            const res = await fetch('/api/coupon/validate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code}) });
+            const data = await res.json();
+            resBox.classList.remove('hidden');
+            
+            if(data.valid) {
+                currentValidCode = code;
+                let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
+                resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-500 bg-green-50";
+                resBox.innerHTML = `
+                    <p class="text-green-700 font-black text-xl mb-2">✅ VALID COUPON</p>
+                    <p class="text-slate-800 font-bold mb-1">Name: <span class="font-normal">${data.name}</span></p>
+                    <p class="text-slate-800 font-bold mb-6">Discount: <span class="font-normal text-blue-600">${data.discount}% OFF</span></p>
+                    <label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label>
+                    <select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-6 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select>
+                    <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-black tracking-wider py-4 rounded-xl shadow-lg hover:bg-green-700 transition">CONFIRM & REDEEM</button>
+                `;
+            } else { 
+                resBox.className = "mt-6 w-full p-4 rounded-xl border-2 border-red-500 bg-red-50"; 
+                resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`; 
+            }
+        }
+
+        async function redeemCode() {
+            const branch = document.getElementById('redeem-branch').value;
+            if(!branch) return alert("Please select a branch first!");
+            
+            logBtnClick('REDEEM COUPON BUTTON'); // Track button click
+            
+            await fetch('/api/coupon/redeem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode, branch}) });
+            document.getElementById('verify-code').value = ''; 
+            document.getElementById('verify-result').classList.add('hidden');
+            loadUserData(); 
+            alert(`Success! Redeemed at ${branch}`);
+        }
+
+        async function loadUserData() {
+            const res = await fetch('/api/user/redeemed-today');
+            const logs = await res.json();
+            document.getElementById('redeemed-list').innerHTML = logs.map(l => `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td>
+                    <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
+                    <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
+                    <td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
+                </tr>
+            `).join('');
         }
     </script>
 </body>
