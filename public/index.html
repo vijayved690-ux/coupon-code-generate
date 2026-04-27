@@ -91,9 +91,8 @@
     </div>
 
     <script>
-        const API_BASE = ''; // Keep empty if same domain
+        const API_BASE = ''; 
 
-        // Initial Setup: Set Date picker to today + 30 days
         document.addEventListener("DOMContentLoaded", () => {
             const dateInput = document.getElementById('expiry-date');
             const defaultDate = new Date();
@@ -177,7 +176,7 @@
                             statusMsg.className = "mt-4 text-sm font-medium text-green-600";
                             statusMsg.innerText = `✅ Success! Messages sent to ${doctors.length} doctors. Codes saved to database.`;
                             loadDashboard();
-                            fileInput.value = ''; // Reset file input
+                            fileInput.value = ''; 
                         } else {
                             const errorData = await res.json();
                             statusMsg.className = "mt-4 text-sm font-medium text-red-600";
