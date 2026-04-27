@@ -97,12 +97,7 @@
                         <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead>
                                 <tr class="border-b text-slate-500 bg-white">
-                                    <th class="p-4">Name</th>
-                                    <th class="p-4">Code</th>
-                                    <th class="p-4">Generated At</th>
-                                    <th class="p-4">Status</th>
-                                    <th class="p-4">Branch Redeemed</th>
-                                    <th class="p-4">Redeemed At</th>
+                                    <th class="p-4">Name</th><th class="p-4">Code</th><th class="p-4">Generated At</th><th class="p-4">Status</th><th class="p-4">Branch</th><th class="p-4">Redeemed At</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-logs"></tbody>
@@ -114,21 +109,14 @@
     </div>
 
     <script>
-        // --- CONSTANTS ---
-        const BRANCHES = [
-            'UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 
-            'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 
-            'UIC ISANPUR', 'UIC MORBI'
-        ];
+        const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
 
-        // --- HELPER FORMAT DATE ---
         function formatDate(dateString) {
             if(!dateString) return '-';
             const d = new Date(dateString);
             return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
         }
 
-        // --- SAMPLE CSV ---
         function downloadSample() {
             const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217";
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -138,24 +126,15 @@
             link.click();
         }
 
-        // --- AUTH ---
-        window.onload = () => {
-            const role = localStorage.getItem('role');
-            if (role) showApp(role);
-        };
+        window.onload = () => { const role = localStorage.getItem('role'); if (role) showApp(role); };
 
         async function login() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
             const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) });
             const data = await res.json();
-            if(data.success) {
-                localStorage.setItem('role', data.role);
-                document.getElementById('login-error').classList.add('hidden');
-                showApp(data.role);
-            } else {
-                document.getElementById('login-error').classList.remove('hidden');
-            }
+            if(data.success) { localStorage.setItem('role', data.role); showApp(data.role); } 
+            else { document.getElementById('login-error').classList.remove('hidden'); }
         }
 
         function logout() { localStorage.removeItem('role'); location.reload(); }
@@ -164,155 +143,67 @@
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('app-view').classList.remove('hidden');
             document.getElementById('role-badge').innerText = role.toUpperCase();
-            document.getElementById('role-badge').className = `text-xs font-bold text-white px-2 py-0.5 rounded inline-block mt-1 ${role === 'admin' ? 'bg-red-500' : 'bg-blue-500'}`;
-
-            if(role === 'admin') {
-                document.getElementById('admin-dashboard').classList.remove('hidden');
-                loadAdminData();
-            } else {
-                document.getElementById('user-dashboard').classList.remove('hidden');
-                loadUserData();
-            }
+            if(role === 'admin') { document.getElementById('admin-dashboard').classList.remove('hidden'); loadAdminData(); } 
+            else { document.getElementById('user-dashboard').classList.remove('hidden'); loadUserData(); }
         }
 
-        // --- USER / RECEPTION LOGIC ---
         let currentValidCode = null;
-
         async function verifyCode() {
             const code = document.getElementById('verify-code').value;
             const resBox = document.getElementById('verify-result');
             if(!code) return;
-            
             const res = await fetch('/api/coupon/validate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code}) });
             const data = await res.json();
             resBox.classList.remove('hidden');
-
             if(data.valid) {
                 currentValidCode = code;
                 let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
-                
                 resBox.className = "mt-6 w-full max-w-md p-4 rounded-lg border-2 border-green-500 bg-green-50";
-                resBox.innerHTML = `
-                    <p class="text-green-700 font-bold text-lg mb-2">✅ Valid Code</p>
-                    <p class="text-slate-800 text-sm"><b>Name:</b> ${data.name}</p>
-                    <p class="text-slate-800 text-sm mb-4"><b>Discount:</b> ${data.discount}% OFF</p>
-                    
-                    <label class="text-xs font-bold text-slate-600 block mb-1">SELECT BRANCH FOR REDEMPTION <span class="text-red-500">*</span></label>
-                    <select id="redeem-branch" class="w-full border-2 border-slate-300 p-2 rounded mb-4 focus:outline-none focus:border-green-500 font-bold text-slate-700">
-                        <option value="">-- Choose Branch --</option>
-                        ${branchOptions}
-                    </select>
-
-                    <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-bold py-3 rounded shadow hover:bg-green-700 transition">Confirm & Redeem</button>
-                `;
-            } else {
-                currentValidCode = null;
-                resBox.className = "mt-6 w-full max-w-md p-4 rounded-lg border-2 border-red-500 bg-red-50";
-                resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`;
-            }
+                resBox.innerHTML = `<p class="text-green-700 font-bold text-lg mb-2">✅ Valid Code</p><p class="text-slate-800 text-sm"><b>Name:</b> ${data.name}</p><p class="text-slate-800 text-sm mb-4"><b>Discount:</b> ${data.discount}% OFF</p><label class="text-xs font-bold text-slate-600 block mb-1">SELECT BRANCH *</label><select id="redeem-branch" class="w-full border-2 border-slate-300 p-2 rounded mb-4 font-bold text-slate-700"><option value="">-- Choose Branch --</option>${branchOptions}</select><button onclick="redeemCode()" class="w-full bg-green-600 text-white font-bold py-3 rounded shadow hover:bg-green-700">Confirm & Redeem</button>`;
+            } else { resBox.className = "mt-6 w-full max-w-md p-4 rounded-lg border-2 border-red-500 bg-red-50"; resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`; }
         }
 
         async function redeemCode() {
-            if(!currentValidCode) return;
             const branch = document.getElementById('redeem-branch').value;
-            if(!branch) return alert("Please select a branch before redeeming!");
-
-            await fetch('/api/coupon/redeem', {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({code: currentValidCode, branch: branch})
-            });
-            
-            document.getElementById('verify-code').value = '';
-            document.getElementById('verify-result').classList.add('hidden');
-            loadUserData();
-            alert(`Success! Coupon redeemed at ${branch}`);
+            if(!branch) return alert("Select branch!");
+            await fetch('/api/coupon/redeem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode, branch}) });
+            document.getElementById('verify-code').value = ''; document.getElementById('verify-result').classList.add('hidden');
+            loadUserData(); alert(`Redeemed at ${branch}`);
         }
 
         async function loadUserData() {
             const res = await fetch('/api/user/redeemed-today');
             const logs = await res.json();
-            document.getElementById('redeemed-list').innerHTML = logs.map(l => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-mono font-bold text-blue-600 tracking-widest">${l.code}</td>
-                    <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
-                    <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
-                </tr>
-            `).join('');
+            document.getElementById('redeemed-list').innerHTML = logs.map(l => `<tr class="border-b"><td class="p-4 font-bold text-blue-600">${l.code}</td><td class="p-4">${l.targetName || 'N/A'}</td><td class="p-4 font-bold">${l.branchRedeemed || '-'}</td><td class="p-4 text-xs">${formatDate(l.redeemedAt)}</td></tr>`).join('');
         }
 
-        // --- ADMIN LOGIC ---
         async function loadAdminData() {
             const s = await fetch('/api/admin/dashboard-stats').then(r => r.json());
             document.getElementById('stat-sent').innerText = s.totalSent;
             document.getElementById('stat-redeemed').innerText = s.usedCount;
-
             const l = await fetch('/api/admin/logs').then(r => r.json());
-            document.getElementById('admin-logs').innerHTML = l.map(i => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-semibold">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-400 font-normal">${i.doctorPhone}</span></td>
-                    <td class="p-4 font-mono font-bold text-blue-600">${i.code}</td>
-                    <td class="p-4 text-xs text-slate-600">${formatDate(i.createdAt)}</td>
-                    <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-xs bg-green-100 px-2 py-1 rounded">✅ Used</span>' : '<span class="text-blue-600 font-bold text-xs bg-blue-100 px-2 py-1 rounded">⏳ Active</span>'}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
-                    <td class="p-4 text-xs text-slate-600">${formatDate(i.redeemedAt)}</td>
-                </tr>
-            `).join('');
+            document.getElementById('admin-logs').innerHTML = l.map(i => `<tr class="border-b"><td class="p-4 font-semibold">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-400">${i.doctorPhone}</span></td><td class="p-4 font-bold text-blue-600">${i.code}</td><td class="p-4 text-xs">${formatDate(i.createdAt)}</td><td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-xs bg-green-100 px-2 py-1 rounded">✅ Used</span>' : '<span class="text-blue-600 font-bold text-xs bg-blue-100 px-2 py-1 rounded">⏳ Active</span>'}</td><td class="p-4 font-bold">${i.branchRedeemed || '-'}</td><td class="p-4 text-xs">${formatDate(i.redeemedAt)}</td></tr>`).join('');
         }
 
-        // --- EXPORT CSV LOGIC ---
         async function exportCSV() {
-            alert("Fetching data, your download will start shortly...");
             const data = await fetch('/api/admin/logs?export=true').then(r => r.json());
-            
-            let csv = "Name,Phone,Code,Audience Type,Discount,Status,Generated Time,Redeemed Branch,Redeemed Time\n";
-            data.forEach(i => {
-                const genTime = i.createdAt ? new Date(i.createdAt).toLocaleString('en-IN').replace(/,/g, '') : '';
-                const redTime = i.redeemedAt ? new Date(i.redeemedAt).toLocaleString('en-IN').replace(/,/g, '') : '';
-                const status = i.isUsed ? 'Used' : 'Active';
-                const branch = i.branchRedeemed || '';
-                
-                csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.audienceType}","${i.discountPercentage}%","${status}","${genTime}","${branch}","${redTime}"\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `UIC_Coupon_Logs_${new Date().toLocaleDateString('en-IN')}.csv`;
-            link.click();
+            let csv = "Name,Phone,Code,Type,Status,Generated,Branch,RedeemedAt\n";
+            data.forEach(i => { csv += `"${i.targetName}","${i.doctorPhone}","${i.code}","${i.audienceType}","${i.isUsed?'Used':'Active'}","${new Date(i.createdAt).toLocaleString()}","${i.branchRedeemed||''}","${i.redeemedAt?new Date(i.redeemedAt).toLocaleString():''}"\n`; });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "UIC_Logs.csv"; link.click();
         }
 
         function shoot() {
             const f = document.getElementById('csv').files[0];
             const btn = document.getElementById('btn-shoot');
-            if(!f) return alert("Upload CSV first!");
-            if(!document.getElementById('exp').value) return alert("Select Expiry Date!");
-            
-            btn.innerText = "SENDING...";
-            btn.disabled = true;
-
-            Papa.parse(f, {
-                header: true, skipEmptyLines: true,
-                complete: async (res) => {
-                    try {
-                        await fetch('/api/campaign/shoot', {
-                            method: 'POST', headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({
-                                targetList: res.data, discount: document.getElementById('disc').value,
-                                expiryDate: document.getElementById('exp').value, audienceType: document.getElementById('aud-type').value
-                            })
-                        });
-                        alert('Campaign Sent Successfully!'); 
-                        document.getElementById('csv').value = '';
-                        loadAdminData();
-                    } catch(e) {
-                        alert('Error sending campaign!');
-                    } finally {
-                        btn.innerText = "SEND";
-                        btn.disabled = false;
-                    }
-                }
-            });
+            if(!f || !document.getElementById('exp').value) return alert("Fill all details!");
+            btn.innerText = "SENDING..."; btn.disabled = true;
+            Papa.parse(f, { header: true, skipEmptyLines: true, complete: async (res) => {
+                const validTargets = res.data.filter(row => row.phone && row.phone.trim() !== '');
+                if(validTargets.length === 0) { alert("No valid phones!"); btn.innerText = "SEND"; btn.disabled = false; return; }
+                await fetch('/api/campaign/shoot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ targetList: validTargets, discount: document.getElementById('disc').value, expiryDate: document.getElementById('exp').value, audienceType: document.getElementById('aud-type').value }) });
+                alert('Sent!'); document.getElementById('csv').value = ''; loadAdminData(); btn.innerText = "SEND"; btn.disabled = false;
+            }});
         }
     </script>
 </body>
