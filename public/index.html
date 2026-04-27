@@ -1,334 +1,173 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>UIC | System Access</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-</head>
-<body class="bg-slate-100 font-sans h-screen flex flex-col">
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const axios = require('axios');
+const path = require('path');
+const Coupon = require('./models/Coupon');
+const Agent = require('./models/Agent');
+const Activity = require('./models/Activity'); 
 
-    <div id="login-view" class="flex-grow flex items-center justify-center">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-96 text-center">
-            <h1 class="text-2xl font-bold text-blue-700 mb-1">UIC Connect</h1>
-            <p class="text-xs text-slate-500 mb-6 font-semibold">Ahmedabad Only | RUNNING MRI CENTRES<br>WE BUY AND SELL</p>
-            <input type="text" id="username" placeholder="Username" class="w-full border p-3 rounded mb-4 outline-none focus:border-blue-500">
-            <input type="password" id="password" placeholder="Password" class="w-full border p-3 rounded mb-6 outline-none focus:border-blue-500">
-            <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition">LOGIN</button>
-            <p id="login-error" class="text-red-500 text-sm mt-3 hidden">Invalid Credentials</p>
-        </div>
-    </div>
+const app = express();
+app.use(express.json());
+app.use(cors());
+app.use(express.static(path.join(__dirname, 'public')));
 
-    <div id="app-view" class="hidden flex-grow flex flex-col">
-        <header class="bg-white shadow-sm p-4 flex justify-between items-center px-8">
-            <div>
-                <h1 class="text-xl font-bold text-slate-800">Usmanpura Imaging Centre</h1>
-                <p id="role-badge" class="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded inline-block mt-1 tracking-widest">ADMIN</p>
-            </div>
-            <button onclick="logout()" class="text-sm font-bold text-red-500 hover:underline">Logout</button>
-        </header>
-
-        <div class="p-8 max-w-7xl mx-auto w-full">
-            
-            <div id="admin-dashboard" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex gap-4">
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 w-40">
-                            <p class="text-[10px] font-bold text-slate-400">TOTAL SENT</p>
-                            <h2 id="stat-sent" class="text-2xl font-bold">0</h2>
-                        </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 w-40">
-                            <p class="text-[10px] font-bold text-slate-400">REDEEMED</p>
-                            <h2 id="stat-redeemed" class="text-2xl font-bold">0</h2>
-                        </div>
-                    </div>
-                    <button onclick="resetSystemData()" class="bg-red-600 text-white text-xs font-bold px-6 py-3 rounded-lg shadow-md hover:bg-red-700 transition">
-                        ⚠️ RESET ALL DATA
-                    </button>
-                </div>
-
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="font-bold text-blue-800 text-sm">🚀 SHOOT CAMPAIGN</h2>
-                        <button onclick="downloadSample()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100">
-                            📥 Download Sample CSV
-                        </button>
-                    </div>
-                    <div class="flex flex-wrap gap-4 items-end">
-                        <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">AUDIENCE</label>
-                            <select id="aud-type" class="w-full border p-2 rounded text-sm"><option value="Doctor">Doctors</option><option value="Patient">Patients</option></select>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">DISCOUNT %</label>
-                            <select id="disc" class="w-full border p-2 rounded text-sm"><option value="30">30%</option><option value="20">20%</option><option value="10">10%</option></select>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">EXPIRY</label>
-                            <input type="date" id="exp" class="w-full border p-2 rounded text-sm">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">CSV FILE</label>
-                            <input type="file" id="csv" class="w-full border p-1.5 rounded text-sm bg-slate-50">
-                        </div>
-                        <button onclick="shoot()" id="btn-shoot" class="bg-blue-600 text-white font-bold p-2 px-8 rounded hover:bg-blue-700 transition">SEND</button>
-                    </div>
-                </div>
-
-                <div class="bg-slate-800 text-white rounded-xl shadow-lg mb-6 overflow-hidden">
-                    <div class="p-3 bg-slate-900 flex justify-between items-center">
-                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-300">🔴 LIVE ACTIVITY LOGS</h3>
-                        <button onclick="loadActivityLogs()" class="text-[10px] bg-slate-700 px-3 py-1.5 rounded hover:bg-slate-600">Refresh Logs</button>
-                    </div>
-                    <div class="max-h-40 overflow-y-auto">
-                        <table class="w-full text-[11px] text-left">
-                            <tbody id="activity-logs"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                        <h3 class="font-bold text-sm">Coupon Database</h3>
-                        <button onclick="exportCSV()" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition">
-                            📊 EXPORT FULL CSV
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs whitespace-nowrap">
-                            <thead>
-                                <tr class="border-b text-slate-400 uppercase font-bold">
-                                    <th class="p-4">Name</th><th class="p-4">Code</th><th class="p-4">Status</th><th class="p-4">Branch Redeemed</th><th class="p-4">Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-logs"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="user-dashboard" class="hidden">
-                <div class="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center max-w-lg mx-auto mb-8">
-                    <h2 class="text-2xl font-black text-slate-800 mb-6">REDEEM COUPON</h2>
-                    <input type="text" id="verify-code" placeholder="ENTER 5-DIGIT CODE" maxlength="5" class="w-full border-4 border-slate-200 p-4 rounded-xl text-center text-3xl font-black tracking-[10px] outline-none focus:border-blue-500 transition-all mb-4">
-                    <button onclick="verifyCode()" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-xl hover:bg-slate-900 transition shadow-md">CHECK CODE</button>
-                    <div id="verify-result" class="mt-8 w-full hidden"></div>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden max-w-4xl mx-auto">
-                    <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold">Recently Redeemed (Today)</h3></div>
-                    <table class="w-full text-left text-sm">
-                        <thead><tr class="bg-white border-b text-slate-500"><th class="p-4">Code</th><th class="p-4">Name</th><th class="p-4">Branch</th><th class="p-4">Time</th></tr></thead>
-                        <tbody id="redeemed-list"></tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <script>
-        const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
-
-        // --- BUTTON TRACKING (ONLY ACTIONS, NO TYPED DATA) ---
-        async function logBtnClick(buttonName) {
-            const user = localStorage.getItem('role') === 'admin' ? 'Admin Panel' : (document.getElementById('redeem-branch')?.value || 'Reception Panel');
-            await fetch('/api/log-action', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ user: user, action: `${buttonName} PRESSED`, details: 'Button Click Recorded' }) 
-            });
+// -----------------------------------------
+// DATABASE CONNECTION & SEEDING
+// -----------------------------------------
+mongoose.connect(process.env.MONGODB_URI)
+    .then(async () => {
+        console.log('MongoDB Connected Successfully!');
+        const team = [
+            { name: 'Ruchit', phone: '7600082217' }, { name: 'Mital', phone: '9558591212' },
+            { name: 'Aditi', phone: '8488931212' }, { name: 'Jay', phone: '9274682553' },
+            { name: 'Khyati', phone: '7490029085' }
+        ];
+        for (let person of team) {
+            const exists = await Agent.findOne({ phone: person.phone });
+            if (!exists) await Agent.create(person);
         }
+    })
+    .catch(err => console.error('MongoDB Error:', err));
 
-        function formatDate(dateString) {
-            if(!dateString) return '-';
-            const d = new Date(dateString);
-            return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+// -----------------------------------------
+// HELPERS
+// -----------------------------------------
+async function generateUniqueCode() {
+    let code; let isUnique = false;
+    while (!isUnique) {
+        code = Math.floor(10000 + Math.random() * 90000).toString();
+        const exists = await Coupon.findOne({ code });
+        if (!exists) isUnique = true;
+    }
+    return code;
+}
+
+async function sendWatiMessage(phone, templateName, params) {
+    try {
+        await axios.post(`${process.env.WATI_API_ENDPOINT}/api/v1/sendTemplateMessage?whatsappNumber=${phone}`, {
+            template_name: templateName, broadcast_name: 'UIC_Campaign', parameters: params
+        }, { headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` } });
+    } catch (err) { console.error(`WATI Error for ${phone}:`, err.message); }
+}
+
+async function logActivity(user, action) {
+    try { await Activity.create({ user, action }); } catch (e) { console.error('Log Error:', e); }
+}
+
+// -----------------------------------------
+// APIs
+// -----------------------------------------
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === 'admin' && password === (process.env.ADMIN_PASS || 'UicAdmin@2026')) return res.json({ success: true, role: 'admin' });
+    if (username === 'user' && password === (process.env.USER_PASS || 'UicStaff@2026')) return res.json({ success: true, role: 'user' });
+    res.status(401).json({ success: false });
+});
+
+app.post('/api/admin/reset-data', async (req, res) => {
+    if (req.body.password === '456789') {
+        await Coupon.deleteMany({});
+        await logActivity('Admin', 'DATABASE RESET SUCCESS');
+        return res.json({ success: true });
+    }
+    res.status(403).json({ success: false });
+});
+
+app.post('/api/log-action', async (req, res) => {
+    await logActivity(req.body.user, req.body.action);
+    res.json({ success: true });
+});
+
+app.get('/api/admin/activity-logs', async (req, res) => {
+    res.json(await Activity.find().sort({ timestamp: -1 }).limit(50));
+});
+
+app.post('/api/campaign/shoot', async (req, res) => {
+    const { targetList, discount, expiryDate, audienceType } = req.body;
+    const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB');
+    for (let target of targetList) {
+        if (!target.phone) continue;
+        const code = await generateUniqueCode();
+        await Coupon.create({ 
+            code, discountPercentage: discount, targetName: target.name, doctorPhone: target.phone, 
+            location: target.location, proPhone: target.proNumber, audienceType, expiryDate: new Date(expiryDate) 
+        });
+        const tMap = { 'Doctor_30': 'temp_doctor_30_dis_new', 'Patient_30': 'patient_30_temp_new_dis' }; // Add others as needed
+        const tName = tMap[`${audienceType}_${discount}`] || 'temp_doctor_30_dis_new';
+        await sendWatiMessage(target.phone, tName, [{name:'1', value: target.name || 'Doctor'}, {name:'2', value: code}, {name:'3', value: formattedDate}]);
+    }
+    res.json({ success: true });
+});
+
+// --- WEBHOOK: CALLS & MORE COUPONS ---
+app.post('/api/wati/webhook', async (req, res) => {
+    const { waId, buttonText, text } = req.body;
+    const btn = (buttonText || text || "").trim();
+
+    if (btn === 'Sales Team Please Call Me') {
+        const lastC = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+        if (lastC && lastC.proPhone) {
+            await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
+                agent_number: lastC.proPhone, destination_number: waId, caller_id: "07969690921"
+            }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
+            await logActivity('WATI', `PRO_CALL_FOR_${waId}`);
         }
-
-        function downloadSample() {
-            const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217";
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "uic_sample.csv";
-            link.click();
+    } 
+    else if (btn === 'I want to More Coupon' || btn === 'I Want More Coupon') {
+        const lastC = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+        const disc = lastC?.discountPercentage || 30;
+        const code = await generateUniqueCode();
+        const exp = new Date(); exp.setMonth(exp.getMonth() + 1);
+        await Coupon.create({ code, discountPercentage: disc, doctorPhone: waId, audienceType: 'Doctor', expiryDate: exp, proPhone: lastC?.proPhone });
+        await sendWatiMessage(waId, 'dis_more_temp_all', [{name:'1', value: `${disc}% Discount`}, {name:'2', value: code}, {name:'3', value: exp.toLocaleDateString('en-GB')}]);
+    }
+    else if (['Need more assistance', 'Book my test', 'I will use the coupon'].includes(btn)) {
+        const agent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
+        if (agent) {
+            agent.lastCalledAt = new Date(); await agent.save();
+            await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
+                agent_number: agent.phone, destination_number: waId, caller_id: "07969690921"
+            }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
+            await logActivity('WATI', `AGENT_CALL_TO_${agent.name}`);
         }
+    }
+    res.sendStatus(200);
+});
 
-        window.onload = () => { const role = localStorage.getItem('role'); if (role) showApp(role); };
+// --- DASHBOARD DATA ---
+app.post('/api/coupon/redeem', async (req, res) => {
+    const { code, branch } = req.body;
+    const coupon = await Coupon.findOne({ code });
+    if (coupon) {
+        coupon.isUsed = true; coupon.branchRedeemed = branch; coupon.redeemedAt = new Date();
+        await coupon.save();
+        res.json({ success: true });
+    } else res.status(404).send();
+});
 
-        async function login() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) });
-            const data = await res.json();
-            if(data.success) { 
-                localStorage.setItem('role', data.role); 
-                showApp(data.role);
-                logBtnClick('LOGIN BUTTON'); // Tracking only the button click
-            } else { 
-                document.getElementById('login-error').classList.remove('hidden'); 
-            }
-        }
+app.post('/api/coupon/validate', async (req, res) => {
+    const c = await Coupon.findOne({ code: req.body.code });
+    if(!c) return res.json({valid:false, message:"Invalid"});
+    res.json({valid:true, discount: c.discountPercentage, name: c.targetName});
+});
 
-        function logout() { 
-            logBtnClick('LOGOUT BUTTON'); 
-            localStorage.removeItem('role'); 
-            location.reload(); 
-        }
+app.get('/api/agents', async (req, res) => res.json(await Agent.find()));
+app.post('/api/agents/toggle', async (req, res) => {
+    await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
+    res.json({ success: true });
+});
+app.get('/api/admin/dashboard-stats', async (req, res) => {
+    res.json({ totalSent: await Coupon.countDocuments(), usedCount: await Coupon.countDocuments({isUsed: true}) });
+});
+app.get('/api/admin/logs', async (req, res) => res.json(await Coupon.find().sort({createdAt: -1}).limit(100)));
+app.get('/api/user/redeemed-today', async (req, res) => {
+    const s = new Date(); s.setHours(0,0,0,0);
+    res.json(await Coupon.find({isUsed:true, redeemedAt:{$gte:s}}).sort({redeemedAt:-1}));
+});
 
-        function showApp(role) {
-            document.getElementById('login-view').classList.add('hidden');
-            document.getElementById('app-view').classList.remove('hidden');
-            document.getElementById('role-badge').innerText = role.toUpperCase();
-            
-            if(role === 'admin') { 
-                document.getElementById('admin-dashboard').classList.remove('hidden'); 
-                loadAdminData(); 
-                loadActivityLogs();
-                setInterval(loadActivityLogs, 5000); // Auto refresh logs every 5 seconds
-            } else { 
-                document.getElementById('user-dashboard').classList.remove('hidden'); 
-                loadUserData();
-            }
-        }
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-        // --- ADMIN FEATURES ---
-        async function resetSystemData() {
-            logBtnClick('RESET DATA BUTTON'); // Track button click BEFORE password prompt
-            const pass = prompt("Enter RESET PASSWORD to delete ALL coupons:");
-            if(!pass) return;
-            
-            const res = await fetch('/api/admin/reset-data', {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password: pass})
-            });
-            const data = await res.json();
-            if(data.success) {
-                alert("DATABASE CLEARED SUCCESSFULLY!");
-                loadAdminData();
-                loadActivityLogs();
-            } else { alert(data.message); }
-        }
-
-        async function loadActivityLogs() {
-            const res = await fetch('/api/admin/activity-logs');
-            const logs = await res.json();
-            document.getElementById('activity-logs').innerHTML = logs.map(l => `
-                <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
-                    <td class="p-2 text-blue-400 font-bold whitespace-nowrap w-24">${new Date(l.timestamp).toLocaleTimeString()}</td>
-                    <td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td>
-                    <td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td>
-                </tr>
-            `).join('');
-        }
-
-        async function loadAdminData() {
-            const s = await fetch('/api/admin/dashboard-stats').then(r => r.json());
-            document.getElementById('stat-sent').innerText = s.totalSent;
-            document.getElementById('stat-redeemed').innerText = s.usedCount;
-            const l = await fetch('/api/admin/logs').then(r => r.json());
-            document.getElementById('admin-logs').innerHTML = l.map(i => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-semibold">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-400 font-normal">${i.doctorPhone || '-'}</span></td>
-                    <td class="p-4 font-mono font-bold text-blue-600 tracking-widest">${i.code}</td>
-                    <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ USED</span>' : '<span class="text-blue-600 font-bold text-[10px] bg-blue-100 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
-                    <td class="p-4 text-[10px] text-slate-500">${formatDate(i.createdAt)}</td>
-                </tr>
-            `).join('');
-        }
-
-        async function exportCSV() {
-            logBtnClick('EXPORT CSV BUTTON'); // Track button click
-            const data = await fetch('/api/admin/logs?export=true').then(r => r.json());
-            let csv = "Name,Phone,Code,Type,Status,Generated,Branch,RedeemedAt\n";
-            data.forEach(i => { csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.audienceType}","${i.isUsed?'Used':'Active'}","${new Date(i.createdAt).toLocaleString()}","${i.branchRedeemed||''}","${i.redeemedAt?new Date(i.redeemedAt).toLocaleString():''}"\n`; });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `UIC_Logs_${new Date().toISOString().split('T')[0]}.csv`; link.click();
-        }
-
-        function shoot() {
-            const f = document.getElementById('csv').files[0];
-            const btn = document.getElementById('btn-shoot');
-            if(!f || !document.getElementById('exp').value) return alert("Upload CSV and select expiry date!");
-            
-            logBtnClick('SHOOT CAMPAIGN BUTTON'); // Track button click
-            
-            btn.innerText = "SENDING..."; 
-            btn.disabled = true;
-            
-            Papa.parse(f, { header: true, skipEmptyLines: true, complete: async (res) => {
-                const validTargets = res.data.filter(row => row.phone && row.phone.trim() !== '');
-                if(validTargets.length === 0) { alert("No valid phone numbers found in CSV!"); btn.innerText = "SEND"; btn.disabled = false; return; }
-                
-                try {
-                    await fetch('/api/campaign/shoot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ targetList: validTargets, discount: document.getElementById('disc').value, expiryDate: document.getElementById('exp').value, audienceType: document.getElementById('aud-type').value }) });
-                    alert('Campaign Sent Successfully!'); 
-                    document.getElementById('csv').value = ''; 
-                    loadAdminData(); 
-                } catch(e) {
-                    alert('Error sending campaign!');
-                } finally {
-                    btn.innerText = "SEND"; 
-                    btn.disabled = false;
-                }
-            }});
-        }
-
-        // --- USER / RECEPTION FEATURES ---
-        let currentValidCode = null;
-        async function verifyCode() {
-            const code = document.getElementById('verify-code').value;
-            const resBox = document.getElementById('verify-result');
-            if(!code) return;
-            
-            const res = await fetch('/api/coupon/validate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code}) });
-            const data = await res.json();
-            resBox.classList.remove('hidden');
-            
-            if(data.valid) {
-                currentValidCode = code;
-                let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
-                resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-500 bg-green-50";
-                resBox.innerHTML = `
-                    <p class="text-green-700 font-black text-xl mb-2">✅ VALID COUPON</p>
-                    <p class="text-slate-800 font-bold mb-1">Name: <span class="font-normal">${data.name}</span></p>
-                    <p class="text-slate-800 font-bold mb-6">Discount: <span class="font-normal text-blue-600">${data.discount}% OFF</span></p>
-                    <label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label>
-                    <select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-6 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select>
-                    <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-black tracking-wider py-4 rounded-xl shadow-lg hover:bg-green-700 transition">CONFIRM & REDEEM</button>
-                `;
-            } else { 
-                resBox.className = "mt-6 w-full p-4 rounded-xl border-2 border-red-500 bg-red-50"; 
-                resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`; 
-            }
-        }
-
-        async function redeemCode() {
-            const branch = document.getElementById('redeem-branch').value;
-            if(!branch) return alert("Please select a branch first!");
-            
-            logBtnClick('REDEEM COUPON BUTTON'); // Track button click
-            
-            await fetch('/api/coupon/redeem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode, branch}) });
-            document.getElementById('verify-code').value = ''; 
-            document.getElementById('verify-result').classList.add('hidden');
-            loadUserData(); 
-            alert(`Success! Redeemed at ${branch}`);
-        }
-
-        async function loadUserData() {
-            const res = await fetch('/api/user/redeemed-today');
-            const logs = await res.json();
-            document.getElementById('redeemed-list').innerHTML = logs.map(l => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td>
-                    <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
-                    <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
-                    <td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
-                </tr>
-            `).join('');
-        }
-    </script>
-</body>
-</html>
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`Live on ${PORT}`));
