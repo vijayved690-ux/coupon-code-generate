@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const axios = require('axios');
-const path = require('path');
+const path = require('path'); // Path module yahan zaroori hai
 const Coupon = require('./models/Coupon');
 const Agent = require('./models/Agent');
 const Activity = require('./models/Activity'); 
@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // -----------------------------------------
-// DATABASE CONNECTION
+// DATABASE CONNECTION & AGENT SEEDING
 // -----------------------------------------
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
@@ -169,9 +169,10 @@ app.post('/api/campaign/shoot', async (req, res) => {
 app.post('/api/wati/webhook', async (req, res) => {
     try {
         const { waId, buttonText, text } = req.body;
-        const btn = buttonText || text;
+        const btn = (buttonText || text || "").trim();
         const patientBtns = ['I will use the coupon', 'I will use the cupon', 'Need more assistance', 'looking for more assistance', 'Book my test', 'book my test'];
 
+        // A. DOCTOR: PRO CALL
         if (btn === 'Sales Team Please Call Me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             if (lastCoupon && lastCoupon.proPhone) {
@@ -182,64 +183,47 @@ app.post('/api/wati/webhook', async (req, res) => {
                 }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
                 
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                await logActivity('System Webhook', 'SALES CALL REQUESTED', `Doctor ${waId} requested call from PRO`);
+                await logActivity('WATI Webhook', 'PRO CALL TRIGGERED', `Doctor ${waId} -> PRO ${lastCoupon.proPhone}`);
             }
         } 
+        // B. DOCTOR: MORE COUPONS
         else if (btn === 'I want to More Coupon' || btn === 'I Want More Coupon') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
-            const discount = lastCoupon ? lastCoupon.discountPercentage : 10;
-            const audience = lastCoupon ? lastCoupon.audienceType : 'Doctor';
+            const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
             let newCodes = [];
-            const expiry = new Date(); 
-            expiry.setMonth(expiry.getMonth() + 1); 
+            const expiry = new Date(); expiry.setMonth(expiry.getMonth() + 1); 
             
             for(let i=0; i<5; i++) {
                 const c = await generateUniqueCode();
                 await Coupon.create({ 
-                    code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Requested',
-                    doctorPhone: waId, audienceType: audience, source: 'Requested', 
+                    code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Doctor',
+                    doctorPhone: waId, audienceType: 'Doctor', source: 'Requested', 
                     expiryDate: expiry, proPhone: lastCoupon?.proPhone, location: lastCoupon?.location
                 });
                 newCodes.push(c);
             }
             
-            const discountText = `${discount}% Discount`;
-
-            // YAHAN AAPKA NAYA TEMPLATE NAAM LAGA DIYA HAI
             await sendWatiMessage(waId, 'dis_more_temp_all', [
-                { name: '1', value: discountText }, 
+                { name: '1', value: `${discount}% Discount` }, 
                 { name: '2', value: newCodes.join(', ') }, 
                 { name: '3', value: expiry.toLocaleDateString('en-GB') }
             ]);
-
-            await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
+            await logActivity('WATI Webhook', 'MORE COUPONS SENT', `Doctor ${waId} requested 5 codes`);
         }
+        // C. PATIENT: ROUND ROBIN AGENTS
         else if (patientBtns.includes(btn)) {
-            if (btn === 'I will use the coupon' || btn === 'I will use the cupon') {
-                await sendWatiMessage(waId, 'patient_thankyou', []);
-            } else {
-                const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
-                if (nextAgent) {
-                    nextAgent.lastCalledAt = new Date(); 
-                    await nextAgent.save();
-                    
-                    try {
-                        await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
-                            agent_number: nextAgent.phone, destination_number: waId, caller_id: "07969690921"
-                        }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
-                        
-                        await sendWatiMessage(waId, 'sales_call_ack_template', []); 
-                        await logActivity('System Webhook', 'PATIENT CALL CONNECTED', `Patient ${waId} connected to agent ${nextAgent.name}`);
-                    } catch (e) { 
-                        console.error("Tata Tele Error:", e.message); 
-                    }
-                }
+            const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
+            if (nextAgent) {
+                nextAgent.lastCalledAt = new Date(); await nextAgent.save();
+                await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
+                    agent_number: nextAgent.phone, destination_number: waId, caller_id: "07969690921"
+                }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
+                
+                await logActivity('WATI Webhook', 'AGENT CALL TRIGGERED', `Patient ${waId} -> Agent ${nextAgent.name}`);
             }
         }
         res.sendStatus(200);
-    } catch (error) { 
-        res.sendStatus(500); 
-    }
+    } catch (error) { res.sendStatus(500); }
 });
 
 // -----------------------------------------
@@ -267,7 +251,7 @@ app.post('/api/coupon/redeem', async (req, res) => {
         coupon.branchRedeemed = branch;
         await coupon.save();
         
-        await logActivity(branch || 'Reception Panel', 'COUPON REDEEMED', `Code ${code} redeemed successfully`);
+        await logActivity(branch || 'Reception', 'COUPON REDEEMED', `Code ${code} used`);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
@@ -288,17 +272,17 @@ app.get('/api/admin/dashboard-stats', async (req, res) => {
 app.get('/api/admin/logs', async (req, res) => {
     const isExport = req.query.export === 'true';
     let query = Coupon.find().sort({ createdAt: -1 });
-    if (!isExport) {
-        query = query.limit(100);
-    }
+    if (!isExport) query = query.limit(100);
     res.json(await query.exec());
 });
 
 app.get('/api/user/redeemed-today', async (req, res) => {
     const start = new Date(); start.setHours(0,0,0,0);
-    const logs = await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 });
-    res.json(logs);
+    res.json(await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 }));
 });
+
+// Aakhri catch-all route for index.html
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Server live on ${PORT}`));
