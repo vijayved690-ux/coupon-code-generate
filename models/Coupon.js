@@ -24,13 +24,15 @@ const couponSchema = new mongoose.Schema({
         enum: ['Campaign', 'Requested'], 
         default: 'Campaign' 
     },
+    expiryDate: { 
+        type: Date, 
+        required: true 
+    },
     createdAt: { 
         type: Date, 
         default: Date.now 
     }
 });
 
-// Indexing for faster queries
 couponSchema.index({ doctorPhone: 1, createdAt: 1 });
-
 module.exports = mongoose.model('Coupon', couponSchema);
