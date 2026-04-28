@@ -31,17 +31,41 @@
         <div class="p-8 max-w-7xl mx-auto w-full">
             
             <div id="admin-dashboard" class="hidden">
-                <div class="flex justify-between items-center mb-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="flex gap-4">
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 w-40">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 w-full">
                             <p class="text-[10px] font-bold text-slate-400">TOTAL SENT</p>
-                            <h2 id="stat-sent" class="text-2xl font-bold">0</h2>
+                            <h2 id="stat-total-sent" class="text-2xl font-bold text-blue-800">0</h2>
                         </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 w-40">
-                            <p class="text-[10px] font-bold text-slate-400">REDEEMED</p>
-                            <h2 id="stat-redeemed" class="text-2xl font-bold">0</h2>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">TOTAL REDEEMED</p>
+                            <h2 id="stat-total-redeemed" class="text-2xl font-bold text-green-700">0</h2>
                         </div>
                     </div>
+                    <div class="flex gap-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">DOCTOR SENT</p>
+                            <h2 id="stat-doc-sent" class="text-2xl font-bold text-purple-800">0</h2>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-teal-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">DOCTOR REDEEMED</p>
+                            <h2 id="stat-doc-redeemed" class="text-2xl font-bold text-teal-700">0</h2>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">PATIENT SENT</p>
+                            <h2 id="stat-pat-sent" class="text-2xl font-bold text-orange-800">0</h2>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">PATIENT REDEEMED</p>
+                            <h2 id="stat-pat-redeemed" class="text-2xl font-bold text-rose-700">0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end mb-6">
                     <button onclick="resetSystemData()" class="bg-red-600 text-white text-xs font-bold px-6 py-3 rounded-lg shadow-md hover:bg-red-700 transition">
                         ⚠️ RESET ALL DATA
                     </button>
@@ -92,16 +116,38 @@
                     </div>
                 </div>
 
-                <div class="flex gap-4 mb-4 border-b pb-4 mt-8">
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-wrap gap-4 items-center border border-slate-200">
+                    <h3 class="font-bold text-sm text-slate-800 w-full mb-1">🔍 Filter Database</h3>
+                    <input type="text" id="search-filter" placeholder="Search Name, Phone, Code, Agent..." class="border p-2 rounded text-sm w-64 outline-none focus:border-blue-500 shadow-inner">
+                    
+                    <div class="flex items-center gap-2">
+                        <input type="date" id="date-from" class="border p-2 rounded text-sm outline-none focus:border-blue-500 text-slate-600">
+                        <span class="text-slate-400 text-xs font-bold">TO</span>
+                        <input type="date" id="date-to" class="border p-2 rounded text-sm outline-none focus:border-blue-500 text-slate-600">
+                    </div>
+
+                    <select id="status-filter" class="border p-2 rounded text-sm outline-none focus:border-blue-500 text-slate-600">
+                        <option value="">All Statuses</option>
+                        <option value="Redeemed">✅ Redeemed</option>
+                        <option value="Active">⏳ Active</option>
+                        <option value="PendingCall">📞 Pending PRO Call</option>
+                        <option value="CallCompleted">📞 Call Completed</option>
+                    </select>
+
+                    <button onclick="applyFilters()" class="bg-blue-600 text-white px-6 py-2 rounded shadow-md text-xs font-bold tracking-wider hover:bg-blue-700 transition">APPLY FILTER</button>
+                    <button onclick="clearFilters()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded shadow-sm text-xs font-bold tracking-wider hover:bg-slate-300 transition">CLEAR</button>
+                </div>
+
+                <div class="flex gap-4 mb-4 border-b pb-4 mt-4">
                     <button onclick="switchTab('doctor')" id="tab-doc" class="px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md">🩺 DOCTOR MANAGEMENT</button>
-                    <button onclick="switchTab('patient')" id="tab-pat" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300">👥 PATIENT MANAGEMENT</button>
+                    <button onclick="switchTab('patient')" id="tab-pat" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition">👥 PATIENT MANAGEMENT</button>
                 </div>
 
                 <div id="doctor-section" class="bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-blue-50">
-                        <h3 class="font-bold text-blue-800">Doctor Database & Call Tracking</h3>
-                        <button onclick="exportFullExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700">
-                            📊 EXPORT DOCTOR REPORT
+                        <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Filtered)</h3>
+                        <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
+                            <span>📊</span> EXPORT FILTERED DATA
                         </button>
                     </div>
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
@@ -113,8 +159,7 @@
                                     <th class="p-4">PRO Number</th>
                                     <th class="p-4">Rating</th>
                                     <th class="p-4">Button Clicked</th>
-                                    <th class="p-4">Call Request Time</th>
-                                    <th class="p-4">PRO Call Time</th>
+                                    <th class="p-4">Call Tracking</th>
                                     <th class="p-4">Status</th>
                                 </tr>
                             </thead>
@@ -125,9 +170,9 @@
 
                 <div id="patient-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                        <h3 class="font-bold text-slate-800">Patient Database</h3>
-                        <button onclick="exportFullExcel('Patient')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700">
-                            📊 EXPORT PATIENT REPORT
+                        <h3 class="font-bold text-slate-800 text-sm">Patient Database (Filtered)</h3>
+                        <button onclick="exportFilteredExcel('Patient')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
+                            <span>📊</span> EXPORT FILTERED DATA
                         </button>
                     </div>
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
@@ -171,6 +216,9 @@
 
     <script>
         const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
+        
+        let globalLogs = [];
+        let filteredLogs = [];
 
         function formatDate(dateString) {
             if(!dateString) return '-';
@@ -219,12 +267,12 @@
                 document.getElementById('doctor-section').classList.remove('hidden');
                 document.getElementById('patient-section').classList.add('hidden');
                 document.getElementById('tab-doc').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md";
-                document.getElementById('tab-pat').className = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300";
+                document.getElementById('tab-pat').className = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition";
             } else {
                 document.getElementById('doctor-section').classList.add('hidden');
                 document.getElementById('patient-section').classList.remove('hidden');
                 document.getElementById('tab-pat').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md";
-                document.getElementById('tab-doc').className = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300";
+                document.getElementById('tab-doc').className = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition";
             }
         }
 
@@ -255,55 +303,117 @@
         }
 
         async function loadAdminData() {
-            const s = await fetch('/api/admin/dashboard-stats').then(r => r.json());
-            document.getElementById('stat-sent').innerText = s.totalSent;
-            document.getElementById('stat-redeemed').innerText = s.usedCount;
-
+            // Load agents
             const agents = await fetch('/api/agents').then(r => r.json());
             document.getElementById('agents-list').innerHTML = agents.map(a => `
                 <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}">
                     <span class="text-xs font-bold">${a.name}</span>
-                    <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4">
+                    <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4 cursor-pointer">
                 </div>
             `).join('');
 
-            const allLogs = await fetch('/api/admin/logs').then(r => r.json());
+            // Fetch Data
+            globalLogs = await fetch('/api/admin/logs').then(r => r.json());
             
+            // Calculate Split Stats
+            const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
+            const patLogs = globalLogs.filter(l => l.audienceType === 'Patient');
+            
+            document.getElementById('stat-total-sent').innerText = globalLogs.length;
+            document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
+            
+            document.getElementById('stat-doc-sent').innerText = docLogs.length;
+            document.getElementById('stat-doc-redeemed').innerText = docLogs.filter(l => l.isUsed).length;
+            
+            document.getElementById('stat-pat-sent').innerText = patLogs.length;
+            document.getElementById('stat-pat-redeemed').innerText = patLogs.filter(l => l.isUsed).length;
+
+            // Apply filters to trigger render initially
+            applyFilters();
+        }
+
+        function clearFilters() {
+            document.getElementById('search-filter').value = '';
+            document.getElementById('date-from').value = '';
+            document.getElementById('date-to').value = '';
+            document.getElementById('status-filter').value = '';
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('search-filter').value.toLowerCase();
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+            const status = document.getElementById('status-filter').value;
+            
+            filteredLogs = globalLogs.filter(item => {
+                let matchSearch = true;
+                if (search) {
+                    const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''}`.toLowerCase();
+                    matchSearch = searchStr.includes(search);
+                }
+                
+                let matchDate = true;
+                if (dateFrom || dateTo) {
+                    const itemDate = new Date(item.createdAt).toISOString().split('T')[0];
+                    if (dateFrom && itemDate < dateFrom) matchDate = false;
+                    if (dateTo && itemDate > dateTo) matchDate = false;
+                }
+                
+                let matchStatus = true;
+                if (status) {
+                    if (status === 'Redeemed' && !item.isUsed) matchStatus = false;
+                    if (status === 'Active' && item.isUsed) matchStatus = false;
+                    if (status === 'PendingCall' && item.callStatus !== 'Pending') matchStatus = false;
+                    if (status === 'CallCompleted' && item.callStatus !== 'Completed') matchStatus = false;
+                }
+                
+                return matchSearch && matchDate && matchStatus;
+            });
+            
+            renderTables();
+        }
+
+        function renderTables() {
             // Render Doctor Logs
-            const docLogs = allLogs.filter(l => l.audienceType === 'Doctor');
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             document.getElementById('doctor-logs').innerHTML = docLogs.map(i => {
                 let stars = i.rating > 0 ? '⭐'.repeat(i.rating) : '<span class="text-slate-300 text-[10px]">None</span>';
                 let statusBadge = '';
-                if(i.callStatus === 'Pending') statusBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold">⏳ PENDING CALL</span>';
-                else if(i.callStatus === 'Completed') statusBadge = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded font-bold">✅ DONE</span>';
-                else statusBadge = '<span class="text-slate-400">-</span>';
+                if(i.isUsed) statusBadge += '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-0.5 rounded block mb-1">✅ REDEEMED</span>';
+                if(i.callStatus === 'Pending') statusBadge += '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] block">⏳ PENDING CALL</span>';
+                else if(i.callStatus === 'Completed') statusBadge += '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] block">📞 CALL DONE</span>';
+                
+                if(!statusBadge) statusBadge = '-';
 
                 return `
                 <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-semibold">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-400">${i.doctorPhone || '-'}</span></td>
+                    <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td>
                     <td class="p-4">
-                        <span class="font-mono font-bold text-blue-600">${i.code}</span><br>
+                        <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
                         <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${i.discountPercentage}% DISCOUNT</span>
                     </td>
                     <td class="p-4 font-bold text-slate-700">${i.proPhone || '-'}</td>
                     <td class="p-4 text-xs">${stars}</td>
                     <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
-                    <td class="p-4 text-[10px] text-slate-600 font-bold">${formatDate(i.requestCallAt)}</td>
-                    <td class="p-4 text-[10px] text-slate-600 font-bold">${formatDate(i.proCallClickedAt)}</td>
-                    <td class="p-4 text-[10px]">${statusBadge}</td>
+                    <td class="p-4">
+                        <div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${formatDate(i.requestCallAt)}</div>
+                        <div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div>
+                    </td>
+                    <td class="p-4">${statusBadge}</td>
                 </tr>
             `}).join('');
 
-            // Render Patient Logs (UPDATED FOR NEW FIELDS)
-            const patLogs = allLogs.filter(l => l.audienceType === 'Patient');
+            // Render Patient Logs
+            const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
             document.getElementById('patient-logs').innerHTML = patLogs.map(i => `
                 <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-semibold">${i.targetName || 'N/A'}</td>
-                    <td class="p-4 text-slate-600">${i.doctorPhone || '-'}</td>
-                    <td class="p-4 font-mono font-bold text-blue-600">${i.code}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
+                    <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
+                    <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
+                    <td class="p-4 font-mono font-bold text-blue-600 tracking-wider">${i.code}</td>
+                    <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
                     <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
-                    <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ USED</span>' : '<span class="text-blue-600 font-bold text-[10px] bg-blue-100 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
+                    <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
                     <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
                 </tr>
             `).join('');
@@ -314,28 +424,31 @@
             loadAdminData();
         }
 
-        // ADVANCED EXPORT FUNCTION FOR BOTH DOCTOR & PATIENT
-        async function exportFullExcel(type) {
-            const data = await fetch('/api/admin/logs?export=true').then(r => r.json());
-            const filtered = data.filter(i => i.audienceType === type);
+        // EXPORT STRICTLY BASED ON FILTERED DATA
+        async function exportFilteredExcel(type) {
+            const dataToExport = filteredLogs.filter(i => i.audienceType === type);
+            if(dataToExport.length === 0) {
+                alert("No data to export based on current filters.");
+                return;
+            }
             
             let csv = "";
             if (type === 'Doctor') {
-                csv = "Name,Phone,Code,Discount,PRO,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Branch\n";
-                filtered.forEach(i => {
-                    csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
+                csv = "Created_Date,Name,Phone,Code,Discount,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Branch_Redeemed\n";
+                dataToExport.forEach(i => {
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
                 });
             } else {
-                csv = "Patient_Name,Phone,Code,Agent_Assigned,Button_Clicked,Coupon_Status,Branch_Redeemed\n";
-                filtered.forEach(i => {
-                    csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.isUsed ? 'Used' : 'Active'}","${i.branchRedeemed || ''}"\n`;
+                csv = "Created_Date,Patient_Name,Phone,Code,Agent_Assigned,Button_Clicked,Coupon_Status,Branch_Redeemed\n";
+                dataToExport.forEach(i => {
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.branchRedeemed || ''}"\n`;
                 });
             }
 
             const blob = new Blob([csv], { type: 'text/csv' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `UIC_${type}_Report_${new Date().toISOString().split('T')[0]}.csv`;
+            link.download = `UIC_${type}_Filtered_Report_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
         }
 
@@ -400,7 +513,7 @@
             if(!branch) return alert("Please select a branch first!");
             await fetch('/api/coupon/redeem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode, branch}) });
             document.getElementById('verify-code').value = ''; document.getElementById('verify-result').classList.add('hidden');
-            loadUserData(); alert(`Success! Redeemed at ${branch}`);
+            loadUserData(); loadAdminData(); alert(`Success! Redeemed at ${branch}`);
         }
 
         async function loadUserData() {
