@@ -19,7 +19,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('MongoDB Connected Successfully!');
-        // Wapas 10-digit set kar diya taaki Tata API reject na kare
         const team = [
             { name: 'Ruchit', phone: '7600082217' },
             { name: 'Mital', phone: '9558591212' },
@@ -56,11 +55,16 @@ async function generateUniqueCode() {
     return code;
 }
 
-// 🚨 TATA TELE NUMBER FORMATTER (Forces exactly 10 digits)
-function formatTataNumber(phone) {
+// 🚨 SMART NUMBER FORMATTERS FOR TATA TELE
+function formatAgent(phone) {
     if (!phone) return null;
-    let num = phone.toString().replace(/\D/g, ''); // Sirf digits rakhega
-    return num.slice(-10); // Hamesha last ke 10 digit nikalega (automatically removes 91)
+    let num = phone.toString().replace(/\D/g, '').slice(-10); // Pehle last 10 digit nikalega
+    return '91' + num; // Agent ke liye hamesha '91' lagayega (12-digit)
+}
+
+function formatCustomer(phone) {
+    if (!phone) return null;
+    return phone.toString().replace(/\D/g, '').slice(-10); // Customer ke liye strictly 10-digit rakhega
 }
 
 async function sendWatiMessage(phone, templateName, params) {
@@ -144,6 +148,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             validCount++;
             const code = await generateUniqueCode();
+            
             let cleanProPhone = target.proNumber ? target.proNumber.toString().trim().replace(/\D/g, '') : null;
 
             await Coupon.create({
@@ -224,8 +229,12 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             if (lastCoupon && lastCoupon.proPhone) {
                 try {
-                    const tataAgentNumber = formatTataNumber(lastCoupon.proPhone);
-                    const tataDestNumber = formatTataNumber(waId);
+                    // Yahan dono numbers properly format honge
+                    const tataAgentNumber = formatAgent(lastCoupon.proPhone); // 12-digit
+                    const tataDestNumber = formatCustomer(waId); // 10-digit
+                    
+                    // Hum log save karenge ki call kis numbers par ja rahi hai (testing ke liye aasaan hoga)
+                    await logActivity('System Webhook', 'CALL ATTEMPT', `Dialing Agent: ${tataAgentNumber}, Dest: ${tataDestNumber}`);
 
                     await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
                         agent_number: tataAgentNumber,
@@ -234,7 +243,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                     }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
 
                     await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                    await logActivity('System Webhook', 'PRO CALL SUCCESS', `Connecting Doctor (${tataDestNumber}) to PRO (${tataAgentNumber})`);
+                    await logActivity('System Webhook', 'PRO CALL SUCCESS', `Connecting Doctor to PRO`);
                 } catch (tataError) {
                     const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
                     await logActivity('System Webhook', 'PRO CALL FAILED', `API Error: ${errMsg}`);
@@ -281,8 +290,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                     await nextAgent.save();
 
                     try {
-                        const tataAgentNumber = formatTataNumber(nextAgent.phone);
-                        const tataDestNumber = formatTataNumber(waId);
+                        const tataAgentNumber = formatAgent(nextAgent.phone);
+                        const tataDestNumber = formatCustomer(waId);
 
                         await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
                             agent_number: tataAgentNumber,
@@ -291,7 +300,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
                         await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                        await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient (${tataDestNumber}) connected to Agent ${nextAgent.name} (${tataAgentNumber})`);
+                        await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient connected to Agent ${nextAgent.name}`);
                     } catch (tataError) {
                         const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
                         await logActivity('System Webhook', 'AGENT CALL FAILED', `API Error: ${errMsg}`);
