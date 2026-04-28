@@ -58,11 +58,16 @@ async function generateUniqueCode() {
     return code;
 }
 
-// 🚨 SMART NUMBER FORMATTER
-function formatTataNumber(phone) {
+// 🚨 SMART NUMBER FORMATTERS (TATA TELE SAFETY)
+function formatAgentNumber(phone) {
     if (!phone) return null;
     let num = phone.toString().replace(/\D/g, '').slice(-10);
-    return '91' + num; 
+    return '91' + num; // Agent needs 12-digits (91 prefix)
+}
+
+function formatDestNumber(phone) {
+    if (!phone) return null;
+    return phone.toString().replace(/\D/g, '').slice(-10); // Customer/Doctor needs strictly 10-digits
 }
 
 async function sendWatiMessage(phone, templateName, params) {
@@ -232,7 +237,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             if (lastCoupon && lastCoupon.proPhone) {
                 lastCoupon.requestCallAt = new Date();
                 lastCoupon.callStatus = 'Pending';
-                lastCoupon.buttonClicked = rawBtn; // Tracking exact button
+                lastCoupon.buttonClicked = rawBtn; 
                 await lastCoupon.save();
 
                 const proParams = [
@@ -247,14 +252,14 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // --- 3. PRO: "Connect with Doctor" (Replaced "Call Now") ---
+        // --- 3. PRO: "Connect with Doctor" ---
         else if (btnLower === 'connect with doctor') {
             const pendingRequest = await Coupon.findOne({ proPhone: waId, callStatus: 'Pending' }).sort({ requestCallAt: -1 });
 
             if (pendingRequest) {
                 try {
-                    const tataAgent = formatTataNumber(waId);
-                    const tataDest = formatTataNumber(pendingRequest.doctorPhone);
+                    const tataAgent = formatAgentNumber(waId);
+                    const tataDest = formatDestNumber(pendingRequest.doctorPhone);
 
                     await axios.post(TATA_URL, {
                         agent_number: tataAgent,
@@ -264,7 +269,6 @@ app.post('/api/wati/webhook', async (req, res) => {
 
                     pendingRequest.proCallClickedAt = new Date();
                     pendingRequest.callStatus = 'Completed';
-                    // Optional tracking for PRO's button
                     await pendingRequest.save();
 
                     await logActivity('System Webhook', 'CALL INITIATED', `PRO ${tataAgent} calling Doctor ${tataDest}`);
@@ -311,7 +315,6 @@ app.post('/api/wati/webhook', async (req, res) => {
         // --- 5. PATIENT CALLING (ROUND ROBIN & TRACKING) ---
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             
-            // Database Update for Button Clicked
             const patientCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             if (patientCoupon) {
                 patientCoupon.buttonClicked = rawBtn;
@@ -327,8 +330,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                     await nextAgent.save();
 
                     try {
-                        const tataAgentNumber = formatTataNumber(nextAgent.phone);
-                        const tataDestNumber = formatTataNumber(waId);
+                        const tataAgentNumber = formatAgentNumber(nextAgent.phone);
+                        const tataDestNumber = formatDestNumber(waId);
 
                         await axios.post(TATA_URL, {
                             agent_number: tataAgentNumber,
@@ -338,7 +341,6 @@ app.post('/api/wati/webhook', async (req, res) => {
 
                         await sendWatiMessage(waId, 'sales_call_ack_template', []);
                         
-                        // Update Assigned Agent in Database
                         if (patientCoupon) {
                             patientCoupon.agentAssigned = nextAgent.name;
                             patientCoupon.callStatus = 'Completed';
