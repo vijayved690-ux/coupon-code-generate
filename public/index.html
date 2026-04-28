@@ -47,6 +47,11 @@
                     </button>
                 </div>
 
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
+                    <h2 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wider">🎧 Call Center Agents (Online Status)</h2>
+                    <div id="agents-list" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
+                </div>
+
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="font-bold text-blue-800 text-sm">🚀 SHOOT CAMPAIGN</h2>
@@ -130,7 +135,6 @@
     <script>
         const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
 
-        // --- BUTTON TRACKING (ONLY ACTIONS, NO TYPED DATA) ---
         async function logBtnClick(buttonName) {
             const user = localStorage.getItem('role') === 'admin' ? 'Admin Panel' : (document.getElementById('redeem-branch')?.value || 'Reception Panel');
             await fetch('/api/log-action', { 
@@ -165,7 +169,7 @@
             if(data.success) { 
                 localStorage.setItem('role', data.role); 
                 showApp(data.role);
-                logBtnClick('LOGIN BUTTON'); // Tracking only the button click
+                logBtnClick('LOGIN BUTTON');
             } else { 
                 document.getElementById('login-error').classList.remove('hidden'); 
             }
@@ -186,16 +190,15 @@
                 document.getElementById('admin-dashboard').classList.remove('hidden'); 
                 loadAdminData(); 
                 loadActivityLogs();
-                setInterval(loadActivityLogs, 5000); // Auto refresh logs every 5 seconds
+                setInterval(loadActivityLogs, 5000);
             } else { 
                 document.getElementById('user-dashboard').classList.remove('hidden'); 
                 loadUserData();
             }
         }
 
-        // --- ADMIN FEATURES ---
         async function resetSystemData() {
-            logBtnClick('RESET DATA BUTTON'); // Track button click BEFORE password prompt
+            logBtnClick('RESET DATA BUTTON');
             const pass = prompt("Enter RESET PASSWORD to delete ALL coupons:");
             if(!pass) return;
             
@@ -226,6 +229,15 @@
             const s = await fetch('/api/admin/dashboard-stats').then(r => r.json());
             document.getElementById('stat-sent').innerText = s.totalSent;
             document.getElementById('stat-redeemed').innerText = s.usedCount;
+
+            const agents = await fetch('/api/agents').then(r => r.json());
+            document.getElementById('agents-list').innerHTML = agents.map(a => `
+                <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}">
+                    <span class="text-xs font-bold">${a.name}</span>
+                    <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4">
+                </div>
+            `).join('');
+
             const l = await fetch('/api/admin/logs').then(r => r.json());
             document.getElementById('admin-logs').innerHTML = l.map(i => `
                 <tr class="border-b hover:bg-slate-50">
@@ -238,8 +250,14 @@
             `).join('');
         }
 
+        async function toggleAgent(id, isOnline) {
+            await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) });
+            logBtnClick(`AGENT TOGGLE ${isOnline ? 'ON' : 'OFF'}`);
+            loadAdminData();
+        }
+
         async function exportCSV() {
-            logBtnClick('EXPORT CSV BUTTON'); // Track button click
+            logBtnClick('EXPORT CSV BUTTON');
             const data = await fetch('/api/admin/logs?export=true').then(r => r.json());
             let csv = "Name,Phone,Code,Type,Status,Generated,Branch,RedeemedAt\n";
             data.forEach(i => { csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.audienceType}","${i.isUsed?'Used':'Active'}","${new Date(i.createdAt).toLocaleString()}","${i.branchRedeemed||''}","${i.redeemedAt?new Date(i.redeemedAt).toLocaleString():''}"\n`; });
@@ -252,7 +270,7 @@
             const btn = document.getElementById('btn-shoot');
             if(!f || !document.getElementById('exp').value) return alert("Upload CSV and select expiry date!");
             
-            logBtnClick('SHOOT CAMPAIGN BUTTON'); // Track button click
+            logBtnClick('SHOOT CAMPAIGN BUTTON');
             
             btn.innerText = "SENDING..."; 
             btn.disabled = true;
@@ -275,7 +293,6 @@
             }});
         }
 
-        // --- USER / RECEPTION FEATURES ---
         let currentValidCode = null;
         async function verifyCode() {
             const code = document.getElementById('verify-code').value;
@@ -308,7 +325,7 @@
             const branch = document.getElementById('redeem-branch').value;
             if(!branch) return alert("Please select a branch first!");
             
-            logBtnClick('REDEEM COUPON BUTTON'); // Track button click
+            logBtnClick('REDEEM COUPON BUTTON');
             
             await fetch('/api/coupon/redeem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode, branch}) });
             document.getElementById('verify-code').value = ''; 
