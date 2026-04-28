@@ -58,16 +58,10 @@ async function generateUniqueCode() {
     return code;
 }
 
-// 🚨 SMART NUMBER FORMATTERS (TATA TELE SAFETY)
-function formatAgentNumber(phone) {
+function formatTataNumber(phone) {
     if (!phone) return null;
     let num = phone.toString().replace(/\D/g, '').slice(-10);
-    return '91' + num; // Agent needs 12-digits (91 prefix)
-}
-
-function formatDestNumber(phone) {
-    if (!phone) return null;
-    return phone.toString().replace(/\D/g, '').slice(-10); // Customer/Doctor needs strictly 10-digits
+    return '91' + num; 
 }
 
 async function sendWatiMessage(phone, templateName, params) {
@@ -202,7 +196,7 @@ app.post('/api/wati/webhook', async (req, res) => {
         const rawBtn = (buttonText || text || "").trim();
         const btnLower = rawBtn.toLowerCase();
 
-        // --- 1. DOCTOR: "Rate this initiative" ---
+        // 1. DOCTOR: "Rate this initiative"
         if (btnLower === 'rate this initiative') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
@@ -230,7 +224,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // --- 2. DOCTOR: "Sales Team Please Call Me" ---
+        // 2. DOCTOR: "Sales Team Please Call Me"
         else if (btnLower === 'sales team please call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             
@@ -252,14 +246,14 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // --- 3. PRO: "Connect with Doctor" ---
+        // 3. PRO: "Connect with Doctor"
         else if (btnLower === 'connect with doctor') {
             const pendingRequest = await Coupon.findOne({ proPhone: waId, callStatus: 'Pending' }).sort({ requestCallAt: -1 });
 
             if (pendingRequest) {
                 try {
-                    const tataAgent = formatAgentNumber(waId);
-                    const tataDest = formatDestNumber(pendingRequest.doctorPhone);
+                    const tataAgent = formatTataNumber(waId);
+                    const tataDest = formatTataNumber(pendingRequest.doctorPhone);
 
                     await axios.post(TATA_URL, {
                         agent_number: tataAgent,
@@ -279,7 +273,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // --- 4. DOCTOR: "More Coupon" ---
+        // 4. DOCTOR: "More Coupon"
         else if (btnLower.includes('more coupon')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             if (lastCoupon) {
@@ -312,7 +306,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
 
-        // --- 5. PATIENT CALLING (ROUND ROBIN & TRACKING) ---
+        // 5. PATIENT CALLING (ROUND ROBIN)
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             
             const patientCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
@@ -330,8 +324,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                     await nextAgent.save();
 
                     try {
-                        const tataAgentNumber = formatAgentNumber(nextAgent.phone);
-                        const tataDestNumber = formatDestNumber(waId);
+                        const tataAgentNumber = formatTataNumber(nextAgent.phone);
+                        const tataDestNumber = formatTataNumber(waId);
 
                         await axios.post(TATA_URL, {
                             agent_number: tataAgentNumber,
@@ -413,8 +407,9 @@ app.get('/api/admin/dashboard-stats', async (req, res) => {
 app.get('/api/admin/logs', async (req, res) => {
     const isExport = req.query.export === 'true';
     let query = Coupon.find().sort({ createdAt: -1 });
+    // Increased limit to 2000 so frontend filtering works effectively over large ranges
     if (!isExport) {
-        query = query.limit(100);
+        query = query.limit(2000);
     }
     const logs = await query.exec();
     res.json(logs);
