@@ -140,7 +140,6 @@ app.post('/api/campaign/shoot', async (req, res) => {
                 expiryDate: new Date(expiryDate)
             });
 
-            // YAHAN TEMPLATE NAAM CHANGE KIYA HAI
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon',
                 'Doctor_20': 'temp_20_doctor_coupon',
@@ -177,10 +176,12 @@ app.post('/api/campaign/shoot', async (req, res) => {
 app.post('/api/wati/webhook', async (req, res) => {
     try {
         const { waId, buttonText, text } = req.body;
-        const btn = (buttonText || text || "").trim();
-        const patientBtns = ['I will use the coupon', 'I will use the cupon', 'Need more assistance', 'looking for more assistance', 'Book my test', 'book my test'];
+        
+        // Fix: Case-insensitive button text matching
+        const rawBtn = (buttonText || text || "").trim();
+        const btnLower = rawBtn.toLowerCase();
 
-        if (btn === 'Sales Team Please Call Me') {
+        if (btnLower === 'sales team please call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             
             if (lastCoupon && lastCoupon.proPhone) {
@@ -201,7 +202,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await logActivity('System Webhook', 'PRO CALL FAILED', `No PRO Number found in database for Doctor ${waId}`);
             }
         }
-        else if (btn === 'I want to More Coupon' || btn === 'I Want More Coupon') {
+        // Fix: Will match "I Want More Coupon", "i want more coupon", etc.
+        else if (btnLower.includes('more coupon')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
             let newCodes = [];
@@ -228,8 +230,8 @@ app.post('/api/wati/webhook', async (req, res) => {
 
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
-        else if (patientBtns.includes(btn)) {
-            if (btn === 'I will use the coupon' || btn === 'I will use the cupon') {
+        else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
+            if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
                 await sendWatiMessage(waId, 'patient_thankyou', []);
             } else {
                 const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
