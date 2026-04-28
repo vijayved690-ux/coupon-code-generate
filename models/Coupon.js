@@ -18,7 +18,11 @@ const couponSchema = new mongoose.Schema({
     // --- Advanced Tracking Fields ---
     requestCallAt: { type: Date },      
     proCallClickedAt: { type: Date },   
-    callStatus: { type: String, default: 'None' } 
+    callStatus: { type: String, default: 'None' },
+    
+    // --- New Fields for Agent & Button Tracking ---
+    agentAssigned: { type: String },
+    buttonClicked: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Coupon', couponSchema);
