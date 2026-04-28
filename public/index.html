@@ -112,6 +112,7 @@
                                     <th class="p-4">Coupon & Discount</th>
                                     <th class="p-4">PRO Number</th>
                                     <th class="p-4">Rating</th>
+                                    <th class="p-4">Button Clicked</th>
                                     <th class="p-4">Call Request Time</th>
                                     <th class="p-4">PRO Call Time</th>
                                     <th class="p-4">Status</th>
@@ -136,7 +137,9 @@
                                     <th class="p-4">Patient Name</th>
                                     <th class="p-4">Phone</th>
                                     <th class="p-4">Code</th>
-                                    <th class="p-4">Status</th>
+                                    <th class="p-4">Agent Assigned</th>
+                                    <th class="p-4">Button Clicked</th>
+                                    <th class="p-4">Coupon Status</th>
                                     <th class="p-4">Branch Redeemed</th>
                                 </tr>
                             </thead>
@@ -284,19 +287,22 @@
                     </td>
                     <td class="p-4 font-bold text-slate-700">${i.proPhone || '-'}</td>
                     <td class="p-4 text-xs">${stars}</td>
+                    <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
                     <td class="p-4 text-[10px] text-slate-600 font-bold">${formatDate(i.requestCallAt)}</td>
                     <td class="p-4 text-[10px] text-slate-600 font-bold">${formatDate(i.proCallClickedAt)}</td>
                     <td class="p-4 text-[10px]">${statusBadge}</td>
                 </tr>
             `}).join('');
 
-            // Render Patient Logs
+            // Render Patient Logs (UPDATED FOR NEW FIELDS)
             const patLogs = allLogs.filter(l => l.audienceType === 'Patient');
             document.getElementById('patient-logs').innerHTML = patLogs.map(i => `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-semibold">${i.targetName || 'N/A'}</td>
                     <td class="p-4 text-slate-600">${i.doctorPhone || '-'}</td>
                     <td class="p-4 font-mono font-bold text-blue-600">${i.code}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
+                    <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
                     <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ USED</span>' : '<span class="text-blue-600 font-bold text-[10px] bg-blue-100 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
                     <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
                 </tr>
@@ -308,14 +314,23 @@
             loadAdminData();
         }
 
+        // ADVANCED EXPORT FUNCTION FOR BOTH DOCTOR & PATIENT
         async function exportFullExcel(type) {
             const data = await fetch('/api/admin/logs?export=true').then(r => r.json());
             const filtered = data.filter(i => i.audienceType === type);
             
-            let csv = "Name,Phone,Code,Discount,PRO,Req_Call_At,Call_Now_At,Status,Rating,Branch\n";
-            filtered.forEach(i => {
-                csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
-            });
+            let csv = "";
+            if (type === 'Doctor') {
+                csv = "Name,Phone,Code,Discount,PRO,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Branch\n";
+                filtered.forEach(i => {
+                    csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
+                });
+            } else {
+                csv = "Patient_Name,Phone,Code,Agent_Assigned,Button_Clicked,Coupon_Status,Branch_Redeemed\n";
+                filtered.forEach(i => {
+                    csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.isUsed ? 'Used' : 'Active'}","${i.branchRedeemed || ''}"\n`;
+                });
+            }
 
             const blob = new Blob([csv], { type: 'text/csv' });
             const link = document.createElement("a");
