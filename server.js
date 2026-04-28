@@ -127,13 +127,16 @@ app.post('/api/campaign/shoot', async (req, res) => {
             validCount++;
             const code = await generateUniqueCode();
 
+            // FIX: Pro phone number format cleaning
+            let cleanProPhone = target.proNumber ? target.proNumber.toString().trim().replace(/\D/g, '') : null;
+
             await Coupon.create({
                 code,
                 discountPercentage: discount,
                 targetName: target.name,
-                doctorPhone: target.phone,
+                doctorPhone: target.phone.toString().trim(),
                 location: target.location || 'Ahmedabad',
-                proPhone: target.proNumber || null,
+                proPhone: cleanProPhone, 
                 audienceType: audienceType,
                 expiryDate: new Date(expiryDate)
             });
@@ -179,15 +182,24 @@ app.post('/api/wati/webhook', async (req, res) => {
 
         if (btn === 'Sales Team Please Call Me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            
             if (lastCoupon && lastCoupon.proPhone) {
-                await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
-                    agent_number: lastCoupon.proPhone,
-                    destination_number: waId,
-                    caller_id: "07969690921"
-                }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
+                try {
+                    await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
+                        agent_number: lastCoupon.proPhone,
+                        destination_number: waId,
+                        caller_id: "07969690921"
+                    }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
 
-                await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                await logActivity('System Webhook', 'SALES CALL REQUESTED', `Doctor ${waId} requested call from PRO`);
+                    await sendWatiMessage(waId, 'sales_call_ack_template', []);
+                    await logActivity('System Webhook', 'PRO CALL SUCCESS', `Connecting Doctor ${waId} to PRO ${lastCoupon.proPhone}`);
+                } catch (tataError) {
+                    // NEW: YAHAN SE HAME EXACT TATA ERROR DIKHEGA LOGS MEIN
+                    const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
+                    await logActivity('System Webhook', 'PRO CALL FAILED', `API Error for ${waId}: ${errMsg}`);
+                }
+            } else {
+                await logActivity('System Webhook', 'PRO CALL FAILED', `No PRO Number found in database for Doctor ${waId}`);
             }
         }
         else if (btn === 'I want to More Coupon' || btn === 'I Want More Coupon') {
@@ -232,9 +244,10 @@ app.post('/api/wati/webhook', async (req, res) => {
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
                         await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                        await logActivity('System Webhook', 'PATIENT CALL CONNECTED', `Patient ${waId} connected to agent ${nextAgent.name}`);
-                    } catch (e) {
-                        console.error("Tata Tele Error:", e.message);
+                        await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient ${waId} connected to agent ${nextAgent.name}`);
+                    } catch (tataError) {
+                        const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
+                        await logActivity('System Webhook', 'AGENT CALL FAILED', `API Error: ${errMsg}`);
                     }
                 }
             }
@@ -271,7 +284,7 @@ app.post('/api/coupon/redeem', async (req, res) => {
         coupon.branchRedeemed = branch;
         await coupon.save();
 
-        await logActivity(branch || 'Reception Panel', 'COUPON REDEEMED', `Code ${code} redeemed successfully`);
+        await logActivity(`Reception (${branch})`, 'COUPON REDEEMED', `Code ${code} redeemed`);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
@@ -308,7 +321,6 @@ app.get('/api/user/redeemed-today', async (req, res) => {
     res.json(logs);
 });
 
-// React fallback
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 8080;
