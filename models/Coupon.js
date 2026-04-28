@@ -7,13 +7,18 @@ const couponSchema = new mongoose.Schema({
     doctorPhone: { type: String },
     proPhone: { type: String },
     location: { type: String },
-    audienceType: { type: String },
+    audienceType: { type: String }, // 'Doctor' or 'Patient'
     source: { type: String },
     expiryDate: { type: Date, required: true },
     isUsed: { type: Boolean, default: false },
     redeemedAt: { type: Date },
     branchRedeemed: { type: String },
-    rating: { type: Number, default: 0 } // YAHAN RATING ADD KIYI HAI
+    rating: { type: Number, default: 0 },
+    
+    // --- Advanced Tracking Fields ---
+    requestCallAt: { type: Date },      
+    proCallClickedAt: { type: Date },   
+    callStatus: { type: String, default: 'None' } 
 }, { timestamps: true });
 
 module.exports = mongoose.model('Coupon', couponSchema);
