@@ -19,7 +19,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('MongoDB Connected Successfully!');
-        // Agents ke aage 91 lagaya gaya hai (as per working project)
         const team = [
             { name: 'Ruchit', phone: '917600082217' },
             { name: 'Mital', phone: '919558591212' },
@@ -41,8 +40,11 @@ mongoose.connect(process.env.MONGODB_URI)
     .catch(err => console.error('MongoDB Error:', err));
 
 // -----------------------------------------
-// HELPERS
+// HELPERS & TATA CONFIG
 // -----------------------------------------
+const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
+const CALLER_ID = "07969690921"; 
+
 async function generateUniqueCode() {
     let isUnique = false;
     let code;
@@ -59,8 +61,8 @@ async function generateUniqueCode() {
 // 🚨 SMART NUMBER FORMATTER - ALWAYS 12 DIGITS (with 91 prefix)
 function formatTataNumber(phone) {
     if (!phone) return null;
-    let num = phone.toString().replace(/\D/g, '').slice(-10); // Aakhri 10 number lega
-    return '91' + num; // Hamesha 91 prefix lagayega
+    let num = phone.toString().replace(/\D/g, '').slice(-10);
+    return '91' + num; 
 }
 
 async function sendWatiMessage(phone, templateName, params) {
@@ -195,7 +197,7 @@ app.post('/api/wati/webhook', async (req, res) => {
         const rawBtn = (buttonText || text || "").trim();
         const btnLower = rawBtn.toLowerCase();
 
-        // 1. RATING
+        // --- 1. DOCTOR: "Rate this initiative" ---
         if (btnLower === 'rate this initiative') {
             await sendWatiMessage(waId, 'rate_doc_coupon', []);
             await logActivity('System Webhook', 'RATING TEMPLATE SENT', `Feedback requested from ${waId}`);
@@ -218,36 +220,57 @@ app.post('/api/wati/webhook', async (req, res) => {
                 }
             }
         }
-        // 2. PRO CALLING
+
+        // --- 2. DOCTOR: "Sales Team Please Call Me" (ALERT PRO) ---
         else if (btnLower === 'sales team please call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             
             if (lastCoupon && lastCoupon.proPhone) {
-                try {
-                    const tataAgentNumber = formatTataNumber(lastCoupon.proPhone);
-                    const tataDestNumber = formatTataNumber(waId);
-                    const tataCallerId = "07969690921"; // Aapka correct DID
+                lastCoupon.requestCallAt = new Date();
+                lastCoupon.callStatus = 'Pending';
+                await lastCoupon.save();
 
-                    await logActivity('System Webhook', 'CALL ATTEMPT', `Agent: ${tataAgentNumber}, Dest: ${tataDestNumber}`);
+                const proParams = [
+                    { name: "1", value: lastCoupon.targetName || "Doctor" },
+                    { name: "2", value: waId }
+                ];
+                await sendWatiMessage(lastCoupon.proPhone, 'pro_call_alert', proParams);
 
-                    // 🚨 EXACT URL FROM WORKING REFERENCE
-                    await axios.post('https://api-smartflo.tatateleservices.com/v1/click_to_call', {
-                        agent_number: tataAgentNumber,
-                        destination_number: tataDestNumber,
-                        caller_id: tataCallerId
-                    }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
-
-                    await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                    await logActivity('System Webhook', 'PRO CALL SUCCESS', `Connecting Doctor to PRO`);
-                } catch (tataError) {
-                    const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
-                    await logActivity('System Webhook', 'PRO CALL FAILED', `API Error: ${errMsg}`);
-                }
+                await sendWatiMessage(waId, 'sales_call_ack_template', []);
+                await logActivity('System Webhook', 'PRO NOTIFIED', `Alert sent to PRO ${lastCoupon.proPhone} for Doctor ${waId}`);
             } else {
                 await logActivity('System Webhook', 'PRO CALL FAILED', `No PRO Number found in database for Doctor ${waId}`);
             }
         }
-        // 3. MORE COUPONS
+
+        // --- 3. PRO: "Call Now" (ACTUAL TATA TELE CALL) ---
+        else if (btnLower === 'call now') {
+            const pendingRequest = await Coupon.findOne({ proPhone: waId, callStatus: 'Pending' }).sort({ requestCallAt: -1 });
+
+            if (pendingRequest) {
+                try {
+                    const tataAgent = formatTataNumber(waId);
+                    const tataDest = formatTataNumber(pendingRequest.doctorPhone);
+
+                    await axios.post(TATA_URL, {
+                        agent_number: tataAgent,
+                        destination_number: tataDest,
+                        caller_id: CALLER_ID
+                    }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
+
+                    pendingRequest.proCallClickedAt = new Date();
+                    pendingRequest.callStatus = 'Completed';
+                    await pendingRequest.save();
+
+                    await logActivity('System Webhook', 'CALL INITIATED', `PRO ${tataAgent} calling Doctor ${tataDest}`);
+                } catch (tataError) {
+                    const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
+                    await logActivity('System Webhook', 'TATA ERROR', errMsg);
+                }
+            }
+        }
+
+        // --- 4. DOCTOR: "More Coupon" ---
         else if (btnLower.includes('more coupon')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
@@ -274,7 +297,8 @@ app.post('/api/wati/webhook', async (req, res) => {
 
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
-        // 4. PATIENT CALLING
+
+        // --- 5. PATIENT CALLING (ROUND ROBIN) ---
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
                 await sendWatiMessage(waId, 'patient_thankyou', []);
@@ -287,13 +311,11 @@ app.post('/api/wati/webhook', async (req, res) => {
                     try {
                         const tataAgentNumber = formatTataNumber(nextAgent.phone);
                         const tataDestNumber = formatTataNumber(waId);
-                        const tataCallerId = "07969690921"; // Aapka correct DID
 
-                        // 🚨 EXACT URL FROM WORKING REFERENCE
-                        await axios.post('https://api-smartflo.tatateleservices.com/v1/click_to_call', {
+                        await axios.post(TATA_URL, {
                             agent_number: tataAgentNumber,
                             destination_number: tataDestNumber,
-                            caller_id: tataCallerId
+                            caller_id: CALLER_ID
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
                         await sendWatiMessage(waId, 'sales_call_ack_template', []);
