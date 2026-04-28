@@ -103,7 +103,7 @@
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
                                 <tr class="border-b text-slate-400 uppercase font-bold">
-                                    <th class="p-4">Name</th><th class="p-4">Code</th><th class="p-4">Status</th><th class="p-4">Branch Redeemed</th><th class="p-4">Time</th>
+                                    <th class="p-4">Name</th><th class="p-4">Code</th><th class="p-4">Status</th><th class="p-4">Rating</th><th class="p-4">Branch Redeemed</th><th class="p-4">Time</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-logs"></tbody>
@@ -239,15 +239,18 @@
             `).join('');
 
             const l = await fetch('/api/admin/logs').then(r => r.json());
-            document.getElementById('admin-logs').innerHTML = l.map(i => `
+            document.getElementById('admin-logs').innerHTML = l.map(i => {
+                let stars = i.rating > 0 ? '⭐'.repeat(i.rating) : '<span class="text-slate-300 text-[10px]">No Rating</span>';
+                return `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-semibold">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-400 font-normal">${i.doctorPhone || '-'}</span></td>
                     <td class="p-4 font-mono font-bold text-blue-600 tracking-widest">${i.code}</td>
                     <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ USED</span>' : '<span class="text-blue-600 font-bold text-[10px] bg-blue-100 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
+                    <td class="p-4 text-xs">${stars}</td>
                     <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
                     <td class="p-4 text-[10px] text-slate-500">${formatDate(i.createdAt)}</td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         async function toggleAgent(id, isOnline) {
@@ -259,8 +262,8 @@
         async function exportCSV() {
             logBtnClick('EXPORT CSV BUTTON');
             const data = await fetch('/api/admin/logs?export=true').then(r => r.json());
-            let csv = "Name,Phone,Code,Type,Status,Generated,Branch,RedeemedAt\n";
-            data.forEach(i => { csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.audienceType}","${i.isUsed?'Used':'Active'}","${new Date(i.createdAt).toLocaleString()}","${i.branchRedeemed||''}","${i.redeemedAt?new Date(i.redeemedAt).toLocaleString():''}"\n`; });
+            let csv = "Name,Phone,Code,Type,Status,Rating,Generated,Branch,RedeemedAt\n";
+            data.forEach(i => { csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.audienceType}","${i.isUsed?'Used':'Active'}","${i.rating || 0}","${new Date(i.createdAt).toLocaleString()}","${i.branchRedeemed||''}","${i.redeemedAt?new Date(i.redeemedAt).toLocaleString():''}"\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `UIC_Logs_${new Date().toISOString().split('T')[0]}.csv`; link.click();
         }
