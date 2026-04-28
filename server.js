@@ -51,6 +51,7 @@ async function generateUniqueCode() {
     return code;
 }
 
+// Helper for sending Templates
 async function sendWatiMessage(phone, templateName, params) {
     try {
         await axios.post(`${process.env.WATI_API_ENDPOINT}/api/v1/sendTemplateMessage?whatsappNumber=${phone}`, {
@@ -61,7 +62,18 @@ async function sendWatiMessage(phone, templateName, params) {
             headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` }
         });
     } catch (err) {
-        console.error(`WATI Error for ${phone}:`, err.response?.data || err.message);
+        console.error(`WATI Template Error for ${phone}:`, err.response?.data || err.message);
+    }
+}
+
+// Helper for sending Normal Text Messages (Like "Thank You")
+async function sendWatiTextMessage(phone, text) {
+    try {
+        await axios.post(`${process.env.WATI_API_ENDPOINT}/api/v1/sendSessionMessage/${phone}?messageText=${encodeURIComponent(text)}`, {}, {
+            headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` }
+        });
+    } catch (err) {
+        console.error(`WATI Text Error for ${phone}:`, err.message);
     }
 }
 
@@ -140,7 +152,6 @@ app.post('/api/campaign/shoot', async (req, res) => {
                 expiryDate: new Date(expiryDate)
             });
 
-            // YAHAN PAR TEMPLATE NAAM CHANGE KIYA HAI
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon',
                 'Doctor_20': 'temp_20_doctor_coupon',
@@ -172,7 +183,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
 });
 
 // -----------------------------------------
-// 4. WATI WEBHOOK (PRO CALLING & ROUND ROBIN)
+// 4. WATI WEBHOOK (INTELLIGENCE & CALLING)
 // -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
     try {
@@ -181,7 +192,36 @@ app.post('/api/wati/webhook', async (req, res) => {
         const rawBtn = (buttonText || text || "").trim();
         const btnLower = rawBtn.toLowerCase();
 
-        if (btnLower === 'sales team please call me') {
+        // --- 1. RATE THIS INITIATIVE ---
+        if (btnLower === 'rate this initiative') {
+            await sendWatiMessage(waId, 'rate_doc_coupon', []);
+            await logActivity('System Webhook', 'RATING TEMPLATE SENT', `Feedback requested from ${waId}`);
+        }
+        
+        // --- 2. CAPTURE RATING (1 to 5 Stars) ---
+        else if (btnLower.includes('★') || btnLower.includes('star')) {
+            let ratingValue = 0;
+            if (btnLower.includes('5')) ratingValue = 5;
+            else if (btnLower.includes('4')) ratingValue = 4;
+            else if (btnLower.includes('3')) ratingValue = 3;
+            else if (btnLower.includes('2')) ratingValue = 2;
+            else if (btnLower.includes('1')) ratingValue = 1;
+
+            if (ratingValue > 0) {
+                const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+                if (lastCoupon) {
+                    lastCoupon.rating = ratingValue;
+                    await lastCoupon.save();
+                    
+                    // Reply with Thank You message
+                    await sendWatiTextMessage(waId, "Thank you for your valuable feedback! We deeply appreciate your support. 🙏");
+                    await logActivity('System Webhook', 'RATING RECEIVED', `Doctor ${waId} gave ${ratingValue} Stars ⭐`);
+                }
+            }
+        }
+
+        // --- 3. PRO CALLING ---
+        else if (btnLower === 'sales team please call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             
             if (lastCoupon && lastCoupon.proPhone) {
@@ -202,6 +242,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await logActivity('System Webhook', 'PRO CALL FAILED', `No PRO Number found in database for Doctor ${waId}`);
             }
         }
+
+        // --- 4. MORE COUPONS ---
         else if (btnLower.includes('more coupon')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
@@ -229,6 +271,8 @@ app.post('/api/wati/webhook', async (req, res) => {
 
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
+
+        // --- 5. PATIENT CALLING (ROUND ROBIN) ---
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
                 await sendWatiMessage(waId, 'patient_thankyou', []);
