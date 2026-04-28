@@ -19,6 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('MongoDB Connected Successfully!');
+        // Agents ko wapas 10-digit format mein set kiya
         const team = [
             { name: 'Ruchit', phone: '7600082217' },
             { name: 'Mital', phone: '9558591212' },
@@ -55,16 +56,10 @@ async function generateUniqueCode() {
     return code;
 }
 
-// 🚨 SMART NUMBER FORMATTERS FOR TATA TELE
-function formatAgent(phone) {
+// 🚨 SMART NUMBER FORMATTER (STRICTLY 10 DIGITS FOR EVERYONE)
+function formatNumber(phone) {
     if (!phone) return null;
-    let num = phone.toString().replace(/\D/g, '').slice(-10); // Pehle last 10 digit nikalega
-    return '91' + num; // Agent ke liye hamesha '91' lagayega (12-digit)
-}
-
-function formatCustomer(phone) {
-    if (!phone) return null;
-    return phone.toString().replace(/\D/g, '').slice(-10); // Customer ke liye strictly 10-digit rakhega
+    return phone.toString().replace(/\D/g, '').slice(-10); // Hamesha sirf aakhri 10 number lega
 }
 
 async function sendWatiMessage(phone, templateName, params) {
@@ -148,7 +143,6 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             validCount++;
             const code = await generateUniqueCode();
-            
             let cleanProPhone = target.proNumber ? target.proNumber.toString().trim().replace(/\D/g, '') : null;
 
             await Coupon.create({
@@ -229,17 +223,16 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             if (lastCoupon && lastCoupon.proPhone) {
                 try {
-                    // Yahan dono numbers properly format honge
-                    const tataAgentNumber = formatAgent(lastCoupon.proPhone); // 12-digit
-                    const tataDestNumber = formatCustomer(waId); // 10-digit
-                    
-                    // Hum log save karenge ki call kis numbers par ja rahi hai (testing ke liye aasaan hoga)
-                    await logActivity('System Webhook', 'CALL ATTEMPT', `Dialing Agent: ${tataAgentNumber}, Dest: ${tataDestNumber}`);
+                    const tataAgentNumber = formatNumber(lastCoupon.proPhone);
+                    const tataDestNumber = formatNumber(waId);
+                    const tataCallerId = "7969690921"; // Aage ka zero hata diya
+
+                    await logActivity('System Webhook', 'CALL ATTEMPT', `Agent: ${tataAgentNumber}, Dest: ${tataDestNumber}, CallerID: ${tataCallerId}`);
 
                     await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
                         agent_number: tataAgentNumber,
                         destination_number: tataDestNumber,
-                        caller_id: "07969690921"
+                        caller_id: tataCallerId
                     }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}` } });
 
                     await sendWatiMessage(waId, 'sales_call_ack_template', []);
@@ -290,13 +283,14 @@ app.post('/api/wati/webhook', async (req, res) => {
                     await nextAgent.save();
 
                     try {
-                        const tataAgentNumber = formatAgent(nextAgent.phone);
-                        const tataDestNumber = formatCustomer(waId);
+                        const tataAgentNumber = formatNumber(nextAgent.phone);
+                        const tataDestNumber = formatNumber(waId);
+                        const tataCallerId = "7969690921"; // Aage ka zero hata diya
 
                         await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
                             agent_number: tataAgentNumber,
                             destination_number: tataDestNumber,
-                            caller_id: "07969690921"
+                            caller_id: tataCallerId
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
                         await sendWatiMessage(waId, 'sales_call_ack_template', []);
