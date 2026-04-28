@@ -127,7 +127,6 @@ app.post('/api/campaign/shoot', async (req, res) => {
             validCount++;
             const code = await generateUniqueCode();
 
-            // FIX: Pro phone number format cleaning
             let cleanProPhone = target.proNumber ? target.proNumber.toString().trim().replace(/\D/g, '') : null;
 
             await Coupon.create({
@@ -185,7 +184,8 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             if (lastCoupon && lastCoupon.proPhone) {
                 try {
-                    await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
+                    // YAHAN URL CHANGE KIYA HAI (in1 hataya hai)
+                    await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
                         agent_number: lastCoupon.proPhone,
                         destination_number: waId,
                         caller_id: "07969690921"
@@ -194,7 +194,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                     await sendWatiMessage(waId, 'sales_call_ack_template', []);
                     await logActivity('System Webhook', 'PRO CALL SUCCESS', `Connecting Doctor ${waId} to PRO ${lastCoupon.proPhone}`);
                 } catch (tataError) {
-                    // NEW: YAHAN SE HAME EXACT TATA ERROR DIKHEGA LOGS MEIN
                     const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
                     await logActivity('System Webhook', 'PRO CALL FAILED', `API Error for ${waId}: ${errMsg}`);
                 }
@@ -239,7 +238,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                     await nextAgent.save();
 
                     try {
-                        await axios.post('https://api.in1.smartflo.tatateleservices.com/v1/clicktocall', {
+                        // YAHAN BHI URL CHANGE KIYA HAI
+                        await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
                             agent_number: nextAgent.phone, destination_number: waId, caller_id: "07969690921"
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
@@ -284,7 +284,7 @@ app.post('/api/coupon/redeem', async (req, res) => {
         coupon.branchRedeemed = branch;
         await coupon.save();
 
-        await logActivity(`Reception (${branch})`, 'COUPON REDEEMED', `Code ${code} redeemed`);
+        await logActivity(branch || 'Reception Panel', 'COUPON REDEEMED', `Code ${code} redeemed successfully`);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
