@@ -58,7 +58,7 @@ async function generateUniqueCode() {
     return code;
 }
 
-// 🚨 SMART NUMBER FORMATTER - ALWAYS 12 DIGITS (with 91 prefix)
+// 🚨 SMART NUMBER FORMATTER
 function formatTataNumber(phone) {
     if (!phone) return null;
     let num = phone.toString().replace(/\D/g, '').slice(-10);
@@ -199,6 +199,9 @@ app.post('/api/wati/webhook', async (req, res) => {
 
         // --- 1. DOCTOR: "Rate this initiative" ---
         if (btnLower === 'rate this initiative') {
+            const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
+            
             await sendWatiMessage(waId, 'rate_doc_coupon', []);
             await logActivity('System Webhook', 'RATING TEMPLATE SENT', `Feedback requested from ${waId}`);
         }
@@ -214,6 +217,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
                 if (lastCoupon) {
                     lastCoupon.rating = ratingValue;
+                    lastCoupon.buttonClicked = rawBtn;
                     await lastCoupon.save();
                     await sendWatiTextMessage(waId, "Thank you for your valuable feedback! We deeply appreciate your support. 🙏");
                     await logActivity('System Webhook', 'RATING RECEIVED', `Doctor ${waId} gave ${ratingValue} Stars ⭐`);
@@ -221,31 +225,30 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // --- 2. DOCTOR: "Sales Team Please Call Me" (ALERT PRO WITH DISCOUNT %) ---
+        // --- 2. DOCTOR: "Sales Team Please Call Me" ---
         else if (btnLower === 'sales team please call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             
             if (lastCoupon && lastCoupon.proPhone) {
                 lastCoupon.requestCallAt = new Date();
                 lastCoupon.callStatus = 'Pending';
+                lastCoupon.buttonClicked = rawBtn; // Tracking exact button
                 await lastCoupon.save();
 
-                // 🚨 PRO alert template trigger
                 const proParams = [
                     { name: "1", value: lastCoupon.targetName || "Doctor" },
-                    { name: "2", value: `${lastCoupon.discountPercentage}%` } // Passing exact percentage
+                    { name: "2", value: `${lastCoupon.discountPercentage}%` }, 
+                    { name: "3", value: `${lastCoupon.discountPercentage}%` }
                 ];
-                await sendWatiMessage(lastCoupon.proPhone, 'pro_call_alert', proParams);
-
+                
+                await sendWatiMessage(lastCoupon.proPhone, 'dis_pro_utility_temp', proParams);
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                await logActivity('System Webhook', 'PRO NOTIFIED', `Alert sent to PRO ${lastCoupon.proPhone} (Doctor: ${waId}, Discount: ${lastCoupon.discountPercentage}%)`);
-            } else {
-                await logActivity('System Webhook', 'PRO CALL FAILED', `No PRO Number found in database for Doctor ${waId}`);
+                await logActivity('System Webhook', 'PRO NOTIFIED', `Alert sent to PRO ${lastCoupon.proPhone}`);
             }
         }
 
-        // --- 3. PRO: "Call Now" (ACTUAL TATA TELE CALL) ---
-        else if (btnLower === 'call now') {
+        // --- 3. PRO: "Connect with Doctor" (Replaced "Call Now") ---
+        else if (btnLower === 'connect with doctor') {
             const pendingRequest = await Coupon.findOne({ proPhone: waId, callStatus: 'Pending' }).sort({ requestCallAt: -1 });
 
             if (pendingRequest) {
@@ -261,6 +264,7 @@ app.post('/api/wati/webhook', async (req, res) => {
 
                     pendingRequest.proCallClickedAt = new Date();
                     pendingRequest.callStatus = 'Completed';
+                    // Optional tracking for PRO's button
                     await pendingRequest.save();
 
                     await logActivity('System Webhook', 'CALL INITIATED', `PRO ${tataAgent} calling Doctor ${tataDest}`);
@@ -274,6 +278,11 @@ app.post('/api/wati/webhook', async (req, res) => {
         // --- 4. DOCTOR: "More Coupon" ---
         else if (btnLower.includes('more coupon')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            if (lastCoupon) {
+                lastCoupon.buttonClicked = rawBtn;
+                await lastCoupon.save();
+            }
+
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
             let newCodes = [];
             const expiry = new Date();
@@ -299,8 +308,16 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
 
-        // --- 5. PATIENT CALLING (ROUND ROBIN) ---
+        // --- 5. PATIENT CALLING (ROUND ROBIN & TRACKING) ---
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
+            
+            // Database Update for Button Clicked
+            const patientCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            if (patientCoupon) {
+                patientCoupon.buttonClicked = rawBtn;
+                await patientCoupon.save();
+            }
+
             if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
                 await sendWatiMessage(waId, 'patient_thankyou', []);
             } else {
@@ -320,6 +337,14 @@ app.post('/api/wati/webhook', async (req, res) => {
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
                         await sendWatiMessage(waId, 'sales_call_ack_template', []);
+                        
+                        // Update Assigned Agent in Database
+                        if (patientCoupon) {
+                            patientCoupon.agentAssigned = nextAgent.name;
+                            patientCoupon.callStatus = 'Completed';
+                            await patientCoupon.save();
+                        }
+
                         await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient connected to Agent ${nextAgent.name}`);
                     } catch (tataError) {
                         const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
