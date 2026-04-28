@@ -19,13 +19,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('MongoDB Connected Successfully!');
-        // Agents ko wapas 10-digit format mein set kiya
+        // Agents ke aage 91 lagaya gaya hai (as per working project)
         const team = [
-            { name: 'Ruchit', phone: '7600082217' },
-            { name: 'Mital', phone: '9558591212' },
-            { name: 'Aditi', phone: '8488931212' },
-            { name: 'Jay', phone: '9274682553' },
-            { name: 'Khyati', phone: '7490029085' }
+            { name: 'Ruchit', phone: '917600082217' },
+            { name: 'Mital', phone: '919558591212' },
+            { name: 'Aditi', phone: '918488931212' },
+            { name: 'Jay', phone: '919274682553' },
+            { name: 'Khyati', phone: '917490029085' }
         ];
         
         for (let person of team) {
@@ -56,10 +56,11 @@ async function generateUniqueCode() {
     return code;
 }
 
-// 🚨 SMART NUMBER FORMATTER (STRICTLY 10 DIGITS FOR EVERYONE)
-function formatNumber(phone) {
+// 🚨 SMART NUMBER FORMATTER - ALWAYS 12 DIGITS (with 91 prefix)
+function formatTataNumber(phone) {
     if (!phone) return null;
-    return phone.toString().replace(/\D/g, '').slice(-10); // Hamesha sirf aakhri 10 number lega
+    let num = phone.toString().replace(/\D/g, '').slice(-10); // Aakhri 10 number lega
+    return '91' + num; // Hamesha 91 prefix lagayega
 }
 
 async function sendWatiMessage(phone, templateName, params) {
@@ -223,13 +224,14 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             if (lastCoupon && lastCoupon.proPhone) {
                 try {
-                    const tataAgentNumber = formatNumber(lastCoupon.proPhone);
-                    const tataDestNumber = formatNumber(waId);
-                    const tataCallerId = "7969690921"; // Aage ka zero hata diya
+                    const tataAgentNumber = formatTataNumber(lastCoupon.proPhone);
+                    const tataDestNumber = formatTataNumber(waId);
+                    const tataCallerId = "07969690921"; // Aapka correct DID
 
-                    await logActivity('System Webhook', 'CALL ATTEMPT', `Agent: ${tataAgentNumber}, Dest: ${tataDestNumber}, CallerID: ${tataCallerId}`);
+                    await logActivity('System Webhook', 'CALL ATTEMPT', `Agent: ${tataAgentNumber}, Dest: ${tataDestNumber}`);
 
-                    await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
+                    // 🚨 EXACT URL FROM WORKING REFERENCE
+                    await axios.post('https://api-smartflo.tatateleservices.com/v1/click_to_call', {
                         agent_number: tataAgentNumber,
                         destination_number: tataDestNumber,
                         caller_id: tataCallerId
@@ -283,11 +285,12 @@ app.post('/api/wati/webhook', async (req, res) => {
                     await nextAgent.save();
 
                     try {
-                        const tataAgentNumber = formatNumber(nextAgent.phone);
-                        const tataDestNumber = formatNumber(waId);
-                        const tataCallerId = "7969690921"; // Aage ka zero hata diya
+                        const tataAgentNumber = formatTataNumber(nextAgent.phone);
+                        const tataDestNumber = formatTataNumber(waId);
+                        const tataCallerId = "07969690921"; // Aapka correct DID
 
-                        await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
+                        // 🚨 EXACT URL FROM WORKING REFERENCE
+                        await axios.post('https://api-smartflo.tatateleservices.com/v1/click_to_call', {
                             agent_number: tataAgentNumber,
                             destination_number: tataDestNumber,
                             caller_id: tataCallerId
