@@ -140,10 +140,11 @@ app.post('/api/campaign/shoot', async (req, res) => {
                 expiryDate: new Date(expiryDate)
             });
 
+            // YAHAN TEMPLATE NAAM CHANGE KIYA HAI
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon',
                 'Doctor_20': 'temp_20_doctor_coupon',
-                'Doctor_30': 'temp_doctor_30_dis_new',
+                'Doctor_30': 'temp_dis_30_doctor', 
                 'Patient_10': 'patient_10_dis_temp',
                 'Patient_20': 'patient_20_dis_temp',
                 'Patient_30': 'patient_30_temp_new_dis'
@@ -184,7 +185,6 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             if (lastCoupon && lastCoupon.proPhone) {
                 try {
-                    // YAHAN URL CHANGE KIYA HAI (in1 hataya hai)
                     await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
                         agent_number: lastCoupon.proPhone,
                         destination_number: waId,
@@ -238,7 +238,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                     await nextAgent.save();
 
                     try {
-                        // YAHAN BHI URL CHANGE KIYA HAI
                         await axios.post('https://api.smartflo.tatateleservices.com/v1/clicktocall', {
                             agent_number: nextAgent.phone, destination_number: waId, caller_id: "07969690921"
                         }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
