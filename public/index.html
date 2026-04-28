@@ -109,7 +109,7 @@
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0">
                                     <th class="p-4">Doctor Details</th>
-                                    <th class="p-4">Coupon</th>
+                                    <th class="p-4">Coupon & Discount</th>
                                     <th class="p-4">PRO Number</th>
                                     <th class="p-4">Rating</th>
                                     <th class="p-4">Call Request Time</th>
@@ -278,7 +278,10 @@
                 return `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-semibold">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-400">${i.doctorPhone || '-'}</span></td>
-                    <td class="p-4 font-mono font-bold text-blue-600">${i.code}</td>
+                    <td class="p-4">
+                        <span class="font-mono font-bold text-blue-600">${i.code}</span><br>
+                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${i.discountPercentage}% DISCOUNT</span>
+                    </td>
                     <td class="p-4 font-bold text-slate-700">${i.proPhone || '-'}</td>
                     <td class="p-4 text-xs">${stars}</td>
                     <td class="p-4 text-[10px] text-slate-600 font-bold">${formatDate(i.requestCallAt)}</td>
@@ -309,9 +312,9 @@
             const data = await fetch('/api/admin/logs?export=true').then(r => r.json());
             const filtered = data.filter(i => i.audienceType === type);
             
-            let csv = "Name,Phone,Code,PRO,Req_Call_At,Call_Now_At,Status,Rating,Branch\n";
+            let csv = "Name,Phone,Code,Discount,PRO,Req_Call_At,Call_Now_At,Status,Rating,Branch\n";
             filtered.forEach(i => {
-                csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.proPhone || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
+                csv += `"${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
