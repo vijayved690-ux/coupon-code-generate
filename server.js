@@ -221,7 +221,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // --- 2. DOCTOR: "Sales Team Please Call Me" (ALERT PRO) ---
+        // --- 2. DOCTOR: "Sales Team Please Call Me" (ALERT PRO WITH DISCOUNT %) ---
         else if (btnLower === 'sales team please call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             
@@ -230,14 +230,15 @@ app.post('/api/wati/webhook', async (req, res) => {
                 lastCoupon.callStatus = 'Pending';
                 await lastCoupon.save();
 
+                // 🚨 PRO alert template trigger
                 const proParams = [
                     { name: "1", value: lastCoupon.targetName || "Doctor" },
-                    { name: "2", value: waId }
+                    { name: "2", value: `${lastCoupon.discountPercentage}%` } // Passing exact percentage
                 ];
                 await sendWatiMessage(lastCoupon.proPhone, 'pro_call_alert', proParams);
 
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                await logActivity('System Webhook', 'PRO NOTIFIED', `Alert sent to PRO ${lastCoupon.proPhone} for Doctor ${waId}`);
+                await logActivity('System Webhook', 'PRO NOTIFIED', `Alert sent to PRO ${lastCoupon.proPhone} (Doctor: ${waId}, Discount: ${lastCoupon.discountPercentage}%)`);
             } else {
                 await logActivity('System Webhook', 'PRO CALL FAILED', `No PRO Number found in database for Doctor ${waId}`);
             }
