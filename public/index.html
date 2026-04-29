@@ -442,7 +442,6 @@
                     csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
                 });
             } else {
-                // 🚨 PATIENT EXCEL FORMAT UPDATED WITH DISCOUNT
                 csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Coupon_Status,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
                     csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.branchRedeemed || ''}"\n`;
@@ -465,22 +464,41 @@
             link.click();
         }
 
+        // 🚨 NEW: SMART BACKGROUND QUEUE FOR 1000+ CSV UPLOADS
         function shoot() {
             const f = document.getElementById('csv').files[0];
             const btn = document.getElementById('btn-shoot');
             if(!f || !document.getElementById('exp').value) return alert("Upload CSV and select expiry date!");
             
-            btn.innerText = "SENDING..."; btn.disabled = true;
+            btn.innerText = "STARTING..."; btn.disabled = true;
             
             Papa.parse(f, { header: true, skipEmptyLines: true, complete: async (res) => {
                 const validTargets = res.data.filter(row => row.phone && row.phone.trim() !== '');
-                if(validTargets.length === 0) { alert("No valid phone numbers found in CSV!"); btn.innerText = "SEND"; btn.disabled = false; return; }
+                if(validTargets.length === 0) { 
+                    alert("No valid phone numbers found in CSV!"); 
+                    btn.innerText = "SEND"; btn.disabled = false; return; 
+                }
                 
                 try {
-                    await fetch('/api/campaign/shoot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ targetList: validTargets, discount: document.getElementById('disc').value, expiryDate: document.getElementById('exp').value, audienceType: document.getElementById('aud-type').value }) });
-                    alert('Campaign Sent Successfully!'); document.getElementById('csv').value = ''; loadAdminData(); 
-                } catch(e) { alert('Error sending campaign!'); } 
-                finally { btn.innerText = "SEND"; btn.disabled = false; }
+                    const req = await fetch('/api/campaign/shoot', { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify({ 
+                            targetList: validTargets, 
+                            discount: document.getElementById('disc').value, 
+                            expiryDate: document.getElementById('exp').value, 
+                            audienceType: document.getElementById('aud-type').value 
+                        }) 
+                    });
+                    const resData = await req.json();
+                    alert(resData.message || 'Campaign Started Safely in Background!'); 
+                    document.getElementById('csv').value = ''; 
+                    loadAdminData(); 
+                } catch(e) { 
+                    alert('Error starting campaign!'); 
+                } finally { 
+                    btn.innerText = "SEND"; btn.disabled = false; 
+                }
             }});
         }
 
