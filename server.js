@@ -45,6 +45,9 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
+// 🚨 SMART DELAY FUNCTION (To prevent WATI Blocking during 1000+ shoots)
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 async function generateUniqueCode() {
     let isUnique = false;
     let code;
@@ -75,6 +78,7 @@ async function sendWatiMessage(phone, templateName, params) {
         });
     } catch (err) {
         console.error(`WATI Template Error for ${phone}:`, err.response?.data || err.message);
+        throw err; // Forward error to track failed messages
     }
 }
 
@@ -132,18 +136,41 @@ app.get('/api/admin/activity-logs', async (req, res) => {
 });
 
 // -----------------------------------------
-// SHOOT CAMPAIGN API
+// SHOOT CAMPAIGN API (SMART BACKGROUND QUEUE)
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
         const { targetList, discount, expiryDate, audienceType } = req.body;
         const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB');
-        let validCount = 0;
+        
+        // 🚨 1. Respond immediately to free up the UI (Browser won't freeze)
+        res.json({ 
+            success: true, 
+            message: `Campaign for ${targetList.length} contacts started! They are being sent safely in the background.` 
+        });
 
-        for (let target of targetList) {
-            if (!target.phone || target.phone.toString().trim() === '') continue;
+        // 🚨 2. Start processing all messages in the background
+        processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate);
 
-            validCount++;
+    } catch (error) {
+        console.error("Shoot API Error:", error);
+    }
+});
+
+// 🚨 3. The Smart Background Engine
+async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate) {
+    let validCount = 0;
+    let successCount = 0;
+    let failCount = 0;
+
+    await logActivity('System', 'CAMPAIGN STARTED', `Initiating background campaign for ${targetList.length} ${audienceType}s (${discount}% OFF)`);
+
+    for (let target of targetList) {
+        if (!target.phone || target.phone.toString().trim() === '') continue;
+        validCount++;
+
+        try {
+            // Per-contact error handling prevents chain crash
             const code = await generateUniqueCode();
             let cleanProPhone = target.proNumber ? target.proNumber.toString().trim().replace(/\D/g, '') : null;
 
@@ -168,24 +195,30 @@ app.post('/api/campaign/shoot', async (req, res) => {
             };
 
             const templateName = templateMap[`${audienceType}_${discount}`];
-            if (!templateName) continue;
+            if (templateName) {
+                const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
+                const params = [
+                    { name: '1', value: safeName },
+                    { name: '2', value: code.toString() },
+                    { name: '3', value: formattedDate.toString() }
+                ];
 
-            const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
-            const params = [
-                { name: '1', value: safeName },
-                { name: '2', value: code.toString() },
-                { name: '3', value: formattedDate.toString() }
-            ];
+                await sendWatiMessage(target.phone, templateName, params);
+                successCount++;
+            }
 
-            await sendWatiMessage(target.phone, templateName, params);
+            // 🚨 Throttling: Wait 1 second before sending the next message to prevent WATI API block
+            await sleep(1000); 
+
+        } catch (error) {
+            console.error(`Failed to send to ${target.phone}:`, error);
+            failCount++;
         }
-
-        await logActivity('Admin Panel', 'CAMPAIGN FIRED', `Generated ${validCount} coupons for ${audienceType} (${discount}% OFF)`);
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
     }
-});
+
+    // Final Log when all messages are processed
+    await logActivity('System', 'CAMPAIGN COMPLETED', `Total Processed: ${validCount} | Success: ${successCount} | Failed: ${failCount}`);
+}
 
 // -----------------------------------------
 // WATI WEBHOOK (CALLING & INTELLIGENCE)
@@ -335,41 +368,40 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await patientCoupon.save();
             }
 
-            const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
-            if (nextAgent) {
-                nextAgent.lastCalledAt = new Date();
-                await nextAgent.save();
-
-                try {
-                    const tataAgentNumber = formatTataNumber(nextAgent.phone);
-                    const tataDestNumber = formatTataNumber(waId);
-
-                    await axios.post(TATA_URL, {
-                        agent_number: tataAgentNumber,
-                        destination_number: tataDestNumber,
-                        caller_id: CALLER_ID
-                    }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
-
-                    // Send WATI reply depending on what they clicked
-                    if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
-                        await sendWatiMessage(waId, 'patient_thankyou', []);
-                    } else {
-                        await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                    }
-                    
-                    if (patientCoupon) {
-                        patientCoupon.agentAssigned = nextAgent.name;
-                        patientCoupon.callStatus = 'Completed';
-                        await patientCoupon.save();
-                    }
-
-                    await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient [${rawBtn}] connected to Agent ${nextAgent.name}`);
-                } catch (tataError) {
-                    const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
-                    await logActivity('System Webhook', 'AGENT CALL FAILED', `API Error: ${errMsg}`);
-                }
+            if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
+                await sendWatiMessage(waId, 'patient_thankyou', []);
             } else {
-                 await logActivity('System Webhook', 'AGENT CALL FAILED', `Patient clicked [${rawBtn}] but NO Call Center Agents are currently online.`);
+                const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
+                if (nextAgent) {
+                    nextAgent.lastCalledAt = new Date();
+                    await nextAgent.save();
+
+                    try {
+                        const tataAgentNumber = formatTataNumber(nextAgent.phone);
+                        const tataDestNumber = formatTataNumber(waId);
+
+                        await axios.post(TATA_URL, {
+                            agent_number: tataAgentNumber,
+                            destination_number: tataDestNumber,
+                            caller_id: CALLER_ID
+                        }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
+
+                        await sendWatiMessage(waId, 'sales_call_ack_template', []);
+                        
+                        if (patientCoupon) {
+                            patientCoupon.agentAssigned = nextAgent.name;
+                            patientCoupon.callStatus = 'Completed';
+                            await patientCoupon.save();
+                        }
+
+                        await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient [${rawBtn}] connected to Agent ${nextAgent.name}`);
+                    } catch (tataError) {
+                        const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
+                        await logActivity('System Webhook', 'AGENT CALL FAILED', `API Error: ${errMsg}`);
+                    }
+                } else {
+                     await logActivity('System Webhook', 'AGENT CALL FAILED', `Patient clicked [${rawBtn}] but NO Call Center Agents are currently online.`);
+                }
             }
         }
         res.sendStatus(200);
