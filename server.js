@@ -310,7 +310,8 @@ app.post('/api/wati/webhook', async (req, res) => {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
             
-            await sendWatiMessage(waId, 'rate_doc_coupon', []);
+            // 🚨 UPDATE: Changed from 'rate_doc_coupon' to 'doc_rate_inti_star'
+            await sendWatiMessage(waId, 'doc_rate_inti_star', []);
             await logActivity('System Webhook', 'RATING TEMPLATE SENT', `Feedback requested from ${waId}`);
         }
         else if (btnLower.includes('★') || btnLower.includes('star')) {
@@ -350,12 +351,11 @@ app.post('/api/wati/webhook', async (req, res) => {
                 lastCoupon.buttonClicked = rawBtn; 
                 await lastCoupon.save();
 
-                // 🚨 EXACT 4 PARAMETERS AS PER YOUR NEW TEMPLATE 'dis_pro_latest_temp'
                 const proParams = [
                     { name: "1", value: lastCoupon.targetName || "Doctor" },
-                    { name: "2", value: `+${lastCoupon.doctorPhone}` }, // Phone Number directly visible
+                    { name: "2", value: `+${lastCoupon.doctorPhone}` }, 
                     { name: "3", value: `${lastCoupon.discountPercentage}%` },
-                    { name: "4", value: lastCoupon.code } // For the Dynamic URL Button
+                    { name: "4", value: lastCoupon.code } 
                 ];
                 
                 await sendWatiMessage(lastCoupon.proPhone, 'dis_pro_latest_temp', proParams);
@@ -397,7 +397,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
 
-        // 4. PATIENT CALLING (ROUND ROBIN) - PATIENT SIDE STILL USES TATA TELE
+        // 4. PATIENT CALLING (ROUND ROBIN)
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
