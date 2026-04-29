@@ -45,7 +45,7 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION (To prevent WATI Blocking during 1000+ shoots)
+// 🚨 SMART DELAY FUNCTION
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function generateUniqueCode() {
@@ -78,7 +78,7 @@ async function sendWatiMessage(phone, templateName, params) {
         });
     } catch (err) {
         console.error(`WATI Template Error for ${phone}:`, err.response?.data || err.message);
-        throw err; // Forward error to track failed messages
+        throw err; 
     }
 }
 
@@ -143,21 +143,17 @@ app.post('/api/campaign/shoot', async (req, res) => {
         const { targetList, discount, expiryDate, audienceType } = req.body;
         const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB');
         
-        // 🚨 Respond immediately to free up the UI (Browser won't freeze)
         res.json({ 
             success: true, 
             message: `Campaign for ${targetList.length} contacts started! They are being sent safely in the background.` 
         });
 
-        // 🚨 Start processing all messages in the background
         processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate);
-
     } catch (error) {
         console.error("Shoot API Error:", error);
     }
 });
 
-// 🚨 The Smart Background Engine
 async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate) {
     let validCount = 0;
     let successCount = 0;
@@ -205,17 +201,12 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 await sendWatiMessage(target.phone, templateName, params);
                 successCount++;
             }
-
-            // 🚨 Throttling: Wait 1 second before sending the next message to prevent WATI API block
             await sleep(1000); 
-
         } catch (error) {
             console.error(`Failed to send to ${target.phone}:`, error);
             failCount++;
         }
     }
-
-    // Final Log when all messages are processed
     await logActivity('System', 'CAMPAIGN COMPLETED', `Total Processed: ${validCount} | Success: ${successCount} | Failed: ${failCount}`);
 }
 
@@ -223,10 +214,12 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
 // WATI WEBHOOK (CALLING & INTELLIGENCE)
 // -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
+    // 🚨 MOST IMPORTANT FIX: Tell WATI "I got it" instantly so it doesn't loop/retry.
+    res.status(200).send("OK");
+
     try {
         const body = req.body;
         
-        // 🚨 Robust Extraction of WATI Button Text
         let rawBtn = body.text || body.buttonText || "";
         if (body.type === 'interactive') {
             if (body.buttonReply) rawBtn = body.buttonReply.title || rawBtn;
@@ -239,12 +232,13 @@ app.post('/api/wati/webhook', async (req, res) => {
         const btnLower = rawBtn.toLowerCase();
         const waId = body.waId || body.sender || "";
 
-        if (!waId || !rawBtn) return res.sendStatus(200);
+        if (!waId || !rawBtn) return;
+        
+        // Block redundant WATI status updates if they hit this endpoint
+        if (body.eventType && body.eventType !== 'message') return;
 
-        // Tracker in Webhook
         await logActivity('System Webhook', 'BUTTON CLICKED', `Number: ${waId} | Button: [${rawBtn}]`);
 
-        // 🚨 Smart Number Matching (Regex for last 10 digits)
         const phone10 = waId.replace(/\D/g, '').slice(-10);
         const couponRegex = new RegExp(phone10 + '$');
 
@@ -281,6 +275,13 @@ app.post('/api/wati/webhook', async (req, res) => {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             
             if (lastCoupon && lastCoupon.proPhone) {
+                // 🔒 DOCTOR ANTI-SPAM: 2 Minute Lock
+                const twoMinsAgo = new Date(Date.now() - 2 * 60000);
+                if (lastCoupon.callStatus === 'Pending' && lastCoupon.updatedAt > twoMinsAgo) {
+                    await logActivity('System Webhook', 'SPAM BLOCKED', `Ignored repeated doctor request [${rawBtn}].`);
+                    return; 
+                }
+
                 lastCoupon.requestCallAt = new Date();
                 lastCoupon.callStatus = 'Pending';
                 lastCoupon.buttonClicked = rawBtn; 
@@ -358,11 +359,18 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
 
-        // 5. PATIENT CALLING (ROUND ROBIN) - WITH STATUS TRACKING
+        // 5. PATIENT CALLING (ROUND ROBIN) - 🔒 ANTI-SPAM LOCKED!
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (patientCoupon) {
+                // 🚨 PATIENT ANTI-SPAM: 2 Minute Lock
+                const twoMinsAgo = new Date(Date.now() - 2 * 60000);
+                if (patientCoupon.callStatus === 'Completed' && patientCoupon.updatedAt > twoMinsAgo) {
+                    await logActivity('System Webhook', 'SPAM BLOCKED', `Ignored repeated patient request [${rawBtn}].`);
+                    return; 
+                }
+
                 patientCoupon.buttonClicked = rawBtn;
                 await patientCoupon.save();
             }
@@ -390,7 +398,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                     
                     if (patientCoupon) {
                         patientCoupon.agentAssigned = nextAgent.name;
-                        patientCoupon.callStatus = 'Completed'; // 📞 Call Done
+                        patientCoupon.callStatus = 'Completed'; 
                         await patientCoupon.save();
                     }
 
@@ -398,7 +406,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 } catch (tataError) {
                     if (patientCoupon) {
                         patientCoupon.agentAssigned = nextAgent.name;
-                        patientCoupon.callStatus = 'Failed'; // ❌ Call Failed
+                        patientCoupon.callStatus = 'Failed'; 
                         await patientCoupon.save();
                     }
                     const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
@@ -406,16 +414,14 @@ app.post('/api/wati/webhook', async (req, res) => {
                 }
             } else {
                  if (patientCoupon) {
-                     patientCoupon.callStatus = 'Pending'; // ⏳ No Agent Online
+                     patientCoupon.callStatus = 'Pending'; 
                      await patientCoupon.save();
                  }
                  await logActivity('System Webhook', 'AGENT CALL FAILED', `Patient clicked [${rawBtn}] but NO Agents Online.`);
             }
         }
-        res.sendStatus(200);
     } catch (error) {
-        console.error("Webhook Error:", error);
-        res.sendStatus(500);
+        console.error("Webhook Internal Logic Error:", error);
     }
 });
 
@@ -433,7 +439,6 @@ app.post('/api/coupon/validate', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
-// 🚨 UPDATE: Handling Patient Reg No on Redeem
 app.post('/api/coupon/redeem', async (req, res) => {
     try {
         const { code, branch, patientRegNo } = req.body;
@@ -443,7 +448,7 @@ app.post('/api/coupon/redeem', async (req, res) => {
         coupon.isUsed = true;
         coupon.redeemedAt = new Date();
         coupon.branchRedeemed = branch;
-        coupon.patientRegNo = patientRegNo; // Saving Reg No
+        coupon.patientRegNo = patientRegNo; 
         await coupon.save();
 
         await logActivity(branch || 'Reception Panel', 'COUPON REDEEMED', `Code ${code} redeemed (Reg No: ${patientRegNo || 'N/A'})`);
