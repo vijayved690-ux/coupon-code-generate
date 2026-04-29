@@ -118,7 +118,7 @@
 
                 <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-wrap gap-4 items-center border border-slate-200">
                     <h3 class="font-bold text-sm text-slate-800 w-full mb-1">🔍 Filter Database</h3>
-                    <input type="text" id="search-filter" placeholder="Search Name, Phone, Code, Agent..." class="border p-2 rounded text-sm w-64 outline-none focus:border-blue-500 shadow-inner">
+                    <input type="text" id="search-filter" placeholder="Search Name, Phone, Code, Reg No..." class="border p-2 rounded text-sm w-64 outline-none focus:border-blue-500 shadow-inner">
                     
                     <div class="flex items-center gap-2">
                         <input type="date" id="date-from" class="border p-2 rounded text-sm outline-none focus:border-blue-500 text-slate-600">
@@ -161,6 +161,8 @@
                                     <th class="p-4">Button Clicked</th>
                                     <th class="p-4">Call Tracking</th>
                                     <th class="p-4">Status</th>
+                                    <th class="p-4">Reg. No</th>
+                                    <th class="p-4">Branch Redeemed</th>
                                 </tr>
                             </thead>
                             <tbody id="doctor-logs"></tbody>
@@ -186,6 +188,7 @@
                                     <th class="p-4">Button Clicked</th>
                                     <th class="p-4">Call Status</th>
                                     <th class="p-4">Coupon Status</th>
+                                    <th class="p-4">Reg. No</th>
                                     <th class="p-4">Branch Redeemed</th>
                                 </tr>
                             </thead>
@@ -206,7 +209,7 @@
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden max-w-4xl mx-auto">
                     <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold">Recently Redeemed (Today)</h3></div>
                     <table class="w-full text-left text-sm">
-                        <thead><tr class="bg-white border-b text-slate-500"><th class="p-4">Code</th><th class="p-4">Name</th><th class="p-4">Branch</th><th class="p-4">Time</th></tr></thead>
+                        <thead><tr class="bg-white border-b text-slate-500"><th class="p-4">Code</th><th class="p-4">Name</th><th class="p-4">Branch</th><th class="p-4">Reg. No</th><th class="p-4">Time</th></tr></thead>
                         <tbody id="redeemed-list"></tbody>
                     </table>
                 </div>
@@ -346,7 +349,7 @@
             filteredLogs = globalLogs.filter(item => {
                 let matchSearch = true;
                 if (search) {
-                    const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''}`.toLowerCase();
+                    const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''} ${item.patientRegNo || ''}`.toLowerCase();
                     matchSearch = searchStr.includes(search);
                 }
                 
@@ -372,7 +375,6 @@
         }
 
         function renderTables() {
-            // Render Doctor Logs
             const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             document.getElementById('doctor-logs').innerHTML = docLogs.map(i => {
                 let stars = i.rating > 0 ? '⭐'.repeat(i.rating) : '<span class="text-slate-300 text-[10px]">None</span>';
@@ -398,10 +400,11 @@
                         <div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div>
                     </td>
                     <td class="p-4">${statusBadge}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
                 </tr>
             `}).join('');
 
-            // Render Patient Logs
             const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
             document.getElementById('patient-logs').innerHTML = patLogs.map(i => {
                 let callBadge = '';
@@ -422,6 +425,7 @@
                     <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
                     <td class="p-4">${callBadge}</td>
                     <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
                     <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
                 </tr>
             `}).join('');
@@ -432,7 +436,6 @@
             loadAdminData();
         }
 
-        // EXPORT STRICTLY BASED ON FILTERED DATA
         async function exportFilteredExcel(type) {
             const dataToExport = filteredLogs.filter(i => i.audienceType === type);
             if(dataToExport.length === 0) {
@@ -442,15 +445,14 @@
             
             let csv = "";
             if (type === 'Doctor') {
-                csv = "Created_Date,Name,Phone,Code,Discount,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Branch_Redeemed\n";
+                csv = "Created_Date,Name,Phone,Code,Discount,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Patient_Reg_No,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
-                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             } else {
-                // 🚨 Final Patient Excel Data Structure
-                csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Branch_Redeemed\n";
+                csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Patient_Reg_No,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
-                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.branchRedeemed || ''}"\n`;
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             }
 
@@ -521,13 +523,19 @@
             if(data.valid) {
                 currentValidCode = code;
                 let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
+                
                 resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-500 bg-green-50";
                 resBox.innerHTML = `
                     <p class="text-green-700 font-black text-xl mb-2">✅ VALID COUPON</p>
                     <p class="text-slate-800 font-bold mb-1">Name: <span class="font-normal">${data.name}</span></p>
                     <p class="text-slate-800 font-bold mb-6">Discount: <span class="font-normal text-blue-600">${data.discount}% OFF</span></p>
+                    
                     <label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label>
-                    <select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-6 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select>
+                    <select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-4 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select>
+                    
+                    <label class="text-xs font-black tracking-widest text-slate-600 block mb-2 mt-2">PATIENT REG. NO *</label>
+                    <input type="text" id="redeem-regno" placeholder="Enter Reg No" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-6 font-bold text-slate-700 focus:outline-none focus:border-blue-500">
+                    
                     <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-black tracking-wider py-4 rounded-xl shadow-lg hover:bg-green-700 transition">CONFIRM & REDEEM</button>
                 `;
             } else { 
@@ -538,17 +546,38 @@
 
         async function redeemCode() {
             const branch = document.getElementById('redeem-branch').value;
+            const regNo = document.getElementById('redeem-regno').value;
+            
             if(!branch) return alert("Please select a branch first!");
-            await fetch('/api/coupon/redeem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode, branch}) });
-            document.getElementById('verify-code').value = ''; document.getElementById('verify-result').classList.add('hidden');
-            loadUserData(); loadAdminData(); alert(`Success! Redeemed at ${branch}`);
+            if(!regNo || regNo.trim() === '') return alert("Please enter Patient Reg. No!");
+
+            await fetch('/api/coupon/redeem', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({
+                    code: currentValidCode, 
+                    branch: branch, 
+                    patientRegNo: regNo.trim()
+                }) 
+            });
+            
+            document.getElementById('verify-code').value = ''; 
+            document.getElementById('verify-result').classList.add('hidden');
+            loadUserData(); loadAdminData(); 
+            alert(`Success! Redeemed at ${branch} with Reg No: ${regNo}`);
         }
 
         async function loadUserData() {
             const res = await fetch('/api/user/redeemed-today');
             const logs = await res.json();
             document.getElementById('redeemed-list').innerHTML = logs.map(l => `
-                <tr class="border-b hover:bg-slate-50"><td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td><td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td><td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td><td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td></tr>
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td>
+                    <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
+                    <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
+                    <td class="p-4 font-bold text-slate-600">${l.patientRegNo || '-'}</td>
+                    <td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
+                </tr>
             `).join('');
         }
     </script>
