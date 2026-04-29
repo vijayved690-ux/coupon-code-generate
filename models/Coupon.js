@@ -15,7 +15,7 @@ const couponSchema = new mongoose.Schema({
     branchRedeemed: { type: String },
     rating: { type: Number, default: 0 },
     
-    // --- Advanced Tracking Fields (Must be here!) ---
+    // --- Advanced Tracking Fields (YAHAN HAIN NAYE COLUMNS) ---
     requestCallAt: { type: Date },      
     proCallClickedAt: { type: Date },   
     callStatus: { type: String, default: 'None' },
