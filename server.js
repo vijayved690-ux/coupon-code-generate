@@ -76,9 +76,10 @@ async function sendWatiMessage(phone, templateName, params) {
         }, {
             headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` }
         });
+        return true;
     } catch (err) {
-        console.error(`WATI Template Error for ${phone}:`, err.response?.data || err.message);
-        throw err; 
+        console.error(`WATI Template Error for ${phone} [${templateName}]:`, err.response?.data || err.message);
+        return false; 
     }
 }
 
@@ -198,8 +199,9 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                     { name: '3', value: formattedDate.toString() }
                 ];
 
-                await sendWatiMessage(target.phone, templateName, params);
-                successCount++;
+                const isSent = await sendWatiMessage(target.phone, templateName, params);
+                if (isSent) successCount++;
+                else failCount++;
             }
             await sleep(1000); 
         } catch (error) {
@@ -214,7 +216,7 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
 // WATI WEBHOOK (CALLING & INTELLIGENCE)
 // -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
-    // 🚨 MOST IMPORTANT FIX: Tell WATI "I got it" instantly so it doesn't loop/retry.
+    // 🚨 MOST IMPORTANT FIX: Instant 200 OK to WATI to prevent retry loops.
     res.status(200).send("OK");
 
     try {
@@ -234,7 +236,6 @@ app.post('/api/wati/webhook', async (req, res) => {
 
         if (!waId || !rawBtn) return;
         
-        // Block redundant WATI status updates if they hit this endpoint
         if (body.eventType && body.eventType !== 'message') return;
 
         await logActivity('System Webhook', 'BUTTON CLICKED', `Number: ${waId} | Button: [${rawBtn}]`);
@@ -287,10 +288,10 @@ app.post('/api/wati/webhook', async (req, res) => {
                 lastCoupon.buttonClicked = rawBtn; 
                 await lastCoupon.save();
 
+                // 🚨 EXACT 2 PARAMETERS AS PER YOUR TEMPLATE
                 const proParams = [
                     { name: "1", value: lastCoupon.targetName || "Doctor" },
-                    { name: "2", value: `${lastCoupon.discountPercentage}%` }, 
-                    { name: "3", value: `${lastCoupon.discountPercentage}%` }
+                    { name: "2", value: `${lastCoupon.discountPercentage}%` }
                 ];
                 
                 await sendWatiMessage(lastCoupon.proPhone, 'dis_pro_utility_temp', proParams);
@@ -359,12 +360,13 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
 
-        // 5. PATIENT CALLING (ROUND ROBIN) - 🔒 ANTI-SPAM LOCKED!
+        // 5. PATIENT CALLING (ROUND ROBIN) - 🚨 SEPARATED TATA AND WATI LOGIC
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
+            
             if (patientCoupon) {
-                // 🚨 PATIENT ANTI-SPAM: 2 Minute Lock
+                // 🔒 PATIENT ANTI-SPAM: 2 Minute Lock
                 const twoMinsAgo = new Date(Date.now() - 2 * 60000);
                 if (patientCoupon.callStatus === 'Completed' && patientCoupon.updatedAt > twoMinsAgo) {
                     await logActivity('System Webhook', 'SPAM BLOCKED', `Ignored repeated patient request [${rawBtn}].`);
@@ -384,25 +386,28 @@ app.post('/api/wati/webhook', async (req, res) => {
                     const tataAgentNumber = formatTataNumber(nextAgent.phone);
                     const tataDestNumber = formatTataNumber(waId);
 
+                    // 1. INITIATE TATA CALL FIRST
                     await axios.post(TATA_URL, {
                         agent_number: tataAgentNumber,
                         destination_number: tataDestNumber,
                         caller_id: CALLER_ID
                     }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
-                    if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
-                        await sendWatiMessage(waId, 'patient_thankyou', []);
-                    } else {
-                        await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                    }
-                    
+                    // 2. CALL TRIGGERED SUCCESSFULLY -> SAVE IN DATABASE IMMEDIATELY
                     if (patientCoupon) {
                         patientCoupon.agentAssigned = nextAgent.name;
                         patientCoupon.callStatus = 'Completed'; 
                         await patientCoupon.save();
                     }
-
                     await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient [${rawBtn}] connected to Agent ${nextAgent.name}`);
+
+                    // 3. SEND WATI MESSAGE SEPARATELY (If this fails, it won't crash the call status!)
+                    if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
+                        await sendWatiMessage(waId, 'patient_thankyou', []);
+                    } else {
+                        await sendWatiMessage(waId, 'sales_call_ack_template', []);
+                    }
+
                 } catch (tataError) {
                     if (patientCoupon) {
                         patientCoupon.agentAssigned = nextAgent.name;
@@ -410,7 +415,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                         await patientCoupon.save();
                     }
                     const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
-                    await logActivity('System Webhook', 'AGENT CALL FAILED', `API Error: ${errMsg}`);
+                    await logActivity('System Webhook', 'AGENT CALL FAILED', `Tata API Error: ${errMsg}`);
                 }
             } else {
                  if (patientCoupon) {
