@@ -15,12 +15,10 @@ const couponSchema = new mongoose.Schema({
     branchRedeemed: { type: String },
     rating: { type: Number, default: 0 },
     
-    // --- Advanced Tracking Fields ---
+    // --- Advanced Tracking Fields (Must be here!) ---
     requestCallAt: { type: Date },      
     proCallClickedAt: { type: Date },   
     callStatus: { type: String, default: 'None' },
-    
-    // --- New Fields for Agent & Button Tracking ---
     agentAssigned: { type: String },
     buttonClicked: { type: String }
 }, { timestamps: true });
