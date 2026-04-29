@@ -224,8 +224,8 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // 2. DOCTOR: "Sales Team Please Call Me"
-        else if (btnLower === 'sales team please call me') {
+        // 2. DOCTOR: "Connect with Doctor" or "Sales Team Please Call Me"
+        else if (btnLower === 'connect with doctor' || btnLower === 'sales team please call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             
             if (lastCoupon && lastCoupon.proPhone) {
@@ -246,8 +246,8 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // 3. PRO: "Connect with Doctor"
-        else if (btnLower === 'connect with doctor') {
+        // 3. PRO: "Call Now"
+        else if (btnLower === 'call now') {
             const pendingRequest = await Coupon.findOne({ proPhone: waId, callStatus: 'Pending' }).sort({ requestCallAt: -1 });
 
             if (pendingRequest) {
@@ -273,7 +273,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // 4. DOCTOR: "More Coupon"
+        // 4. DOCTOR/PATIENT: "More Coupon"
         else if (btnLower.includes('more coupon')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
             if (lastCoupon) {
