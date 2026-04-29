@@ -15,12 +15,15 @@ const couponSchema = new mongoose.Schema({
     branchRedeemed: { type: String },
     rating: { type: Number, default: 0 },
     
-    // --- Advanced Tracking Fields (YAHAN HAIN NAYE COLUMNS) ---
+    // --- Advanced Tracking Fields ---
     requestCallAt: { type: Date },      
     proCallClickedAt: { type: Date },   
     callStatus: { type: String, default: 'None' },
     agentAssigned: { type: String },
     buttonClicked: { type: String }
-}, { timestamps: true });
+}, { 
+    timestamps: true, 
+    strict: false // 🚨 Yeh safety lock lagaya hai taaki DB koi data block na kare
+});
 
 module.exports = mongoose.model('Coupon', couponSchema);
