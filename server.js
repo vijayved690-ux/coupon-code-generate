@@ -433,18 +433,20 @@ app.post('/api/coupon/validate', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
+// 🚨 UPDATE: Handling Patient Reg No on Redeem
 app.post('/api/coupon/redeem', async (req, res) => {
     try {
-        const { code, branch } = req.body;
+        const { code, branch, patientRegNo } = req.body;
         const coupon = await Coupon.findOne({ code });
         if (!coupon || coupon.isUsed) return res.status(400).json({ success: false });
 
         coupon.isUsed = true;
         coupon.redeemedAt = new Date();
         coupon.branchRedeemed = branch;
+        coupon.patientRegNo = patientRegNo; // Saving Reg No
         await coupon.save();
 
-        await logActivity(branch || 'Reception Panel', 'COUPON REDEEMED', `Code ${code} redeemed successfully`);
+        await logActivity(branch || 'Reception Panel', 'COUPON REDEEMED', `Code ${code} redeemed (Reg No: ${patientRegNo || 'N/A'})`);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
