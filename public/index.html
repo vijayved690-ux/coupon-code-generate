@@ -78,7 +78,7 @@
 
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="font-bold text-blue-800 text-sm">🚀 SHOOT CAMPAIGN</h2>
+                        <h2 class="font-bold text-blue-800 text-sm">🚀 SHOOT CAMPAIGN (1000+ Smart Queue)</h2>
                         <button onclick="downloadSample()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100">
                             📥 Download Sample CSV
                         </button>
@@ -130,7 +130,7 @@
                         <option value="">All Statuses</option>
                         <option value="Redeemed">✅ Redeemed</option>
                         <option value="Active">⏳ Active</option>
-                        <option value="PendingCall">📞 Pending PRO Call</option>
+                        <option value="PendingCall">📞 Pending Call</option>
                         <option value="CallCompleted">📞 Call Completed</option>
                     </select>
 
@@ -184,6 +184,7 @@
                                     <th class="p-4">Coupon & Discount</th>
                                     <th class="p-4">Agent Assigned</th>
                                     <th class="p-4">Button Clicked</th>
+                                    <th class="p-4">Call Status</th>
                                     <th class="p-4">Coupon Status</th>
                                     <th class="p-4">Branch Redeemed</th>
                                 </tr>
@@ -303,7 +304,6 @@
         }
 
         async function loadAdminData() {
-            // Load agents
             const agents = await fetch('/api/agents').then(r => r.json());
             document.getElementById('agents-list').innerHTML = agents.map(a => `
                 <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}">
@@ -312,10 +312,8 @@
                 </div>
             `).join('');
 
-            // Fetch Data
             globalLogs = await fetch('/api/admin/logs').then(r => r.json());
             
-            // Calculate Split Stats
             const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
             const patLogs = globalLogs.filter(l => l.audienceType === 'Patient');
             
@@ -328,7 +326,6 @@
             document.getElementById('stat-pat-sent').innerText = patLogs.length;
             document.getElementById('stat-pat-redeemed').innerText = patLogs.filter(l => l.isUsed).length;
 
-            // Apply filters to trigger render initially
             applyFilters();
         }
 
@@ -406,7 +403,14 @@
 
             // Render Patient Logs
             const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
-            document.getElementById('patient-logs').innerHTML = patLogs.map(i => `
+            document.getElementById('patient-logs').innerHTML = patLogs.map(i => {
+                let callBadge = '';
+                if(i.callStatus === 'Pending') callBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px]">⏳ PENDING</span>';
+                else if(i.callStatus === 'Completed') callBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px]">📞 CALL DONE</span>';
+                else if(i.callStatus === 'Failed') callBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold text-[10px]">❌ FAILED</span>';
+                else callBadge = '-';
+
+                return `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
                     <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
@@ -416,10 +420,11 @@
                     </td>
                     <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
                     <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
+                    <td class="p-4">${callBadge}</td>
                     <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
                     <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         async function toggleAgent(id, isOnline) {
@@ -442,9 +447,10 @@
                     csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
                 });
             } else {
-                csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Coupon_Status,Branch_Redeemed\n";
+                // 🚨 Final Patient Excel Data Structure
+                csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
-                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.branchRedeemed || ''}"\n`;
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.branchRedeemed || ''}"\n`;
                 });
             }
 
@@ -464,7 +470,6 @@
             link.click();
         }
 
-        // 🚨 NEW: SMART BACKGROUND QUEUE FOR 1000+ CSV UPLOADS
         function shoot() {
             const f = document.getElementById('csv').files[0];
             const btn = document.getElementById('btn-shoot');
@@ -491,6 +496,7 @@
                         }) 
                     });
                     const resData = await req.json();
+                    
                     alert(resData.message || 'Campaign Started Safely in Background!'); 
                     document.getElementById('csv').value = ''; 
                     loadAdminData(); 
