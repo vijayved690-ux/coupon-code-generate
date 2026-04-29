@@ -20,10 +20,13 @@ const couponSchema = new mongoose.Schema({
     proCallClickedAt: { type: Date },   
     callStatus: { type: String, default: 'None' },
     agentAssigned: { type: String },
-    buttonClicked: { type: String }
+    buttonClicked: { type: String },
+    
+    // 🚨 NEW: Patient Registration Number
+    patientRegNo: { type: String }
 }, { 
     timestamps: true, 
-    strict: false // 🚨 Yeh safety lock lagaya hai taaki DB koi data block na kare
+    strict: false 
 });
 
 module.exports = mongoose.model('Coupon', couponSchema);
