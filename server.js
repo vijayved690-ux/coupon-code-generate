@@ -192,13 +192,33 @@ app.post('/api/campaign/shoot', async (req, res) => {
 // -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
     try {
-        const { waId, buttonText, text } = req.body;
-        const rawBtn = (buttonText || text || "").trim();
+        const body = req.body;
+        
+        // 🚨 Robust Extraction of WATI Button Text
+        let rawBtn = body.text || body.buttonText || "";
+        if (body.type === 'interactive') {
+            if (body.buttonReply) rawBtn = body.buttonReply.title || rawBtn;
+            if (body.listReply) rawBtn = body.listReply.title || rawBtn;
+        } else if (body.type === 'button') {
+            rawBtn = body.button?.text || rawBtn;
+        }
+        
+        rawBtn = rawBtn.trim();
         const btnLower = rawBtn.toLowerCase();
+        const waId = body.waId || body.sender || "";
+
+        if (!waId || !rawBtn) return res.sendStatus(200);
+
+        // Tracker in Webhook
+        await logActivity('System Webhook', 'BUTTON CLICKED', `Number: ${waId} | Button: [${rawBtn}]`);
+
+        // 🚨 Smart Number Matching (Regex for last 10 digits)
+        const phone10 = waId.replace(/\D/g, '').slice(-10);
+        const couponRegex = new RegExp(phone10 + '$');
 
         // 1. DOCTOR: "Rate this initiative"
         if (btnLower === 'rate this initiative') {
-            const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
             
             await sendWatiMessage(waId, 'rate_doc_coupon', []);
@@ -213,7 +233,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             else if (btnLower.includes('1')) ratingValue = 1;
 
             if (ratingValue > 0) {
-                const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+                const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
                 if (lastCoupon) {
                     lastCoupon.rating = ratingValue;
                     lastCoupon.buttonClicked = rawBtn;
@@ -226,7 +246,7 @@ app.post('/api/wati/webhook', async (req, res) => {
 
         // 2. DOCTOR: "Connect with Doctor" or "Sales Team Please Call Me"
         else if (btnLower === 'connect with doctor' || btnLower === 'sales team please call me') {
-            const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             
             if (lastCoupon && lastCoupon.proPhone) {
                 lastCoupon.requestCallAt = new Date();
@@ -248,7 +268,7 @@ app.post('/api/wati/webhook', async (req, res) => {
 
         // 3. PRO: "Call Now"
         else if (btnLower === 'call now') {
-            const pendingRequest = await Coupon.findOne({ proPhone: waId, callStatus: 'Pending' }).sort({ requestCallAt: -1 });
+            const pendingRequest = await Coupon.findOne({ proPhone: { $regex: couponRegex }, callStatus: 'Pending' }).sort({ requestCallAt: -1 });
 
             if (pendingRequest) {
                 try {
@@ -275,7 +295,7 @@ app.post('/api/wati/webhook', async (req, res) => {
 
         // 4. DOCTOR/PATIENT: "More Coupon"
         else if (btnLower.includes('more coupon')) {
-            const lastCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) {
                 lastCoupon.buttonClicked = rawBtn;
                 await lastCoupon.save();
@@ -306,49 +326,50 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
 
-        // 5. PATIENT CALLING (ROUND ROBIN)
+        // 5. PATIENT CALLING (ROUND ROBIN) - FIXED: ALL triggers call to agent!
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             
-            const patientCoupon = await Coupon.findOne({ doctorPhone: waId }).sort({ createdAt: -1 });
+            const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (patientCoupon) {
                 patientCoupon.buttonClicked = rawBtn;
                 await patientCoupon.save();
             }
 
-            if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
-                await sendWatiMessage(waId, 'patient_thankyou', []);
-            } else {
-                const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
-                if (nextAgent) {
-                    nextAgent.lastCalledAt = new Date();
-                    await nextAgent.save();
+            const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
+            if (nextAgent) {
+                nextAgent.lastCalledAt = new Date();
+                await nextAgent.save();
 
-                    try {
-                        const tataAgentNumber = formatTataNumber(nextAgent.phone);
-                        const tataDestNumber = formatTataNumber(waId);
+                try {
+                    const tataAgentNumber = formatTataNumber(nextAgent.phone);
+                    const tataDestNumber = formatTataNumber(waId);
 
-                        await axios.post(TATA_URL, {
-                            agent_number: tataAgentNumber,
-                            destination_number: tataDestNumber,
-                            caller_id: CALLER_ID
-                        }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
+                    await axios.post(TATA_URL, {
+                        agent_number: tataAgentNumber,
+                        destination_number: tataDestNumber,
+                        caller_id: CALLER_ID
+                    }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
+                    // Send WATI reply depending on what they clicked
+                    if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
+                        await sendWatiMessage(waId, 'patient_thankyou', []);
+                    } else {
                         await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                        
-                        if (patientCoupon) {
-                            patientCoupon.agentAssigned = nextAgent.name;
-                            patientCoupon.callStatus = 'Completed';
-                            await patientCoupon.save();
-                        }
-
-                        await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient connected to Agent ${nextAgent.name}`);
-                    } catch (tataError) {
-                        const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
-                        await logActivity('System Webhook', 'AGENT CALL FAILED', `API Error: ${errMsg}`);
                     }
-                } else {
-                     await logActivity('System Webhook', 'AGENT CALL FAILED', `No Call Center Agents are currently online.`);
+                    
+                    if (patientCoupon) {
+                        patientCoupon.agentAssigned = nextAgent.name;
+                        patientCoupon.callStatus = 'Completed';
+                        await patientCoupon.save();
+                    }
+
+                    await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient [${rawBtn}] connected to Agent ${nextAgent.name}`);
+                } catch (tataError) {
+                    const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
+                    await logActivity('System Webhook', 'AGENT CALL FAILED', `API Error: ${errMsg}`);
                 }
+            } else {
+                 await logActivity('System Webhook', 'AGENT CALL FAILED', `Patient clicked [${rawBtn}] but NO Call Center Agents are currently online.`);
             }
         }
         res.sendStatus(200);
@@ -407,7 +428,6 @@ app.get('/api/admin/dashboard-stats', async (req, res) => {
 app.get('/api/admin/logs', async (req, res) => {
     const isExport = req.query.export === 'true';
     let query = Coupon.find().sort({ createdAt: -1 });
-    // Increased limit to 2000 so frontend filtering works effectively over large ranges
     if (!isExport) {
         query = query.limit(2000);
     }
