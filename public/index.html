@@ -181,7 +181,7 @@
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0">
                                     <th class="p-4">Patient Name</th>
                                     <th class="p-4">Phone</th>
-                                    <th class="p-4">Code</th>
+                                    <th class="p-4">Coupon & Discount</th>
                                     <th class="p-4">Agent Assigned</th>
                                     <th class="p-4">Button Clicked</th>
                                     <th class="p-4">Coupon Status</th>
@@ -410,7 +410,10 @@
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
                     <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
-                    <td class="p-4 font-mono font-bold text-blue-600 tracking-wider">${i.code}</td>
+                    <td class="p-4">
+                        <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
+                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${i.discountPercentage}% DISCOUNT</span>
+                    </td>
                     <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
                     <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
                     <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
@@ -439,9 +442,10 @@
                     csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.branchRedeemed || ''}"\n`;
                 });
             } else {
-                csv = "Created_Date,Patient_Name,Phone,Code,Agent_Assigned,Button_Clicked,Coupon_Status,Branch_Redeemed\n";
+                // 🚨 PATIENT EXCEL FORMAT UPDATED WITH DISCOUNT
+                csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Coupon_Status,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
-                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.branchRedeemed || ''}"\n`;
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.branchRedeemed || ''}"\n`;
                 });
             }
 
