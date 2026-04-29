@@ -45,7 +45,7 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION (To prevent WATI Blocking during 1000+ shoots)
+// 🚨 SMART DELAY FUNCTION
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function generateUniqueCode() {
@@ -217,7 +217,7 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
 }
 
 // -----------------------------------------
-// 🚨 NEW: SPECIFIC LINK CALL TRIGGER API 🚨
+// 🚨 PRO DIALER TRIGGER API (No TATA Tele involved)
 // -----------------------------------------
 app.get('/api/trigger-call/:code', async (req, res) => {
     try {
@@ -235,47 +235,41 @@ app.get('/api/trigger-call/:code', async (req, res) => {
             `);
         }
 
-        if (coupon.callStatus === 'Completed') {
-            return res.send(`
-                <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
-                    <h2 style="color: orange;">⚠️ Call Already Completed</h2>
-                    <p>This doctor has already been connected previously.</p>
-                </div>
-            `);
-        }
-
-        const tataAgent = formatTataNumber(coupon.proPhone);
-        const tataDest = formatTataNumber(coupon.doctorPhone);
-
-        // TRIGGER TATA CALL EXACTLY FOR THIS DOCTOR
-        await axios.post(TATA_URL, {
-            agent_number: tataAgent,
-            destination_number: tataDest,
-            caller_id: CALLER_ID
-        }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
-
-        // Update Status
+        const doctorNumber = coupon.doctorPhone; 
+        
+        // 1. UPDATE DB SO UI SHOWS "CALL COMPLETED"
         coupon.proCallClickedAt = new Date();
         coupon.callStatus = 'Completed';
         await coupon.save();
 
-        await logActivity('Link Trigger', 'CALL INITIATED', `PRO ${tataAgent} called Doctor ${tataDest} via unique URL`);
+        await logActivity('Link Trigger', 'PRO DIALER OPENED', `PRO clicked to call Doctor +${doctorNumber}`);
 
-        // Show Success UI to PRO
+        // 2. OPEN PHONE DIALER AUTOMATICALLY
         res.send(`
-            <div style="font-family: sans-serif; text-align: center; margin-top: 50px; background: #f0fdf4; padding: 30px; border-radius: 10px; max-width: 400px; margin-left: auto; margin-right: auto; border: 2px solid #22c55e;">
-                <h1 style="color: #16a34a; font-size: 24px;">📞 Call Connecting!</h1>
-                <p style="color: #333; font-size: 16px;">System is connecting you to <b>${coupon.targetName || 'Doctor'}</b>.</p>
-                <p style="color: #555; font-size: 14px;">Please check your phone, you will receive an incoming call shortly.</p>
-                <p style="font-size: 12px; color: gray; margin-top: 20px;">You can close this window now.</p>
-            </div>
+            <html lang="en">
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Opening Dialer...</title>
+            </head>
+            <body style="font-family: sans-serif; text-align: center; margin-top: 50px; background: #f0fdf4;">
+                <h1 style="color: #16a34a;">📞 Opening Dialer...</h1>
+                <p>Redirecting to call <b>+${doctorNumber}</b></p>
+                <p style="font-size: 14px; color: #555; margin-top: 20px;">
+                    If the dialer doesn't open automatically, <br><br>
+                    <a href="tel:+${doctorNumber}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Click Here to Call</a>
+                </p>
+                <script>
+                    window.location.href = "tel:+${doctorNumber}";
+                    setTimeout(() => { window.close(); }, 3000);
+                </script>
+            </body>
+            </html>
         `);
     } catch (error) {
         console.error("Link Call Error:", error);
         res.send(`
             <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
                 <h2 style="color: red;">❌ Error Connecting Call</h2>
-                <p>Tata Tele API failed or timed out. Please try again.</p>
             </div>
         `);
     }
@@ -285,7 +279,7 @@ app.get('/api/trigger-call/:code', async (req, res) => {
 // WATI WEBHOOK (CALLING & INTELLIGENCE)
 // -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
-    // 🚨 MOST IMPORTANT FIX: Instant 200 OK prevents WATI retry loops
+    // Instant 200 OK prevents WATI retry loops
     res.status(200).send("OK");
 
     try {
@@ -356,23 +350,21 @@ app.post('/api/wati/webhook', async (req, res) => {
                 lastCoupon.buttonClicked = rawBtn; 
                 await lastCoupon.save();
 
-                // 🚨 ADDED 3rd Parameter for Unique URL Tracking in WATI Template
+                // 🚨 EXACT 4 PARAMETERS AS PER YOUR NEW TEMPLATE 'dis_pro_latest_temp'
                 const proParams = [
                     { name: "1", value: lastCoupon.targetName || "Doctor" },
-                    { name: "2", value: `${lastCoupon.discountPercentage}%` },
-                    { name: "3", value: lastCoupon.code } // <--- This goes into the URL
+                    { name: "2", value: `+${lastCoupon.doctorPhone}` }, // Phone Number directly visible
+                    { name: "3", value: `${lastCoupon.discountPercentage}%` },
+                    { name: "4", value: lastCoupon.code } // For the Dynamic URL Button
                 ];
                 
-                await sendWatiMessage(lastCoupon.proPhone, 'dis_pro_utility_temp', proParams);
+                await sendWatiMessage(lastCoupon.proPhone, 'dis_pro_latest_temp', proParams);
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
                 await logActivity('System Webhook', 'PRO NOTIFIED', `Alert sent to PRO ${lastCoupon.proPhone}`);
             }
         }
 
-        // 🚨 NOTE: The old random FIFO "else if (btnLower === 'call now')" block has been completely REMOVED. 
-        // PRO will now click the unique URL generated in the template.
-
-        // 4. DOCTOR/PATIENT: "More Coupon"
+        // 3. DOCTOR/PATIENT: "More Coupon"
         else if (btnLower.includes('more coupon')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) {
@@ -405,7 +397,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
 
-        // 5. PATIENT CALLING (ROUND ROBIN)
+        // 4. PATIENT CALLING (ROUND ROBIN) - PATIENT SIDE STILL USES TATA TELE
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
