@@ -143,13 +143,13 @@ app.post('/api/campaign/shoot', async (req, res) => {
         const { targetList, discount, expiryDate, audienceType } = req.body;
         const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB');
         
-        // 🚨 1. Respond immediately to free up the UI (Browser won't freeze)
+        // 🚨 Respond immediately to free up the UI (Browser won't freeze)
         res.json({ 
             success: true, 
             message: `Campaign for ${targetList.length} contacts started! They are being sent safely in the background.` 
         });
 
-        // 🚨 2. Start processing all messages in the background
+        // 🚨 Start processing all messages in the background
         processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate);
 
     } catch (error) {
@@ -157,7 +157,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
     }
 });
 
-// 🚨 3. The Smart Background Engine
+// 🚨 The Smart Background Engine
 async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate) {
     let validCount = 0;
     let successCount = 0;
@@ -170,7 +170,6 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
         validCount++;
 
         try {
-            // Per-contact error handling prevents chain crash
             const code = await generateUniqueCode();
             let cleanProPhone = target.proNumber ? target.proNumber.toString().trim().replace(/\D/g, '') : null;
 
@@ -359,7 +358,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
 
-        // 5. PATIENT CALLING (ROUND ROBIN) - FIXED: ALL triggers call to agent!
+        // 5. PATIENT CALLING (ROUND ROBIN) - WITH STATUS TRACKING
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
@@ -368,40 +367,49 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await patientCoupon.save();
             }
 
-            if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
-                await sendWatiMessage(waId, 'patient_thankyou', []);
-            } else {
-                const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
-                if (nextAgent) {
-                    nextAgent.lastCalledAt = new Date();
-                    await nextAgent.save();
+            const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
+            if (nextAgent) {
+                nextAgent.lastCalledAt = new Date();
+                await nextAgent.save();
 
-                    try {
-                        const tataAgentNumber = formatTataNumber(nextAgent.phone);
-                        const tataDestNumber = formatTataNumber(waId);
+                try {
+                    const tataAgentNumber = formatTataNumber(nextAgent.phone);
+                    const tataDestNumber = formatTataNumber(waId);
 
-                        await axios.post(TATA_URL, {
-                            agent_number: tataAgentNumber,
-                            destination_number: tataDestNumber,
-                            caller_id: CALLER_ID
-                        }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
+                    await axios.post(TATA_URL, {
+                        agent_number: tataAgentNumber,
+                        destination_number: tataDestNumber,
+                        caller_id: CALLER_ID
+                    }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
+                    if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
+                        await sendWatiMessage(waId, 'patient_thankyou', []);
+                    } else {
                         await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                        
-                        if (patientCoupon) {
-                            patientCoupon.agentAssigned = nextAgent.name;
-                            patientCoupon.callStatus = 'Completed';
-                            await patientCoupon.save();
-                        }
-
-                        await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient [${rawBtn}] connected to Agent ${nextAgent.name}`);
-                    } catch (tataError) {
-                        const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
-                        await logActivity('System Webhook', 'AGENT CALL FAILED', `API Error: ${errMsg}`);
                     }
-                } else {
-                     await logActivity('System Webhook', 'AGENT CALL FAILED', `Patient clicked [${rawBtn}] but NO Call Center Agents are currently online.`);
+                    
+                    if (patientCoupon) {
+                        patientCoupon.agentAssigned = nextAgent.name;
+                        patientCoupon.callStatus = 'Completed'; // 📞 Call Done
+                        await patientCoupon.save();
+                    }
+
+                    await logActivity('System Webhook', 'AGENT CALL SUCCESS', `Patient [${rawBtn}] connected to Agent ${nextAgent.name}`);
+                } catch (tataError) {
+                    if (patientCoupon) {
+                        patientCoupon.agentAssigned = nextAgent.name;
+                        patientCoupon.callStatus = 'Failed'; // ❌ Call Failed
+                        await patientCoupon.save();
+                    }
+                    const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
+                    await logActivity('System Webhook', 'AGENT CALL FAILED', `API Error: ${errMsg}`);
                 }
+            } else {
+                 if (patientCoupon) {
+                     patientCoupon.callStatus = 'Pending'; // ⏳ No Agent Online
+                     await patientCoupon.save();
+                 }
+                 await logActivity('System Webhook', 'AGENT CALL FAILED', `Patient clicked [${rawBtn}] but NO Agents Online.`);
             }
         }
         res.sendStatus(200);
