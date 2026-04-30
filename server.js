@@ -185,7 +185,8 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon',
                 'Doctor_20': 'temp_20_doctor_coupon',
-                'Doctor_30': 'dis_temp_doctor_30', 
+                // 🚨 UPDATE 1: Naya Gujarati Template yahan lag gaya
+                'Doctor_30': 'doc_dis_30_temp_guj', 
                 'Patient_10': 'patient_10_dis_temp',
                 'Patient_20': 'patient_20_dis_temp',
                 'Patient_30': 'patient_30_temp_new_dis'
@@ -305,12 +306,11 @@ app.post('/api/wati/webhook', async (req, res) => {
         const phone10 = waId.replace(/\D/g, '').slice(-10);
         const couponRegex = new RegExp(phone10 + '$');
 
-        // 1. DOCTOR: "Rate this initiative"
-        if (btnLower === 'rate this initiative') {
+        // 🚨 UPDATE 2: DOCTOR: "Rate this initiative" (English & Gujarati)
+        if (btnLower === 'rate this initiative' || btnLower === 'આ પહેલને રેટ કરો') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
             
-            // 🚨 UPDATE: Changed from 'rate_doc_coupon' to 'doc_rate_inti_star'
             await sendWatiMessage(waId, 'doc_rate_inti_star', []);
             await logActivity('System Webhook', 'RATING TEMPLATE SENT', `Feedback requested from ${waId}`);
         }
@@ -334,8 +334,8 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // 2. DOCTOR: "Connect with Doctor" or "Sales Team Please Call Me"
-        else if (btnLower === 'connect with doctor' || btnLower === 'sales team please call me') {
+        // 🚨 UPDATE 3: DOCTOR: "Sales Team Please Call Me" (English & Gujarati)
+        else if (btnLower === 'connect with doctor' || btnLower === 'sales team please call me' || btnLower === 'સેલ્સ ટીમ, મને કોલ કરો') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             
             if (lastCoupon && lastCoupon.proPhone) {
@@ -364,8 +364,8 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // 3. DOCTOR/PATIENT: "More Coupon"
-        else if (btnLower.includes('more coupon')) {
+        // 🚨 UPDATE 4: DOCTOR/PATIENT: "More Coupon" (English & Gujarati)
+        else if (btnLower.includes('more coupon') || btnLower === 'મને વધુ કૂપન જોઈએ છે' || btnLower.includes('વધુ કૂપન')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) {
                 lastCoupon.buttonClicked = rawBtn;
@@ -397,7 +397,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
 
-        // 4. PATIENT CALLING (ROUND ROBIN)
+        // 5. PATIENT CALLING (ROUND ROBIN)
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
             
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
