@@ -32,7 +32,8 @@
             
             <div id="admin-dashboard" class="hidden">
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <!-- 🚨 UPDATE: Grid changed to lg:grid-cols-4 for Dental Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div class="flex gap-4">
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 w-full">
                             <p class="text-[10px] font-bold text-slate-400">TOTAL SENT</p>
@@ -49,8 +50,19 @@
                             <h2 id="stat-doc-sent" class="text-2xl font-bold text-purple-800">0</h2>
                         </div>
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-teal-500 w-full">
-                            <p class="text-[10px] font-bold text-slate-400">DOCTOR REDEEMED</p>
+                            <p class="text-[10px] font-bold text-slate-400">DOC REDEEMED</p>
                             <h2 id="stat-doc-redeemed" class="text-2xl font-bold text-teal-700">0</h2>
+                        </div>
+                    </div>
+                    <!-- 🚨 UPDATE: Dental Stats Block -->
+                    <div class="flex gap-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">DENTAL SENT</p>
+                            <h2 id="stat-den-sent" class="text-2xl font-bold text-indigo-800">0</h2>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-cyan-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">DENTAL REDEEMED</p>
+                            <h2 id="stat-den-redeemed" class="text-2xl font-bold text-cyan-700">0</h2>
                         </div>
                     </div>
                     <div class="flex gap-4">
@@ -59,7 +71,7 @@
                             <h2 id="stat-pat-sent" class="text-2xl font-bold text-orange-800">0</h2>
                         </div>
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-500 w-full">
-                            <p class="text-[10px] font-bold text-slate-400">PATIENT REDEEMED</p>
+                            <p class="text-[10px] font-bold text-slate-400">PAT REDEEMED</p>
                             <h2 id="stat-pat-redeemed" class="text-2xl font-bold text-rose-700">0</h2>
                         </div>
                     </div>
@@ -73,24 +85,35 @@
 
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
                     <h2 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wider">🎧 Call Center Agents (Online Status)</h2>
-                    <div id="agents-list" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
+                    <div id="agents-list" class="grid grid-cols-2 md:grid-cols-6 gap-4"></div>
                 </div>
 
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="font-bold text-blue-800 text-sm">🚀 SHOOT CAMPAIGN (1000+ Smart Queue)</h2>
                         <button onclick="downloadSample()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100">
-                            📥 Download Sample CSV
+                            📥 Download Demo CSV
                         </button>
                     </div>
                     <div class="flex flex-wrap gap-4 items-end">
                         <div>
                             <label class="text-xs font-bold text-slate-500 block mb-1">AUDIENCE</label>
-                            <select id="aud-type" class="w-full border p-2 rounded text-sm"><option value="Doctor">Doctors</option><option value="Patient">Patients</option></select>
+                            <select id="aud-type" class="w-full border p-2 rounded text-sm">
+                                <option value="Doctor">Doctors</option>
+                                <option value="Patient">Patients</option>
+                                <!-- 🚨 UPDATE: Dental Audience Option -->
+                                <option value="Dental">Dental (CBCT)</option>
+                            </select>
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">DISCOUNT %</label>
-                            <select id="disc" class="w-full border p-2 rounded text-sm"><option value="30">30%</option><option value="20">20%</option><option value="10">10%</option></select>
+                            <label class="text-xs font-bold text-slate-500 block mb-1">DISCOUNT / SERVICE</label>
+                            <select id="disc" class="w-full border p-2 rounded text-sm">
+                                <option value="30">30%</option>
+                                <option value="20">20%</option>
+                                <option value="10">10%</option>
+                                <!-- 🚨 UPDATE: CBCT Selection -->
+                                <option value="CBCT">CBCT</option>
+                            </select>
                         </div>
                         <div>
                             <label class="text-xs font-bold text-slate-500 block mb-1">EXPIRY</label>
@@ -138,31 +161,34 @@
                     <button onclick="clearFilters()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded shadow-sm text-xs font-bold tracking-wider hover:bg-slate-300 transition">CLEAR</button>
                 </div>
 
-                <div class="flex gap-4 mb-4 border-b pb-4 mt-4">
-                    <button onclick="switchTab('doctor')" id="tab-doc" class="px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md">🩺 DOCTOR MANAGEMENT</button>
-                    <button onclick="switchTab('patient')" id="tab-pat" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition">👥 PATIENT MANAGEMENT</button>
+                <!-- 🚨 UPDATE: Added Dental Tab -->
+                <div class="flex gap-4 mb-4 border-b pb-4 mt-4 overflow-x-auto">
+                    <button onclick="switchTab('doctor')" id="tab-doc" class="px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap">🩺 DOCTOR</button>
+                    <button onclick="switchTab('patient')" id="tab-pat" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">👥 PATIENT</button>
+                    <button onclick="switchTab('dental')" id="tab-den" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">🦷 DENTAL (CBCT)</button>
                 </div>
 
+                <!-- DOCTOR TABLE -->
                 <div id="doctor-section" class="bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-blue-50">
                         <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Filtered)</h3>
                         <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
-                            <span>📊</span> EXPORT FILTERED DATA
+                            <span>📊</span> EXPORT DOCTORS
                         </button>
                     </div>
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0">
-                                    <th class="p-4">Doctor Details</th>
-                                    <th class="p-4">Coupon & Discount</th>
-                                    <th class="p-4">PRO Number</th>
+                                    <th class="p-4">Details</th>
+                                    <th class="p-4">Coupon</th>
+                                    <th class="p-4">PRO Info</th>
                                     <th class="p-4">Rating</th>
-                                    <th class="p-4">Button Clicked</th>
+                                    <th class="p-4">Action</th>
                                     <th class="p-4">Call Tracking</th>
                                     <th class="p-4">Status</th>
                                     <th class="p-4">Reg. No</th>
-                                    <th class="p-4">Branch Redeemed</th>
+                                    <th class="p-4">Branch</th>
                                 </tr>
                             </thead>
                             <tbody id="doctor-logs"></tbody>
@@ -170,34 +196,65 @@
                     </div>
                 </div>
 
-                <div id="patient-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
-                    <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                        <h3 class="font-bold text-slate-800 text-sm">Patient Database (Filtered)</h3>
-                        <button onclick="exportFilteredExcel('Patient')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
-                            <span>📊</span> EXPORT FILTERED DATA
+                <!-- 🚨 UPDATE: DENTAL TABLE -->
+                <div id="dental-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
+                    <div class="p-4 border-b flex justify-between items-center bg-indigo-50">
+                        <h3 class="font-bold text-indigo-800 text-sm">Dental CBCT Database (Filtered)</h3>
+                        <button onclick="exportFilteredExcel('Dental')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
+                            <span>📊</span> EXPORT DENTISTS
                         </button>
                     </div>
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0">
-                                    <th class="p-4">Patient Name</th>
-                                    <th class="p-4">Phone</th>
-                                    <th class="p-4">Coupon & Discount</th>
-                                    <th class="p-4">Agent Assigned</th>
-                                    <th class="p-4">Button Clicked</th>
-                                    <th class="p-4">Call Status</th>
-                                    <th class="p-4">Coupon Status</th>
+                                    <th class="p-4">Details</th>
+                                    <th class="p-4">Service</th>
+                                    <th class="p-4">PRO Info</th>
+                                    <th class="p-4">Rating</th>
+                                    <th class="p-4">Action</th>
+                                    <th class="p-4">Call Tracking</th>
+                                    <th class="p-4">Status</th>
                                     <th class="p-4">Reg. No</th>
-                                    <th class="p-4">Branch Redeemed</th>
+                                    <th class="p-4">Branch</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dental-logs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PATIENT TABLE -->
+                <div id="patient-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
+                    <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                        <h3 class="font-bold text-slate-800 text-sm">Patient Database (Filtered)</h3>
+                        <button onclick="exportFilteredExcel('Patient')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
+                            <span>📊</span> EXPORT PATIENTS
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                        <table class="w-full text-left text-xs whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0">
+                                    <th class="p-4">Name</th>
+                                    <th class="p-4">Phone</th>
+                                    <th class="p-4">Coupon</th>
+                                    <th class="p-4">Agent</th>
+                                    <th class="p-4">Action</th>
+                                    <th class="p-4">Call Status</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4">Reg. No</th>
+                                    <th class="p-4">Branch</th>
                                 </tr>
                             </thead>
                             <tbody id="patient-logs"></tbody>
                         </table>
                     </div>
                 </div>
+
             </div>
 
+            <!-- RECEPTION / USER VIEW -->
             <div id="user-dashboard" class="hidden">
                 <div class="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center max-w-lg mx-auto mb-8">
                     <h2 class="text-2xl font-black text-slate-800 mb-6">REDEEM COUPON</h2>
@@ -267,16 +324,26 @@
         }
 
         function switchTab(type) {
+            // Reset all sections
+            document.getElementById('doctor-section').classList.add('hidden');
+            document.getElementById('patient-section').classList.add('hidden');
+            document.getElementById('dental-section').classList.add('hidden');
+            
+            // Reset all buttons
+            const defaultClass = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap";
+            document.getElementById('tab-doc').className = defaultClass;
+            document.getElementById('tab-pat').className = defaultClass;
+            document.getElementById('tab-den').className = defaultClass;
+
             if(type === 'doctor') {
                 document.getElementById('doctor-section').classList.remove('hidden');
-                document.getElementById('patient-section').classList.add('hidden');
-                document.getElementById('tab-doc').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md";
-                document.getElementById('tab-pat').className = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition";
+                document.getElementById('tab-doc').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap";
+            } else if (type === 'dental') {
+                document.getElementById('dental-section').classList.remove('hidden');
+                document.getElementById('tab-den').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap";
             } else {
-                document.getElementById('doctor-section').classList.add('hidden');
                 document.getElementById('patient-section').classList.remove('hidden');
-                document.getElementById('tab-pat').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md";
-                document.getElementById('tab-doc').className = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition";
+                document.getElementById('tab-pat').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap";
             }
         }
 
@@ -319,6 +386,7 @@
             
             const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
             const patLogs = globalLogs.filter(l => l.audienceType === 'Patient');
+            const denLogs = globalLogs.filter(l => l.audienceType === 'Dental'); // 🚨 Dental Logs
             
             document.getElementById('stat-total-sent').innerText = globalLogs.length;
             document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
@@ -328,6 +396,9 @@
             
             document.getElementById('stat-pat-sent').innerText = patLogs.length;
             document.getElementById('stat-pat-redeemed').innerText = patLogs.filter(l => l.isUsed).length;
+
+            document.getElementById('stat-den-sent').innerText = denLogs.length;
+            document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
 
             applyFilters();
         }
@@ -374,23 +445,24 @@
             renderTables();
         }
 
-        function renderTables() {
-            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
-            document.getElementById('doctor-logs').innerHTML = docLogs.map(i => {
+        function getTableRowsHTML(logsArray) {
+            return logsArray.map(i => {
                 let stars = i.rating > 0 ? '⭐'.repeat(i.rating) : '<span class="text-slate-300 text-[10px]">None</span>';
                 let statusBadge = '';
                 if(i.isUsed) statusBadge += '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-0.5 rounded block mb-1">✅ REDEEMED</span>';
                 if(i.callStatus === 'Pending') statusBadge += '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] block">⏳ PENDING CALL</span>';
                 else if(i.callStatus === 'Completed') statusBadge += '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] block">📞 CALL DONE</span>';
-                
                 if(!statusBadge) statusBadge = '-';
+
+                // Handle CBCT Display perfectly
+                const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
 
                 return `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td>
                     <td class="p-4">
                         <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
-                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${i.discountPercentage}% DISCOUNT</span>
+                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
                     </td>
                     <td class="p-4 font-bold text-slate-700">${i.proPhone || '-'}</td>
                     <td class="p-4 text-xs">${stars}</td>
@@ -404,7 +476,18 @@
                     <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
                 </tr>
             `}).join('');
+        }
 
+        function renderTables() {
+            // Render Doctor
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
+            document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(docLogs);
+
+            // Render Dental
+            const denLogs = filteredLogs.filter(l => l.audienceType === 'Dental');
+            document.getElementById('dental-logs').innerHTML = getTableRowsHTML(denLogs);
+
+            // Render Patient (Has different columns so kept separate)
             const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
             document.getElementById('patient-logs').innerHTML = patLogs.map(i => {
                 let callBadge = '';
@@ -444,10 +527,11 @@
             }
             
             let csv = "";
-            if (type === 'Doctor') {
-                csv = "Created_Date,Name,Phone,Code,Discount,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Patient_Reg_No,Branch_Redeemed\n";
+            if (type === 'Doctor' || type === 'Dental') {
+                csv = "Created_Date,Name,Phone,Code,Service/Discount,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Patient_Reg_No,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
-                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+                    const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             } else {
                 csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Patient_Reg_No,Branch_Redeemed\n";
@@ -464,7 +548,8 @@
         }
 
         function downloadSample() {
-            const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217";
+            // Added Dental example in the demo CSV
+            const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217\nDr. Sneha Dental Clinic,918888888888,Ahmedabad,917043001130";
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
@@ -524,11 +609,13 @@
                 currentValidCode = code;
                 let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
                 
+                const displayDiscount = data.discount === 'CBCT' ? 'CBCT Special' : `${data.discount}% OFF`;
+
                 resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-500 bg-green-50";
                 resBox.innerHTML = `
                     <p class="text-green-700 font-black text-xl mb-2">✅ VALID COUPON</p>
                     <p class="text-slate-800 font-bold mb-1">Name: <span class="font-normal">${data.name}</span></p>
-                    <p class="text-slate-800 font-bold mb-6">Discount: <span class="font-normal text-blue-600">${data.discount}% OFF</span></p>
+                    <p class="text-slate-800 font-bold mb-6">Service/Discount: <span class="font-normal text-blue-600">${displayDiscount}</span></p>
                     
                     <label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label>
                     <select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-4 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select>
