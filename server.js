@@ -559,7 +559,7 @@ app.get('/api/admin/logs', async (req, res) => {
     const isExport = req.query.export === 'true';
     let query = Coupon.find().sort({ createdAt: -1 });
     if (!isExport) {
-        query = query.limit(2000);
+        query = query.limit(10000); // 👈 2000 ko hatakar 10000 kar diya
     }
     const logs = await query.exec();
     res.json(logs);
