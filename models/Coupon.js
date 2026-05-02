@@ -2,7 +2,10 @@ const mongoose = require('mongoose');
 
 const couponSchema = new mongoose.Schema({
     code: { type: String, required: true, unique: true },
-    discountPercentage: { type: Number, required: true },
+    
+    // 🚨 UPDATE: type: Number se hata kar type: String kar diya hai
+    discountPercentage: { type: String, required: true }, 
+    
     targetName: { type: String },
     doctorPhone: { type: String },
     proPhone: { type: String },
