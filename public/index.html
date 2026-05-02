@@ -32,7 +32,6 @@
             
             <div id="admin-dashboard" class="hidden">
                 
-                <!-- 🚨 UPDATE: Grid changed to lg:grid-cols-4 for Dental Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div class="flex gap-4">
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 w-full">
@@ -54,7 +53,6 @@
                             <h2 id="stat-doc-redeemed" class="text-2xl font-bold text-teal-700">0</h2>
                         </div>
                     </div>
-                    <!-- 🚨 UPDATE: Dental Stats Block -->
                     <div class="flex gap-4">
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500 w-full">
                             <p class="text-[10px] font-bold text-slate-400">DENTAL SENT</p>
@@ -101,7 +99,6 @@
                             <select id="aud-type" class="w-full border p-2 rounded text-sm">
                                 <option value="Doctor">Doctors</option>
                                 <option value="Patient">Patients</option>
-                                <!-- 🚨 UPDATE: Dental Audience Option -->
                                 <option value="Dental">Dental (CBCT)</option>
                             </select>
                         </div>
@@ -111,7 +108,6 @@
                                 <option value="30">30%</option>
                                 <option value="20">20%</option>
                                 <option value="10">10%</option>
-                                <!-- 🚨 UPDATE: CBCT Selection -->
                                 <option value="CBCT">CBCT</option>
                             </select>
                         </div>
@@ -161,7 +157,6 @@
                     <button onclick="clearFilters()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded shadow-sm text-xs font-bold tracking-wider hover:bg-slate-300 transition">CLEAR</button>
                 </div>
 
-                <!-- 🚨 UPDATE: Added Dental Tab -->
                 <div class="flex gap-4 mb-4 border-b pb-4 mt-4 overflow-x-auto">
                     <button onclick="switchTab('doctor')" id="tab-doc" class="px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap">🩺 DOCTOR</button>
                     <button onclick="switchTab('patient')" id="tab-pat" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">👥 PATIENT</button>
@@ -196,7 +191,7 @@
                     </div>
                 </div>
 
-                <!-- 🚨 UPDATE: DENTAL TABLE -->
+                <!-- DENTAL TABLE -->
                 <div id="dental-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-indigo-50">
                         <h3 class="font-bold text-indigo-800 text-sm">Dental CBCT Database (Filtered)</h3>
@@ -324,12 +319,10 @@
         }
 
         function switchTab(type) {
-            // Reset all sections
             document.getElementById('doctor-section').classList.add('hidden');
             document.getElementById('patient-section').classList.add('hidden');
             document.getElementById('dental-section').classList.add('hidden');
             
-            // Reset all buttons
             const defaultClass = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap";
             document.getElementById('tab-doc').className = defaultClass;
             document.getElementById('tab-pat').className = defaultClass;
@@ -386,7 +379,7 @@
             
             const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
             const patLogs = globalLogs.filter(l => l.audienceType === 'Patient');
-            const denLogs = globalLogs.filter(l => l.audienceType === 'Dental'); // 🚨 Dental Logs
+            const denLogs = globalLogs.filter(l => l.audienceType === 'Dental'); 
             
             document.getElementById('stat-total-sent').innerText = globalLogs.length;
             document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
@@ -454,7 +447,7 @@
                 else if(i.callStatus === 'Completed') statusBadge += '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] block">📞 CALL DONE</span>';
                 if(!statusBadge) statusBadge = '-';
 
-                // Handle CBCT Display perfectly
+                // 🚨 UPDATE: Fixed 'CBCT%' display to 'CBCT SERVICE'
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
 
                 return `
@@ -487,7 +480,7 @@
             const denLogs = filteredLogs.filter(l => l.audienceType === 'Dental');
             document.getElementById('dental-logs').innerHTML = getTableRowsHTML(denLogs);
 
-            // Render Patient (Has different columns so kept separate)
+            // Render Patient
             const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
             document.getElementById('patient-logs').innerHTML = patLogs.map(i => {
                 let callBadge = '';
@@ -496,13 +489,16 @@
                 else if(i.callStatus === 'Failed') callBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold text-[10px]">❌ FAILED</span>';
                 else callBadge = '-';
 
+                // 🚨 UPDATE: Fixed 'CBCT%' display for Patient table too
+                const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
+
                 return `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
                     <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
                     <td class="p-4">
                         <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
-                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${i.discountPercentage}% DISCOUNT</span>
+                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
                     </td>
                     <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
                     <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
@@ -536,7 +532,9 @@
             } else {
                 csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Patient_Reg_No,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
-                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${i.discountPercentage}%","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+                    // 🚨 UPDATE: Fixed Patient export to show CBCT instead of CBCT%
+                    const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             }
 
@@ -548,7 +546,6 @@
         }
 
         function downloadSample() {
-            // Added Dental example in the demo CSV
             const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217\nDr. Sneha Dental Clinic,918888888888,Ahmedabad,917043001130";
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
