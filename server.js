@@ -24,7 +24,9 @@ mongoose.connect(process.env.MONGODB_URI)
             { name: 'Mital', phone: '919558591212' },
             { name: 'Aditi', phone: '918488931212' },
             { name: 'Jay', phone: '919274682553' },
-            { name: 'Khyati', phone: '917490029085' }
+            { name: 'Khyati', phone: '917490029085' },
+            // 🚨 UPDATE: Hardik Parikh added for Dental PRO
+            { name: 'Hardik Parikh', phone: '917043001130' } 
         ];
         
         for (let person of team) {
@@ -185,14 +187,16 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon',
                 'Doctor_20': 'temp_20_doctor_coupon',
-                // 🚨 UPDATE 1: Naya Gujarati Template yahan lag gaya
                 'Doctor_30': 'doc_dis_30_temp_guj', 
                 'Patient_10': 'patient_10_dis_temp',
                 'Patient_20': 'patient_20_dis_temp',
-                'Patient_30': 'patient_30_temp_new_dis'
+                'Patient_30': 'patient_30_temp_new_dis',
+                // 🚨 UPDATE: MAIN DENTAL CAMPAIGN TEMPLATE
+                'Dental_CBCT': 'dental_temp_dis_machine' 
             };
 
-            const templateName = templateMap[`${audienceType}_${discount}`];
+            const templateName = templateMap[`${audienceType}_${discount}`] || (audienceType === 'Dental' ? 'dental_temp_dis_machine' : null);
+            
             if (templateName) {
                 const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
                 const params = [
@@ -224,7 +228,6 @@ app.get('/api/trigger-call/:code', async (req, res) => {
     try {
         const { code } = req.params;
         
-        // Find the specific coupon using the unique link code
         const coupon = await Coupon.findOne({ code: code });
 
         if (!coupon) {
@@ -238,14 +241,12 @@ app.get('/api/trigger-call/:code', async (req, res) => {
 
         const doctorNumber = coupon.doctorPhone; 
         
-        // 1. UPDATE DB SO UI SHOWS "CALL COMPLETED"
         coupon.proCallClickedAt = new Date();
         coupon.callStatus = 'Completed';
         await coupon.save();
 
         await logActivity('Link Trigger', 'PRO DIALER OPENED', `PRO clicked to call Doctor +${doctorNumber}`);
 
-        // 2. OPEN PHONE DIALER AUTOMATICALLY
         res.send(`
             <html lang="en">
             <head>
@@ -280,7 +281,6 @@ app.get('/api/trigger-call/:code', async (req, res) => {
 // WATI WEBHOOK (CALLING & INTELLIGENCE)
 // -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
-    // Instant 200 OK prevents WATI retry loops
     res.status(200).send("OK");
 
     try {
@@ -306,7 +306,7 @@ app.post('/api/wati/webhook', async (req, res) => {
         const phone10 = waId.replace(/\D/g, '').slice(-10);
         const couponRegex = new RegExp(phone10 + '$');
 
-        // 🚨 UPDATE 2: DOCTOR: "Rate this initiative" (English & Gujarati)
+        // 1. DOCTOR: "Rate this initiative"
         if (btnLower === 'rate this initiative' || btnLower === 'આ પહેલને રેટ કરો') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
@@ -334,12 +334,11 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // 🚨 UPDATE 3: DOCTOR: "Sales Team Please Call Me" (English & Gujarati)
-        else if (btnLower === 'connect with doctor' || btnLower === 'sales team please call me' || btnLower === 'સેલ્સ ટીમ, મને કોલ કરો') {
+        // 🚨 UPDATE 2: PRO NOTIFICATION LOGIC (Dental check included)
+        else if (btnLower === 'connect with doctor' || btnLower === 'sales team please call me' || btnLower === 'સેલ્સ ટીમ, મને કોલ કરો' || btnLower === 'ask sales team to call' || btnLower === 'ask sales team to call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             
             if (lastCoupon && lastCoupon.proPhone) {
-                // 🔒 DOCTOR ANTI-SPAM: 2 Minute Lock
                 const twoMinsAgo = new Date(Date.now() - 2 * 60000);
                 if (lastCoupon.callStatus === 'Pending' && lastCoupon.updatedAt > twoMinsAgo) {
                     await logActivity('System Webhook', 'SPAM BLOCKED', `Ignored repeated doctor request [${rawBtn}].`);
@@ -351,20 +350,47 @@ app.post('/api/wati/webhook', async (req, res) => {
                 lastCoupon.buttonClicked = rawBtn; 
                 await lastCoupon.save();
 
+                const discountValue = lastCoupon.discountPercentage === 'CBCT' ? 'CBCT Service' : `${lastCoupon.discountPercentage}%`;
+
                 const proParams = [
                     { name: "1", value: lastCoupon.targetName || "Doctor" },
                     { name: "2", value: `+${lastCoupon.doctorPhone}` }, 
-                    { name: "3", value: `${lastCoupon.discountPercentage}%` },
+                    { name: "3", value: discountValue },
                     { name: "4", value: lastCoupon.code } 
                 ];
                 
-                await sendWatiMessage(lastCoupon.proPhone, 'dis_pro_latest_temp', proParams);
+                // Route to Dental PRO template OR Regular PRO template
+                if (lastCoupon.audienceType === 'Dental' || lastCoupon.discountPercentage === 'CBCT') {
+                    await sendWatiMessage(lastCoupon.proPhone, 'pro_doc_dental_notify', proParams);
+                } else {
+                    await sendWatiMessage(lastCoupon.proPhone, 'dis_pro_latest_temp', proParams);
+                }
+                
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
                 await logActivity('System Webhook', 'PRO NOTIFIED', `Alert sent to PRO ${lastCoupon.proPhone}`);
             }
         }
 
-        // 🚨 UPDATE 4: DOCTOR/PATIENT: "More Coupon" (English & Gujarati)
+        // 🚨 UPDATE 3: Referral Books Request 
+        else if (btnLower === 'send me referral books' || btnLower === 'send referral books') {
+            const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
+            
+            if (lastCoupon && lastCoupon.proPhone) {
+                lastCoupon.buttonClicked = rawBtn; 
+                await lastCoupon.save();
+
+                const proParams = [
+                    { name: "1", value: lastCoupon.targetName || "Doctor" },
+                    { name: "2", value: `+${lastCoupon.doctorPhone}` } 
+                ];
+                
+                await sendWatiMessage(lastCoupon.proPhone, 'pro_referral_alert', proParams);
+                await sendWatiTextMessage(waId, "Thank you! 🙏 Our PRO will deliver the UIC Referral Books to your clinic very soon.");
+                await logActivity('System Webhook', 'REFERRAL BOOK REQ', `Alert sent to PRO ${lastCoupon.proPhone} for Books.`);
+            }
+        }
+
+        // 4. DOCTOR/PATIENT: "More Coupon"
         else if (btnLower.includes('more coupon') || btnLower === 'મને વધુ કૂપન જોઈએ છે' || btnLower.includes('વધુ કૂપન')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) {
@@ -403,7 +429,6 @@ app.post('/api/wati/webhook', async (req, res) => {
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             
             if (patientCoupon) {
-                // 🔒 PATIENT ANTI-SPAM: 2 Minute Lock
                 const twoMinsAgo = new Date(Date.now() - 2 * 60000);
                 if (patientCoupon.callStatus === 'Completed' && patientCoupon.updatedAt > twoMinsAgo) {
                     await logActivity('System Webhook', 'SPAM BLOCKED', `Ignored repeated patient request [${rawBtn}].`);
