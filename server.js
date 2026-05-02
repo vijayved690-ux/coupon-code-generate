@@ -9,7 +9,12 @@ const Agent = require('./models/Agent');
 const Activity = require('./models/Activity');
 
 const app = express();
-app.use(express.json());
+
+// 🚨🚨🚨 YAHI WOH FIX HAI JO 2400+ NUMBERS KO ALLOW KAREGA 🚨🚨🚨
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// 🚨🚨🚨 ISKE BINA BADA CSV FAIL HO JAYEGA 🚨🚨🚨
+
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -398,7 +403,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                     { name: "2", value: `+${lastCoupon.doctorPhone}` } 
                 ];
                 
-                // 🚨 YAHAN PE 'pro_referral_alert' PERFECTLY SET HAI
                 await sendWatiMessage(lastCoupon.proPhone, 'pro_referral_alert', proParams);
                 await sendWatiTextMessage(waId, "Thank you! 🙏 Our PRO will deliver the UIC Referral Books to your clinic very soon.");
                 await logActivity('System Webhook', 'REFERRAL BOOK REQ', `Alert sent to PRO ${lastCoupon.proPhone} for Books.`);
