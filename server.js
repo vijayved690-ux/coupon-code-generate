@@ -25,8 +25,8 @@ mongoose.connect(process.env.MONGODB_URI)
             { name: 'Aditi', phone: '918488931212' },
             { name: 'Jay', phone: '919274682553' },
             { name: 'Khyati', phone: '917490029085' },
-            // 🚨 UPDATE: Hardik Parikh added for Dental PRO
-            { name: 'Hardik Parikh', phone: '917043001130' } 
+            // 🚨 UPDATE: Hardik Parikh new number added
+            { name: 'Hardik Parikh', phone: '919737900092' } 
         ];
         
         for (let person of team) {
@@ -47,7 +47,7 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION
+// 🚨 SMART DELAY FUNCTION (Best for 3000+ shoots)
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function generateUniqueCode() {
@@ -163,14 +163,17 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
     let successCount = 0;
     let failCount = 0;
 
-    await logActivity('System', 'CAMPAIGN STARTED', `Initiating background campaign for ${targetList.length} ${audienceType}s (${discount}% OFF)`);
+    await logActivity('System', 'CAMPAIGN STARTED', `Initiating background campaign for ${targetList.length} ${audienceType}s (${discount === 'CBCT' ? 'CBCT' : discount + '% OFF'})`);
 
     for (let target of targetList) {
         if (!target.phone || target.phone.toString().trim() === '') continue;
         validCount++;
 
         try {
-            const code = await generateUniqueCode();
+            // Hidden code generated internally so PRO URL connection works smoothly
+            const code = await generateUniqueCode(); 
+            
+            // PRIORITY TO SHEET: Excel sheet PRO Number takes first priority
             let cleanProPhone = target.proNumber ? target.proNumber.toString().trim().replace(/\D/g, '') : null;
 
             await Coupon.create({
@@ -191,19 +194,31 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 'Patient_10': 'patient_10_dis_temp',
                 'Patient_20': 'patient_20_dis_temp',
                 'Patient_30': 'patient_30_temp_new_dis',
-                // 🚨 UPDATE: MAIN DENTAL CAMPAIGN TEMPLATE
-                'Dental_CBCT': 'dental_temp_dis_machine' 
+                // 🚨 UPDATE: Naya Dental Template
+                'Dental_CBCT': 'dental_temp_final_2k' 
             };
 
-            const templateName = templateMap[`${audienceType}_${discount}`] || (audienceType === 'Dental' ? 'dental_temp_dis_machine' : null);
+            const templateName = templateMap[`${audienceType}_${discount}`] || (audienceType === 'Dental' ? 'dental_temp_final_2k' : null);
             
             if (templateName) {
                 const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
-                const params = [
-                    { name: '1', value: safeName },
-                    { name: '2', value: code.toString() },
-                    { name: '3', value: formattedDate.toString() }
-                ];
+                
+                let params = [];
+                
+                // 🚨 NO COUPON CODE FOR DENTAL LOGIC
+                if (audienceType === 'Dental') {
+                    // Dental ko sirf {{1}} Name jayega
+                    params = [
+                        { name: '1', value: safeName }
+                    ];
+                } else {
+                    // Doctor/Patient ko {{1}} Name, {{2}} Code, {{3}} Date jayega
+                    params = [
+                        { name: '1', value: safeName },
+                        { name: '2', value: code.toString() },
+                        { name: '3', value: formattedDate.toString() }
+                    ];
+                }
 
                 const isSent = await sendWatiMessage(target.phone, templateName, params);
                 if (isSent) successCount++;
@@ -222,12 +237,11 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
 }
 
 // -----------------------------------------
-// 🚨 PRO DIALER TRIGGER API (No TATA Tele involved)
+// 🚨 PRO DIALER TRIGGER API
 // -----------------------------------------
 app.get('/api/trigger-call/:code', async (req, res) => {
     try {
         const { code } = req.params;
-        
         const coupon = await Coupon.findOne({ code: code });
 
         if (!coupon) {
@@ -334,7 +348,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // 🚨 UPDATE 2: PRO NOTIFICATION LOGIC (Dental check included)
+        // 2. DOCTOR: PRO NOTIFICATION LOGIC (Dental check included)
         else if (btnLower === 'connect with doctor' || btnLower === 'sales team please call me' || btnLower === 'સેલ્સ ટીમ, મને કોલ કરો' || btnLower === 'ask sales team to call' || btnLower === 'ask sales team to call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             
@@ -371,7 +385,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // 🚨 UPDATE 3: Referral Books Request 
+        // 3. DOCTOR: Referral Books Request 
         else if (btnLower === 'send me referral books' || btnLower === 'send referral books') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             
