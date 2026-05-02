@@ -166,7 +166,7 @@
                 <!-- DOCTOR TABLE -->
                 <div id="doctor-section" class="bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-blue-50">
-                        <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Filtered)</h3>
+                        <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Latest Activity First)</h3>
                         <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
                             <span>📊</span> EXPORT DOCTORS
                         </button>
@@ -174,7 +174,7 @@
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0">
+                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                     <th class="p-4">Details</th>
                                     <th class="p-4">Coupon</th>
                                     <th class="p-4">PRO Info</th>
@@ -194,7 +194,7 @@
                 <!-- DENTAL TABLE -->
                 <div id="dental-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-indigo-50">
-                        <h3 class="font-bold text-indigo-800 text-sm">Dental CBCT Database (Filtered)</h3>
+                        <h3 class="font-bold text-indigo-800 text-sm">Dental CBCT Database (Latest Activity First)</h3>
                         <button onclick="exportFilteredExcel('Dental')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
                             <span>📊</span> EXPORT DENTISTS
                         </button>
@@ -202,7 +202,7 @@
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0">
+                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                     <th class="p-4">Details</th>
                                     <th class="p-4">Service</th>
                                     <th class="p-4">PRO Info</th>
@@ -222,7 +222,7 @@
                 <!-- PATIENT TABLE -->
                 <div id="patient-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                        <h3 class="font-bold text-slate-800 text-sm">Patient Database (Filtered)</h3>
+                        <h3 class="font-bold text-slate-800 text-sm">Patient Database (Latest Activity First)</h3>
                         <button onclick="exportFilteredExcel('Patient')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
                             <span>📊</span> EXPORT PATIENTS
                         </button>
@@ -230,7 +230,7 @@
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0">
+                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                     <th class="p-4">Name</th>
                                     <th class="p-4">Phone</th>
                                     <th class="p-4">Coupon</th>
@@ -310,8 +310,10 @@
             if(role === 'admin') { 
                 document.getElementById('admin-dashboard').classList.remove('hidden'); 
                 loadAdminData(); 
-                loadActivityLogs();
+                
+                // 🚨 AUTO REFRESH ACTIVITY & TABLES (Har 10 sec)
                 setInterval(loadActivityLogs, 5000);
+                setInterval(loadAdminData, 10000); 
             } else { 
                 document.getElementById('user-dashboard').classList.remove('hidden'); 
                 loadUserData();
@@ -435,6 +437,9 @@
                 return matchSearch && matchDate && matchStatus;
             });
             
+            // 🚨🚨 UPDATE: Sorting Magic! Latest Activity wale record Table ke Upar aayenge
+            filteredLogs.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+            
             renderTables();
         }
 
@@ -447,11 +452,21 @@
                 else if(i.callStatus === 'Completed') statusBadge += '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] block">📞 CALL DONE</span>';
                 if(!statusBadge) statusBadge = '-';
 
-                // 🚨 UPDATE: Fixed 'CBCT%' display to 'CBCT SERVICE'
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
 
+                // 🚨 UPDATE: MULTIPLE BUTTON CLICKS & "TEMPLATE SENT" BADGE
+                let actionHTML = '';
+                if (i.buttonClicked && i.buttonClicked.trim() !== '') {
+                    // Split the string into array of buttons (if backend logic comma separates them)
+                    let buttons = i.buttonClicked.split(',');
+                    actionHTML = buttons.map(btn => `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">${btn.trim()}</span>`).join('');
+                } else {
+                    // Agar button nahi dabaya toh "Template Sent"
+                    actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`;
+                }
+
                 return `
-                <tr class="border-b hover:bg-slate-50">
+                <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td>
                     <td class="p-4">
                         <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
@@ -459,7 +474,7 @@
                     </td>
                     <td class="p-4 font-bold text-slate-700">${i.proPhone || '-'}</td>
                     <td class="p-4 text-xs">${stars}</td>
-                    <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
+                    <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
                     <td class="p-4">
                         <div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${formatDate(i.requestCallAt)}</div>
                         <div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div>
@@ -472,15 +487,12 @@
         }
 
         function renderTables() {
-            // Render Doctor
             const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(docLogs);
 
-            // Render Dental
             const denLogs = filteredLogs.filter(l => l.audienceType === 'Dental');
             document.getElementById('dental-logs').innerHTML = getTableRowsHTML(denLogs);
 
-            // Render Patient
             const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
             document.getElementById('patient-logs').innerHTML = patLogs.map(i => {
                 let callBadge = '';
@@ -489,11 +501,18 @@
                 else if(i.callStatus === 'Failed') callBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold text-[10px]">❌ FAILED</span>';
                 else callBadge = '-';
 
-                // 🚨 UPDATE: Fixed 'CBCT%' display for Patient table too
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
 
+                let actionHTML = '';
+                if (i.buttonClicked && i.buttonClicked.trim() !== '') {
+                    let buttons = i.buttonClicked.split(',');
+                    actionHTML = buttons.map(btn => `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">${btn.trim()}</span>`).join('');
+                } else {
+                    actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`;
+                }
+
                 return `
-                <tr class="border-b hover:bg-slate-50">
+                <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
                     <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
                     <td class="p-4">
@@ -501,7 +520,7 @@
                         <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
                     </td>
                     <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
-                    <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] border border-slate-200 capitalize">${i.buttonClicked || '-'}</span></td>
+                    <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
                     <td class="p-4">${callBadge}</td>
                     <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
                     <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
@@ -532,7 +551,6 @@
             } else {
                 csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Patient_Reg_No,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
-                    // 🚨 UPDATE: Fixed Patient export to show CBCT instead of CBCT%
                     const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
                     csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
