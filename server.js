@@ -398,6 +398,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                     { name: "2", value: `+${lastCoupon.doctorPhone}` } 
                 ];
                 
+                // 🚨 YAHAN PE 'pro_referral_alert' PERFECTLY SET HAI
                 await sendWatiMessage(lastCoupon.proPhone, 'pro_referral_alert', proParams);
                 await sendWatiTextMessage(waId, "Thank you! 🙏 Our PRO will deliver the UIC Referral Books to your clinic very soon.");
                 await logActivity('System Webhook', 'REFERRAL BOOK REQ', `Alert sent to PRO ${lastCoupon.proPhone} for Books.`);
