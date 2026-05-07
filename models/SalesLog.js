@@ -7,7 +7,8 @@ const schema = new mongoose.Schema({
     team: String, // 'SS' or 'B'
     keyword: String, // The bot they replied to
     answers: [{ type: String }], // Their text replies
-    adminReplyText: String // Status of admin reply
+    adminReplyText: String, // Status of admin reply
+    responseTimeMins: Number // 🚨 NAYA UPDATE: Speed/Delay track karne ke liye
 }, { timestamps: true });
 
 module.exports = mongoose.model('SalesLog', schema);
