@@ -8,12 +8,15 @@ const Coupon = require('./models/Coupon');
 const Agent = require('./models/Agent');
 const Activity = require('./models/Activity');
 
+// 🚨 SALES BOT MODELS
+const SalesQuestion = require('./models/SalesQuestion');
+const SalesLog = require('./models/SalesLog');
+
 const app = express();
 
-// 🚨🚨🚨 YAHI WOH FIX HAI JO 2400+ NUMBERS KO ALLOW KAREGA 🚨🚨🚨
+// 🚨 LIMIT FIX FOR 3000+ CSV
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-// 🚨🚨🚨 ISKE BINA BADA CSV FAIL HO JAYEGA 🚨🚨🚨
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -30,7 +33,6 @@ mongoose.connect(process.env.MONGODB_URI)
             { name: 'Aditi', phone: '918488931212' },
             { name: 'Jay', phone: '919274682553' },
             { name: 'Khyati', phone: '917490029085' },
-            // 🚨 UPDATE: Hardik Parikh new number added
             { name: 'Hardik Parikh', phone: '919737900092' } 
         ];
         
@@ -47,13 +49,38 @@ mongoose.connect(process.env.MONGODB_URI)
     .catch(err => console.error('MongoDB Error:', err));
 
 // -----------------------------------------
-// HELPERS & TATA CONFIG
+// SALES TEAM CONFIGURATION
+// -----------------------------------------
+const SALES_TEAM = [
+    // Senior Sales (SS)
+    { name: "ALPESH ROHIT", phone: "919574767971", team: "SS" },
+    { name: "HARDIK PAREKH", phone: "919737900092", team: "SS" },
+    { name: "NAGJI DESAI", phone: "919737248086", team: "SS" },
+    { name: "NARENDRA NAI", phone: "918347016137", team: "SS" },
+    { name: "SANDEEP UPDHAYAY", phone: "918980776879", team: "SS" },
+    { name: "HITEN SHAH", phone: "919601952094", team: "SS" },
+    // Buddies (B)
+    { name: "AMAN DESAI", phone: "919998070509", team: "B" },
+    { name: "ARPIT PATEL", phone: "917600083723", team: "B" },
+    { name: "CHETAN TUSHAVARA", phone: "919274682548", team: "B" },
+    { name: "JITENDRA MEHTA", phone: "918511015012", team: "B" },
+    { name: "NISHAL CHOKSI", phone: "919974360230", team: "B" },
+    { name: "PRASHANT GARANGE", phone: "919998974351", team: "B" },
+    { name: "SHAHEBAJ SHAIKH", phone: "917600085461", team: "B" },
+    { name: "YOGESH SOLANKI", phone: "916352950760", team: "B" }
+];
+
+// -----------------------------------------
+// HELPERS
 // -----------------------------------------
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION (Best for 3000+ shoots)
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+function getTodayDateStr() {
+    return new Date().toISOString().split('T')[0];
+}
 
 async function generateUniqueCode() {
     let isUnique = false;
@@ -85,7 +112,6 @@ async function sendWatiMessage(phone, templateName, params) {
         });
         return true;
     } catch (err) {
-        console.error(`WATI Template Error for ${phone} [${templateName}]:`, err.response?.data || err.message);
         return false; 
     }
 }
@@ -143,6 +169,14 @@ app.get('/api/admin/activity-logs', async (req, res) => {
     res.json(logs);
 });
 
+// 🚨 SYSTEM HEALTH API FOR MEMORY WARNING
+app.get('/api/admin/system-health', async (req, res) => {
+    const dbSize = await mongoose.connection.db.stats();
+    // Setting warning at 400MB
+    const isMemoryFull = (dbSize.dataSize > 400 * 1024 * 1024); 
+    res.json({ isMemoryFull, sizeMB: (dbSize.dataSize / (1024*1024)).toFixed(2) });
+});
+
 // -----------------------------------------
 // SHOOT CAMPAIGN API (SMART BACKGROUND QUEUE)
 // -----------------------------------------
@@ -164,10 +198,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
 });
 
 async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate) {
-    let validCount = 0;
-    let successCount = 0;
-    let failCount = 0;
-
+    let validCount = 0; let successCount = 0; let failCount = 0;
     await logActivity('System', 'CAMPAIGN STARTED', `Initiating background campaign for ${targetList.length} ${audienceType}s (${discount === 'CBCT' ? 'CBCT' : discount + '% OFF'})`);
 
     for (let target of targetList) {
@@ -175,31 +206,17 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
         validCount++;
 
         try {
-            // Hidden code generated internally so PRO URL connection works smoothly
             const code = await generateUniqueCode(); 
-            
-            // PRIORITY TO SHEET: Excel sheet PRO Number takes first priority
             let cleanProPhone = target.proNumber ? target.proNumber.toString().trim().replace(/\D/g, '') : null;
 
             await Coupon.create({
-                code,
-                discountPercentage: discount,
-                targetName: target.name,
-                doctorPhone: target.phone.toString().trim(),
-                location: target.location || 'Ahmedabad',
-                proPhone: cleanProPhone, 
-                audienceType: audienceType,
-                expiryDate: new Date(expiryDate)
+                code, discountPercentage: discount, targetName: target.name, doctorPhone: target.phone.toString().trim(),
+                location: target.location || 'Ahmedabad', proPhone: cleanProPhone, audienceType: audienceType, expiryDate: new Date(expiryDate)
             });
 
             const templateMap = {
-                'Doctor_10': 'temp_10_doctor_coupon',
-                'Doctor_20': 'temp_20_doctor_coupon',
-                'Doctor_30': 'doc_dis_30_temp_guj', 
-                'Patient_10': 'patient_10_dis_temp',
-                'Patient_20': 'patient_20_dis_temp',
-                'Patient_30': 'patient_30_temp_new_dis',
-                // 🚨 UPDATE: Naya Dental Template
+                'Doctor_10': 'temp_10_doctor_coupon', 'Doctor_20': 'temp_20_doctor_coupon', 'Doctor_30': 'doc_dis_30_temp_guj', 
+                'Patient_10': 'patient_10_dis_temp', 'Patient_20': 'patient_20_dis_temp', 'Patient_30': 'patient_30_temp_new_dis',
                 'Dental_CBCT': 'dental_temp_final_2k' 
             };
 
@@ -207,37 +224,21 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
             
             if (templateName) {
                 const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
-                
                 let params = [];
-                
-                // 🚨 NO COUPON CODE FOR DENTAL LOGIC
                 if (audienceType === 'Dental') {
-                    // Dental ko sirf {{1}} Name jayega
-                    params = [
-                        { name: '1', value: safeName }
-                    ];
+                    params = [{ name: '1', value: safeName }];
                 } else {
-                    // Doctor/Patient ko {{1}} Name, {{2}} Code, {{3}} Date jayega
-                    params = [
-                        { name: '1', value: safeName },
-                        { name: '2', value: code.toString() },
-                        { name: '3', value: formattedDate.toString() }
-                    ];
+                    params = [ { name: '1', value: safeName }, { name: '2', value: code.toString() }, { name: '3', value: formattedDate.toString() } ];
                 }
 
                 const isSent = await sendWatiMessage(target.phone, templateName, params);
-                if (isSent) successCount++;
-                else failCount++;
+                if (isSent) successCount++; else failCount++;
             }
 
             await sleep(1000); 
 
-        } catch (error) {
-            console.error(`Failed to send to ${target.phone}:`, error);
-            failCount++;
-        }
+        } catch (error) { failCount++; }
     }
-
     await logActivity('System', 'CAMPAIGN COMPLETED', `Total Processed: ${validCount} | Success: ${successCount} | Failed: ${failCount}`);
 }
 
@@ -250,16 +251,10 @@ app.get('/api/trigger-call/:code', async (req, res) => {
         const coupon = await Coupon.findOne({ code: code });
 
         if (!coupon) {
-            return res.send(`
-                <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
-                    <h2 style="color: red;">❌ Invalid Link!</h2>
-                    <p>Request not found in database.</p>
-                </div>
-            `);
+            return res.send(`<div style="font-family: sans-serif; text-align: center; margin-top: 50px;"><h2 style="color: red;">❌ Invalid Link!</h2><p>Request not found in database.</p></div>`);
         }
 
         const doctorNumber = coupon.doctorPhone; 
-        
         coupon.proCallClickedAt = new Date();
         coupon.callStatus = 'Completed';
         await coupon.save();
@@ -268,36 +263,66 @@ app.get('/api/trigger-call/:code', async (req, res) => {
 
         res.send(`
             <html lang="en">
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>Opening Dialer...</title>
-            </head>
+            <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Opening Dialer...</title></head>
             <body style="font-family: sans-serif; text-align: center; margin-top: 50px; background: #f0fdf4;">
                 <h1 style="color: #16a34a;">📞 Opening Dialer...</h1>
                 <p>Redirecting to call <b>+${doctorNumber}</b></p>
-                <p style="font-size: 14px; color: #555; margin-top: 20px;">
-                    If the dialer doesn't open automatically, <br><br>
-                    <a href="tel:+${doctorNumber}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Click Here to Call</a>
-                </p>
-                <script>
-                    window.location.href = "tel:+${doctorNumber}";
-                    setTimeout(() => { window.close(); }, 3000);
-                </script>
+                <p style="font-size: 14px; color: #555; margin-top: 20px;">If the dialer doesn't open automatically, <br><br><a href="tel:+${doctorNumber}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Click Here to Call</a></p>
+                <script>window.location.href = "tel:+${doctorNumber}"; setTimeout(() => { window.close(); }, 3000);</script>
             </body>
             </html>
         `);
     } catch (error) {
-        console.error("Link Call Error:", error);
-        res.send(`
-            <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
-                <h2 style="color: red;">❌ Error Connecting Call</h2>
-            </div>
-        `);
+        res.send(`<div style="font-family: sans-serif; text-align: center; margin-top: 50px;"><h2 style="color: red;">❌ Error Connecting Call</h2></div>`);
     }
 });
 
 // -----------------------------------------
-// WATI WEBHOOK (CALLING & INTELLIGENCE)
+// 🚨 SALES BOT APIs
+// -----------------------------------------
+app.get('/api/sales/questions', async (req, res) => {
+    res.json(await SalesQuestion.find());
+});
+
+app.post('/api/sales/questions', async (req, res) => {
+    const { keyword, questions } = req.body; 
+    await SalesQuestion.findOneAndUpdate({ keyword }, { keyword, questions }, { upsert: true, new: true });
+    res.json({ success: true });
+});
+
+app.get('/api/sales/tracker', async (req, res) => {
+    const today = getTodayDateStr();
+    const logs = await SalesLog.find({ dateStr: today });
+    const questions = await SalesQuestion.find();
+
+    const report = SALES_TEAM.map(member => {
+        const log = logs.find(l => l.phone === member.phone);
+        return {
+            name: member.name,
+            phone: member.phone,
+            team: member.team,
+            status: log ? 'Replied' : 'Not Reply',
+            keyword: log ? log.keyword : '-',
+            answers: log ? log.answers : [],
+            adminReply: log ? log.adminReplyText : null,
+            time: log ? log.updatedAt : null,
+            questions: log ? (questions.find(q => q.keyword === log.keyword)?.questions || []) : []
+        };
+    });
+    res.json(report);
+});
+
+app.post('/api/sales/reply', async (req, res) => {
+    const { phone, text } = req.body;
+    await sendWatiTextMessage(phone, text);
+    const today = getTodayDateStr();
+    await SalesLog.findOneAndUpdate({ phone: phone, dateStr: today }, { adminReplyText: text });
+    await logActivity('Admin', 'SALES BOT REPLY', `Sent feedback to ${phone}`);
+    res.json({ success: true });
+});
+
+// -----------------------------------------
+// WATI WEBHOOK (CALLING & INTELLIGENCE & SALES)
 // -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
     res.status(200).send("OK");
@@ -317,7 +342,39 @@ app.post('/api/wati/webhook', async (req, res) => {
         const btnLower = rawBtn.toLowerCase();
         const waId = body.waId || body.sender || "";
 
-        if (!waId || !rawBtn) return;
+        if (!waId) return;
+
+        // 🚨 NEW LOGIC: IS IT A SALES TEAM MEMBER?
+        const salesMember = SALES_TEAM.find(s => formatTataNumber(s.phone) === formatTataNumber(waId));
+        if (salesMember) {
+            const today = getTodayDateStr();
+            
+            // Check if they clicked the Bot Trigger Button
+            if (btnLower.includes('yes i will reply')) {
+                const keywordMatch = rawBtn.match(/(SS\d+|B\d+)/i);
+                const keyword = keywordMatch ? keywordMatch[0].toUpperCase() : 'UNKNOWN';
+                
+                await SalesLog.findOneAndUpdate(
+                    { phone: salesMember.phone, dateStr: today },
+                    { name: salesMember.name, team: salesMember.team, keyword: keyword, answers: [], adminReplyText: '' },
+                    { upsert: true }
+                );
+                await logActivity('Sales Bot', 'SESSION STARTED', `${salesMember.name} started ${keyword}`);
+                return;
+            } 
+            // If they are sending text (answering questions)
+            else if (body.eventType === 'message' && body.type === 'text') {
+                const log = await SalesLog.findOne({ phone: salesMember.phone, dateStr: today });
+                if (log) {
+                    log.answers.push(rawBtn);
+                    await log.save();
+                }
+                return;
+            }
+        }
+
+        // --- REGULAR COUPON LOGIC BELOW ---
+        if (!rawBtn) return;
         if (body.eventType && body.eventType !== 'message') return;
 
         await logActivity('System Webhook', 'BUTTON CLICKED', `Number: ${waId} | Button: [${rawBtn}]`);
@@ -325,11 +382,9 @@ app.post('/api/wati/webhook', async (req, res) => {
         const phone10 = waId.replace(/\D/g, '').slice(-10);
         const couponRegex = new RegExp(phone10 + '$');
 
-        // 1. DOCTOR: "Rate this initiative"
         if (btnLower === 'rate this initiative' || btnLower === 'આ પહેલને રેટ કરો') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
-            
             await sendWatiMessage(waId, 'doc_rate_inti_star', []);
             await logActivity('System Webhook', 'RATING TEMPLATE SENT', `Feedback requested from ${waId}`);
         }
@@ -352,11 +407,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                 }
             }
         }
-
-        // 2. DOCTOR: PRO NOTIFICATION LOGIC (Dental check included)
         else if (btnLower === 'connect with doctor' || btnLower === 'sales team please call me' || btnLower === 'સેલ્સ ટીમ, મને કોલ કરો' || btnLower === 'ask sales team to call' || btnLower === 'ask sales team to call me') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
-            
             if (lastCoupon && lastCoupon.proPhone) {
                 const twoMinsAgo = new Date(Date.now() - 2 * 60000);
                 if (lastCoupon.callStatus === 'Pending' && lastCoupon.updatedAt > twoMinsAgo) {
@@ -378,7 +430,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                     { name: "4", value: lastCoupon.code } 
                 ];
                 
-                // Route to Dental PRO template OR Regular PRO template
                 if (lastCoupon.audienceType === 'Dental' || lastCoupon.discountPercentage === 'CBCT') {
                     await sendWatiMessage(lastCoupon.proPhone, 'pro_doc_dental_notify', proParams);
                 } else {
@@ -389,33 +440,20 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await logActivity('System Webhook', 'PRO NOTIFIED', `Alert sent to PRO ${lastCoupon.proPhone}`);
             }
         }
-
-        // 3. DOCTOR: Referral Books Request 
         else if (btnLower === 'send me referral books' || btnLower === 'send referral books') {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
-            
             if (lastCoupon && lastCoupon.proPhone) {
                 lastCoupon.buttonClicked = rawBtn; 
                 await lastCoupon.save();
-
-                const proParams = [
-                    { name: "1", value: lastCoupon.targetName || "Doctor" },
-                    { name: "2", value: `+${lastCoupon.doctorPhone}` } 
-                ];
-                
+                const proParams = [ { name: "1", value: lastCoupon.targetName || "Doctor" }, { name: "2", value: `+${lastCoupon.doctorPhone}` } ];
                 await sendWatiMessage(lastCoupon.proPhone, 'pro_referral_alert', proParams);
                 await sendWatiTextMessage(waId, "Thank you! 🙏 Our PRO will deliver the UIC Referral Books to your clinic very soon.");
                 await logActivity('System Webhook', 'REFERRAL BOOK REQ', `Alert sent to PRO ${lastCoupon.proPhone} for Books.`);
             }
         }
-
-        // 4. DOCTOR/PATIENT: "More Coupon"
         else if (btnLower.includes('more coupon') || btnLower === 'મને વધુ કૂપન જોઈએ છે' || btnLower.includes('વધુ કૂપન')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
-            if (lastCoupon) {
-                lastCoupon.buttonClicked = rawBtn;
-                await lastCoupon.save();
-            }
+            if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
 
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
             let newCodes = [];
@@ -438,13 +476,9 @@ app.post('/api/wati/webhook', async (req, res) => {
                 { name: '2', value: newCodes.join(', ') },
                 { name: '3', value: expiry.toLocaleDateString('en-GB') }
             ]);
-
             await logActivity('System Webhook', 'MORE COUPONS SENT', `Sent 5 new codes of ${discount}% to ${waId}`);
         }
-
-        // 5. PATIENT CALLING (ROUND ROBIN)
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].includes(btnLower)) {
-            
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             
             if (patientCoupon) {
@@ -453,7 +487,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                     await logActivity('System Webhook', 'SPAM BLOCKED', `Ignored repeated patient request [${rawBtn}].`);
                     return; 
                 }
-
                 patientCoupon.buttonClicked = rawBtn;
                 await patientCoupon.save();
             }
@@ -468,9 +501,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                     const tataDestNumber = formatTataNumber(waId);
 
                     await axios.post(TATA_URL, {
-                        agent_number: tataAgentNumber,
-                        destination_number: tataDestNumber,
-                        caller_id: CALLER_ID
+                        agent_number: tataAgentNumber, destination_number: tataDestNumber, caller_id: CALLER_ID
                     }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
 
                     if (patientCoupon) {
@@ -559,7 +590,7 @@ app.get('/api/admin/logs', async (req, res) => {
     const isExport = req.query.export === 'true';
     let query = Coupon.find().sort({ createdAt: -1 });
     if (!isExport) {
-        query = query.limit(10000); // 👈 2000 ko hatakar 10000 kar diya
+        query = query.limit(10000); 
     }
     const logs = await query.exec();
     res.json(logs);
