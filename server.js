@@ -33,6 +33,7 @@ mongoose.connect(process.env.MONGODB_URI)
             { name: 'Aditi', phone: '918488931212' },
             { name: 'Jay', phone: '919274682553' },
             { name: 'Khyati', phone: '917490029085' },
+            // 🚨 UPDATE: Hardik Parikh new number added
             { name: 'Hardik Parikh', phone: '919737900092' } 
         ];
         
@@ -71,15 +72,26 @@ const SALES_TEAM = [
 ];
 
 // -----------------------------------------
-// HELPERS
+// HELPERS & TATA CONFIG
 // -----------------------------------------
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
+// 🚨 SMART DELAY FUNCTION (Best for 3000+ shoots)
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-function getTodayDateStr() {
-    return new Date().toISOString().split('T')[0];
+function getIndianDateStr(dateObj = new Date()) {
+    return dateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); 
+}
+
+// 🚨 TIME CALCULATION FOR DELAY TRACKING
+function getScheduledTime(dateStr, keyword) {
+    const [year, month, day] = dateStr.split('-');
+    let hours = 0, mins = 0;
+    if (['SS12', 'B1'].includes(keyword)) { hours = 9; mins = 0; } // 9:00 AM
+    else if (['SS46', 'B46'].includes(keyword)) { hours = 14; mins = 30; } // 2:30 PM
+    else if (['SS70', 'B79'].includes(keyword)) { hours = 19; mins = 0; } // 7:00 PM
+    return new Date(year, month - 1, day, hours, mins, 0).getTime();
 }
 
 async function generateUniqueCode() {
@@ -112,6 +124,7 @@ async function sendWatiMessage(phone, templateName, params) {
         });
         return true;
     } catch (err) {
+        console.error(`WATI Template Error for ${phone} [${templateName}]:`, err.response?.data || err.message);
         return false; 
     }
 }
@@ -291,35 +304,68 @@ app.post('/api/sales/questions', async (req, res) => {
 });
 
 app.get('/api/sales/tracker', async (req, res) => {
-    const today = getTodayDateStr();
-    const logs = await SalesLog.find({ dateStr: today });
-    const questions = await SalesQuestion.find();
+    const { from, to } = req.query;
+    let targetDates = [];
+    if (from && to) {
+        let curr = new Date(from); const end = new Date(to);
+        while (curr <= end) { targetDates.push(getIndianDateStr(curr)); curr.setDate(curr.getDate() + 1); }
+    } else { targetDates = [getIndianDateStr()]; }
 
-    const report = SALES_TEAM.map(member => {
-        const log = logs.find(l => l.phone === member.phone);
-        return {
-            name: member.name,
-            phone: member.phone,
-            team: member.team,
-            status: log ? 'Replied' : 'Not Reply',
-            keyword: log ? log.keyword : '-',
-            answers: log ? log.answers : [],
-            adminReply: log ? log.adminReplyText : null,
-            time: log ? log.updatedAt : null,
-            questions: log ? (questions.find(q => q.keyword === log.keyword)?.questions || []) : []
-        };
+    const logs = await SalesLog.find({ dateStr: { $in: targetDates } });
+    const questions = await SalesQuestion.find();
+    let report = [];
+
+    for (let d of targetDates) {
+        SALES_TEAM.forEach(member => {
+            // Har person ke liye uski team ke according 3 row (Morning, Aft, Eve)
+            const expectedKeywords = member.team === 'SS' ? ['SS12', 'SS46', 'SS70'] : ['B1', 'B46', 'B79'];
+            expectedKeywords.forEach(kw => {
+                const log = logs.find(l => l.phone === member.phone && l.dateStr === d && l.keyword === kw);
+                
+                // Calculate delay text
+                let delayStr = "-";
+                if (log && log.responseTimeMins != null) {
+                    const m = Math.floor(log.responseTimeMins);
+                    if (m < 0) delayStr = "Early Reply ⚡";
+                    else if (m < 60) delayStr = `${m} mins delay`;
+                    else delayStr = `${Math.floor(m/60)} hr ${m%60} mins delay`;
+                }
+
+                report.push({
+                    date: d,
+                    name: member.name, phone: member.phone, team: member.team,
+                    status: log ? 'Replied' : 'Not Reply',
+                    keyword: kw,
+                    delayStr: delayStr,
+                    answers: log ? log.answers : [],
+                    adminReply: log ? log.adminReplyText : null,
+                    time: log ? log.updatedAt : null,
+                    questions: (questions.find(q => q.keyword === kw)?.questions || [])
+                });
+            });
+        });
+    }
+
+    // 🚨 SORTING: Jinhone recently reply kiya wo TOP pe. 
+    report.sort((a, b) => {
+        if (a.time && b.time) return new Date(b.time) - new Date(a.time); // Dono me se naya top par
+        if (a.time) return -1; // A ne kiya, B ne nahi
+        if (b.time) return 1;  // B ne kiya, A ne nahi
+        return 0;
     });
+
     res.json(report);
 });
 
 app.post('/api/sales/reply', async (req, res) => {
-    const { phone, text } = req.body;
+    const { phone, text, date, keyword } = req.body;
     await sendWatiTextMessage(phone, text);
-    const today = getTodayDateStr();
-    await SalesLog.findOneAndUpdate({ phone: phone, dateStr: today }, { adminReplyText: text });
-    await logActivity('Admin', 'SALES BOT REPLY', `Sent feedback to ${phone}`);
+    const targetDate = date || getIndianDateStr();
+    await SalesLog.findOneAndUpdate({ phone: phone, dateStr: targetDate, keyword: keyword }, { adminReplyText: text });
+    await logActivity('Admin', 'SALES BOT REPLY', `Sent feedback to ${phone} for ${keyword}`);
     res.json({ success: true });
 });
+
 
 // -----------------------------------------
 // WATI WEBHOOK (CALLING & INTELLIGENCE & SALES)
@@ -347,26 +393,43 @@ app.post('/api/wati/webhook', async (req, res) => {
         // 🚨 NEW LOGIC: IS IT A SALES TEAM MEMBER?
         const salesMember = SALES_TEAM.find(s => formatTataNumber(s.phone) === formatTataNumber(waId));
         if (salesMember) {
-            const today = getTodayDateStr();
+            const today = getIndianDateStr();
             
-            // Check if they clicked the Bot Trigger Button
+            // IF THEY CLICK "YES I WILL REPLY"
             if (btnLower.includes('yes i will reply')) {
                 const keywordMatch = rawBtn.match(/(SS\d+|B\d+)/i);
                 const keyword = keywordMatch ? keywordMatch[0].toUpperCase() : 'UNKNOWN';
                 
+                // Calculate Delay Tracker
+                const scheduledTime = getScheduledTime(today, keyword);
+                const delayMins = (Date.now() - scheduledTime) / 60000; 
+
                 await SalesLog.findOneAndUpdate(
-                    { phone: salesMember.phone, dateStr: today },
-                    { name: salesMember.name, team: salesMember.team, keyword: keyword, answers: [], adminReplyText: '' },
+                    { phone: salesMember.phone, dateStr: today, keyword: keyword },
+                    { name: salesMember.name, team: salesMember.team, keyword: keyword, adminReplyText: '', responseTimeMins: delayMins },
                     { upsert: true }
                 );
                 await logActivity('Sales Bot', 'SESSION STARTED', `${salesMember.name} started ${keyword}`);
                 return;
             } 
-            // If they are sending text (answering questions)
+            
+            // IF THEY TYPE AN ANSWER (🚨 15 SECONDS SMART GROUPING)
             else if (body.eventType === 'message' && body.type === 'text') {
-                const log = await SalesLog.findOne({ phone: salesMember.phone, dateStr: today });
+                // Find latest active session for this person today
+                const log = await SalesLog.findOne({ phone: salesMember.phone, dateStr: today }).sort({ updatedAt: -1 });
                 if (log) {
-                    log.answers.push(rawBtn);
+                    const now = new Date();
+                    const lastUpdate = new Date(log.updatedAt);
+                    const diffSecs = (now - lastUpdate) / 1000;
+                    
+                    // IF message comes within 15 seconds, APPEND to the last answer
+                    if (log.answers.length > 0 && diffSecs <= 15) {
+                        log.answers[log.answers.length - 1] += "\n" + rawBtn;
+                    } else {
+                        // Otherwise, it's a new answer
+                        log.answers.push(rawBtn);
+                    }
+                    log.markModified('answers'); // Fix for mongoose array saving
                     await log.save();
                 }
                 return;
