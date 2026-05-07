@@ -8,6 +8,10 @@
 </head>
 <body class="bg-slate-100 font-sans h-screen flex flex-col">
 
+    <div id="memory-warning" class="hidden bg-red-600 text-white text-center p-2 font-bold text-sm tracking-wider animate-pulse shadow-md z-50">
+        ⚠️ ALERT: System Database Memory is almost full. Please contact developer! ⚠️
+    </div>
+
     <div id="login-view" class="flex-grow flex items-center justify-center">
         <div class="bg-white p-8 rounded-xl shadow-lg w-96 text-center">
             <h1 class="text-2xl font-bold text-blue-700 mb-1">UIC Connect</h1>
@@ -161,9 +165,9 @@
                     <button onclick="switchTab('doctor')" id="tab-doc" class="px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap">🩺 DOCTOR</button>
                     <button onclick="switchTab('patient')" id="tab-pat" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">👥 PATIENT</button>
                     <button onclick="switchTab('dental')" id="tab-den" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">🦷 DENTAL (CBCT)</button>
+                    <button onclick="switchTab('sales')" id="tab-sales" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">📊 SALES BOT TRACKER</button>
                 </div>
 
-                <!-- DOCTOR TABLE -->
                 <div id="doctor-section" class="bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-blue-50">
                         <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Latest Activity First)</h3>
@@ -191,7 +195,6 @@
                     </div>
                 </div>
 
-                <!-- DENTAL TABLE -->
                 <div id="dental-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-indigo-50">
                         <h3 class="font-bold text-indigo-800 text-sm">Dental CBCT Database (Latest Activity First)</h3>
@@ -219,7 +222,6 @@
                     </div>
                 </div>
 
-                <!-- PATIENT TABLE -->
                 <div id="patient-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-slate-50">
                         <h3 class="font-bold text-slate-800 text-sm">Patient Database (Latest Activity First)</h3>
@@ -247,9 +249,32 @@
                     </div>
                 </div>
 
+                <div id="sales-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
+                    <div class="p-4 border-b flex justify-between items-center bg-amber-50">
+                        <h3 class="font-bold text-amber-800 text-sm">Sales Team Bot Responses (Today)</h3>
+                        <div class="flex gap-2">
+                            <button onclick="document.getElementById('question-modal').classList.remove('hidden')" class="bg-indigo-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-indigo-700 transition">⚙️ MANAGE QUESTIONS</button>
+                            <button onclick="exportSalesExcel()" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2"><span>📊</span> EXPORT SALES DATA</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                        <table class="w-full text-left text-xs whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
+                                    <th class="p-4">Sales Person</th>
+                                    <th class="p-4">Team</th>
+                                    <th class="p-4">Status & Time</th>
+                                    <th class="p-4 w-1/3">Questions & Answers</th>
+                                    <th class="p-4">Admin Reply</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-logs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- RECEPTION / USER VIEW -->
             <div id="user-dashboard" class="hidden">
                 <div class="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center max-w-lg mx-auto mb-8">
                     <h2 class="text-2xl font-black text-slate-800 mb-6">REDEEM COUPON</h2>
@@ -270,11 +295,41 @@
         </div>
     </div>
 
+    <div id="question-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow-xl w-[500px]">
+            <h2 class="text-xl font-bold mb-4 text-slate-800">Manage Bot Questions</h2>
+            <p class="text-xs text-slate-500 mb-4">Set questions for specific bot keywords so they map correctly in Excel.</p>
+            
+            <label class="block text-xs font-bold text-slate-700 mb-1">Select Bot Keyword</label>
+            <select id="q-keyword" class="w-full border p-2 rounded mb-4 text-sm" onchange="loadSpecificQuestions()">
+                <option value="SS12">SS12 (Morning 9:00 AM)</option>
+                <option value="SS46">SS46 (Afternoon 2:30 PM)</option>
+                <option value="SS70">SS70 (Evening 7:00 PM)</option>
+                <option value="B1">B1 (Buddies 1)</option>
+                <option value="B46">B46 (Buddies 46)</option>
+                <option value="B79">B79 (Buddies 79)</option>
+            </select>
+
+            <div class="space-y-3">
+                <input type="text" id="q1" placeholder="Question 1" class="w-full border p-2 rounded text-sm outline-blue-500">
+                <input type="text" id="q2" placeholder="Question 2" class="w-full border p-2 rounded text-sm outline-blue-500">
+                <input type="text" id="q3" placeholder="Question 3" class="w-full border p-2 rounded text-sm outline-blue-500">
+                <input type="text" id="q4" placeholder="Question 4" class="w-full border p-2 rounded text-sm outline-blue-500">
+            </div>
+
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="document.getElementById('question-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-200 text-slate-700 rounded font-bold text-sm">Cancel</button>
+                <button onclick="saveQuestions()" class="px-4 py-2 bg-blue-600 text-white rounded font-bold text-sm shadow">Save Questions</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
         
         let globalLogs = [];
         let filteredLogs = [];
+        let salesReportData = []; // 🚨 NEW
 
         function formatDate(dateString) {
             if(!dateString) return '-';
@@ -311,7 +366,9 @@
                 document.getElementById('admin-dashboard').classList.remove('hidden'); 
                 loadAdminData(); 
                 
-                // 🚨 AUTO REFRESH ACTIVITY & TABLES (Har 10 sec)
+                // 🚨 System Health Check & Auto Refresh
+                checkSystemHealth();
+                setInterval(checkSystemHealth, 60000); 
                 setInterval(loadActivityLogs, 5000);
                 setInterval(loadAdminData, 10000); 
             } else { 
@@ -320,15 +377,25 @@
             }
         }
 
+        async function checkSystemHealth() {
+            try {
+                const res = await fetch('/api/admin/system-health').then(r => r.json());
+                if(res.isMemoryFull) document.getElementById('memory-warning').classList.remove('hidden');
+                else document.getElementById('memory-warning').classList.add('hidden');
+            } catch(e){}
+        }
+
         function switchTab(type) {
             document.getElementById('doctor-section').classList.add('hidden');
             document.getElementById('patient-section').classList.add('hidden');
             document.getElementById('dental-section').classList.add('hidden');
+            document.getElementById('sales-section').classList.add('hidden');
             
             const defaultClass = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap";
             document.getElementById('tab-doc').className = defaultClass;
             document.getElementById('tab-pat').className = defaultClass;
             document.getElementById('tab-den').className = defaultClass;
+            document.getElementById('tab-sales').className = defaultClass;
 
             if(type === 'doctor') {
                 document.getElementById('doctor-section').classList.remove('hidden');
@@ -336,9 +403,13 @@
             } else if (type === 'dental') {
                 document.getElementById('dental-section').classList.remove('hidden');
                 document.getElementById('tab-den').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap";
-            } else {
+            } else if (type === 'patient') {
                 document.getElementById('patient-section').classList.remove('hidden');
                 document.getElementById('tab-pat').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap";
+            } else if (type === 'sales') {
+                document.getElementById('sales-section').classList.remove('hidden');
+                document.getElementById('tab-sales').className = "px-6 py-2 rounded-full font-bold bg-amber-500 text-white shadow-md whitespace-nowrap";
+                loadSalesData();
             }
         }
 
@@ -396,6 +467,11 @@
             document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
 
             applyFilters();
+            
+            // Reload sales data if tab is active
+            if(!document.getElementById('sales-section').classList.contains('hidden')) {
+                loadSalesData();
+            }
         }
 
         function clearFilters() {
@@ -437,7 +513,6 @@
                 return matchSearch && matchDate && matchStatus;
             });
             
-            // 🚨🚨 UPDATE: Sorting Magic! Latest Activity wale record Table ke Upar aayenge
             filteredLogs.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
             
             renderTables();
@@ -454,14 +529,11 @@
 
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
 
-                // 🚨 UPDATE: MULTIPLE BUTTON CLICKS & "TEMPLATE SENT" BADGE
                 let actionHTML = '';
                 if (i.buttonClicked && i.buttonClicked.trim() !== '') {
-                    // Split the string into array of buttons (if backend logic comma separates them)
                     let buttons = i.buttonClicked.split(',');
                     actionHTML = buttons.map(btn => `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">${btn.trim()}</span>`).join('');
                 } else {
-                    // Agar button nahi dabaya toh "Template Sent"
                     actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`;
                 }
 
@@ -528,6 +600,99 @@
                 </tr>
             `}).join('');
         }
+
+        // 🚨 SALES LOGIC BEGIN 🚨
+        async function loadSalesData() {
+            try {
+                const report = await fetch('/api/sales/tracker').then(r => r.json());
+                salesReportData = report;
+                
+                document.getElementById('sales-logs').innerHTML = report.map(r => {
+                    let statusBadge = r.status === 'Replied' 
+                        ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 shadow-sm">✅ Replied [${r.keyword}]</span><br><span class="text-[10px] text-slate-500 ml-1 font-bold mt-1 inline-block">⏱️ ${new Date(r.time).toLocaleTimeString()}</span>` 
+                        : `<span class="bg-red-50 text-red-600 font-bold px-2 py-1 rounded border border-red-200 shadow-sm">❌ Not Reply</span>`;
+                    
+                    let qaHTML = '<div class="text-[10px] space-y-2 whitespace-normal">';
+                    if(r.answers && r.answers.length > 0) {
+                        r.answers.forEach((ans, idx) => {
+                            let q = r.questions && r.questions[idx] ? r.questions[idx] : `Question ${idx+1}`;
+                            qaHTML += `<div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p><p class="text-blue-700 font-semibold">👉 ${ans}</p></div>`;
+                        });
+                    } else {
+                        qaHTML += `<span class="text-slate-400 italic">No answers recorded today.</span>`;
+                    }
+                    qaHTML += '</div>';
+
+                    let replyHTML = r.adminReply 
+                        ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] block font-semibold whitespace-normal shadow-inner border border-blue-200">Admin: ${r.adminReply}</span>`
+                        : `<div class="flex gap-1"><input type="text" id="reply-${r.phone}" placeholder="Type feedback..." class="border border-slate-300 p-1.5 rounded text-xs w-32 outline-blue-500"><button onclick="sendSalesReply('${r.phone}')" class="bg-blue-600 hover:bg-blue-700 transition text-white px-3 py-1.5 rounded text-[10px] font-bold shadow-sm">Send</button></div>`;
+
+                    return `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span></td>
+                        <td class="p-4"><span class="bg-slate-200 text-slate-800 px-3 py-1 rounded text-[10px] font-black tracking-widest shadow-sm">${r.team}</span></td>
+                        <td class="p-4">${statusBadge}</td>
+                        <td class="p-4">${qaHTML}</td>
+                        <td class="p-4">${replyHTML}</td>
+                    </tr>
+                    `;
+                }).join('');
+            } catch(e) {}
+        }
+
+        async function sendSalesReply(phone) {
+            const input = document.getElementById(`reply-${phone}`);
+            if(!input.value.trim()) return;
+            try {
+                await fetch('/api/sales/reply', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone, text: input.value}) });
+                alert("Feedback sent successfully!");
+                loadSalesData();
+            } catch(e) { alert("Failed to send reply"); }
+        }
+
+        async function loadSpecificQuestions() {
+            try {
+                const keyword = document.getElementById('q-keyword').value;
+                const questionsList = await fetch('/api/sales/questions').then(r => r.json());
+                const match = questionsList.find(q => q.keyword === keyword);
+                
+                document.getElementById('q1').value = match && match.questions[0] ? match.questions[0] : '';
+                document.getElementById('q2').value = match && match.questions[1] ? match.questions[1] : '';
+                document.getElementById('q3').value = match && match.questions[2] ? match.questions[2] : '';
+                document.getElementById('q4').value = match && match.questions[3] ? match.questions[3] : '';
+            } catch(e){}
+        }
+
+        async function saveQuestions() {
+            const keyword = document.getElementById('q-keyword').value;
+            const questions = [
+                document.getElementById('q1').value, document.getElementById('q2').value,
+                document.getElementById('q3').value, document.getElementById('q4').value
+            ].filter(q => q.trim() !== '');
+
+            await fetch('/api/sales/questions', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({keyword, questions}) });
+            alert('Questions saved successfully!');
+            document.getElementById('question-modal').classList.add('hidden');
+            loadSalesData();
+        }
+
+        function exportSalesExcel() {
+            if(salesReportData.length === 0) return alert("No sales data available");
+            
+            let csv = "Name,Phone,Team,Status,Keyword,Reply Time,Admin Feedback,Q1,Ans1,Q2,Ans2,Q3,Ans3,Q4,Ans4\n";
+            salesReportData.forEach(r => {
+                let row = `"${r.name}","${r.phone}","${r.team}","${r.status}","${r.keyword}","${r.time ? new Date(r.time).toLocaleString() : ''}","${r.adminReply || ''}"`;
+                for(let i=0; i<4; i++) {
+                    row += `,"${r.questions[i] || ''}","${r.answers[i] || ''}"`;
+                }
+                csv += row + "\n";
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+            link.download = `UIC_Sales_Tracker_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+        // 🚨 SALES LOGIC END 🚨
 
         async function toggleAgent(id, isOnline) {
             await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) });
