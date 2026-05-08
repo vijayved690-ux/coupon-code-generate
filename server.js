@@ -33,7 +33,6 @@ mongoose.connect(process.env.MONGODB_URI)
             { name: 'Aditi', phone: '918488931212' },
             { name: 'Jay', phone: '919274682553' },
             { name: 'Khyati', phone: '917490029085' },
-            // 🚨 UPDATE: Hardik Parikh new number added
             { name: 'Hardik Parikh', phone: '919737900092' } 
         ];
         
@@ -413,23 +412,21 @@ app.post('/api/wati/webhook', async (req, res) => {
                 return;
             } 
             
-            // IF THEY TYPE AN ANSWER (🚨 15 SECONDS SMART GROUPING)
+            // IF THEY TYPE AN ANSWER (🚨 1 SECOND SMART GROUPING)
             else if (body.eventType === 'message' && body.type === 'text') {
-                // Find latest active session for this person today
                 const log = await SalesLog.findOne({ phone: salesMember.phone, dateStr: today }).sort({ updatedAt: -1 });
                 if (log) {
                     const now = new Date();
                     const lastUpdate = new Date(log.updatedAt);
                     const diffSecs = (now - lastUpdate) / 1000;
                     
-                    // IF message comes within 15 seconds, APPEND to the last answer
-                    if (log.answers.length > 0 && diffSecs <= 15) {
+                    // 👈 YAHAN PE 1 SECOND KA LOGIC LAGA HAI 
+                    if (log.answers.length > 0 && diffSecs <= 1) {
                         log.answers[log.answers.length - 1] += "\n" + rawBtn;
                     } else {
-                        // Otherwise, it's a new answer
                         log.answers.push(rawBtn);
                     }
-                    log.markModified('answers'); // Fix for mongoose array saving
+                    log.markModified('answers'); 
                     await log.save();
                 }
                 return;
