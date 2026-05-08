@@ -179,15 +179,7 @@
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
-                                    <th class="p-4">Details</th>
-                                    <th class="p-4">Coupon</th>
-                                    <th class="p-4">PRO Info</th>
-                                    <th class="p-4">Rating</th>
-                                    <th class="p-4">Action</th>
-                                    <th class="p-4">Call Tracking</th>
-                                    <th class="p-4">Status</th>
-                                    <th class="p-4">Reg. No</th>
-                                    <th class="p-4">Branch</th>
+                                    <th class="p-4">Details</th><th class="p-4">Coupon</th><th class="p-4">PRO Info</th><th class="p-4">Rating</th><th class="p-4">Action</th><th class="p-4">Call Tracking</th><th class="p-4">Status</th><th class="p-4">Reg. No</th><th class="p-4">Branch</th>
                                 </tr>
                             </thead>
                             <tbody id="doctor-logs"></tbody>
@@ -206,15 +198,7 @@
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
-                                    <th class="p-4">Details</th>
-                                    <th class="p-4">Service</th>
-                                    <th class="p-4">PRO Info</th>
-                                    <th class="p-4">Rating</th>
-                                    <th class="p-4">Action</th>
-                                    <th class="p-4">Call Tracking</th>
-                                    <th class="p-4">Status</th>
-                                    <th class="p-4">Reg. No</th>
-                                    <th class="p-4">Branch</th>
+                                    <th class="p-4">Details</th><th class="p-4">Service</th><th class="p-4">PRO Info</th><th class="p-4">Rating</th><th class="p-4">Action</th><th class="p-4">Call Tracking</th><th class="p-4">Status</th><th class="p-4">Reg. No</th><th class="p-4">Branch</th>
                                 </tr>
                             </thead>
                             <tbody id="dental-logs"></tbody>
@@ -233,15 +217,7 @@
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
-                                    <th class="p-4">Name</th>
-                                    <th class="p-4">Phone</th>
-                                    <th class="p-4">Coupon</th>
-                                    <th class="p-4">Agent</th>
-                                    <th class="p-4">Action</th>
-                                    <th class="p-4">Call Status</th>
-                                    <th class="p-4">Status</th>
-                                    <th class="p-4">Reg. No</th>
-                                    <th class="p-4">Branch</th>
+                                    <th class="p-4">Name</th><th class="p-4">Phone</th><th class="p-4">Coupon</th><th class="p-4">Agent</th><th class="p-4">Action</th><th class="p-4">Call Status</th><th class="p-4">Status</th><th class="p-4">Reg. No</th><th class="p-4">Branch</th>
                                 </tr>
                             </thead>
                             <tbody id="patient-logs"></tbody>
@@ -256,9 +232,7 @@
                             <div class="bg-slate-200 p-2 font-bold text-[11px] text-slate-700 text-center border-b uppercase tracking-wider">Senior Sales (SS) - Quick Status</div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-[10px] text-left whitespace-nowrap">
-                                    <thead class="bg-slate-50 text-slate-500 uppercase border-b">
-                                        <tr><th class="p-2 pl-3">Name</th><th class="p-2">Phone</th><th class="p-2 text-center">SS12</th><th class="p-2 text-center">SS46</th><th class="p-2 text-center">SS70</th></tr>
-                                    </thead>
+                                    <thead class="bg-slate-50 text-slate-500 uppercase border-b" id="th-ss-summary"></thead>
                                     <tbody id="summary-ss"></tbody>
                                 </table>
                             </div>
@@ -267,9 +241,7 @@
                             <div class="bg-slate-200 p-2 font-bold text-[11px] text-slate-700 text-center border-b uppercase tracking-wider">Buddies (B) - Quick Status</div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-[10px] text-left whitespace-nowrap">
-                                    <thead class="bg-slate-50 text-slate-500 uppercase border-b">
-                                        <tr><th class="p-2 pl-3">Name</th><th class="p-2">Phone</th><th class="p-2 text-center">B1</th><th class="p-2 text-center">B46</th><th class="p-2 text-center">B79</th></tr>
-                                    </thead>
+                                    <thead class="bg-slate-50 text-slate-500 uppercase border-b" id="th-b-summary"></thead>
                                     <tbody id="summary-b"></tbody>
                                 </table>
                             </div>
@@ -283,11 +255,11 @@
                             <input type="date" id="s-from" class="border p-1.5 text-xs rounded border-amber-300">
                             <span class="text-xs font-bold text-amber-800">TO</span>
                             <input type="date" id="s-to" class="border p-1.5 text-xs rounded border-amber-300">
-                            <button onclick="loadSalesData()" class="bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-amber-700 shadow-sm">SEARCH DATE</button>
+                            <button onclick="loadSalesData()" class="bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-amber-700 shadow-sm">SEARCH</button>
                             
                             <input type="text" id="s-search" placeholder="Search name/team..." class="border p-1.5 text-xs rounded border-amber-300 ml-2" onkeyup="renderSalesTable()">
                             
-                            <button onclick="openQuestionModal()" class="bg-indigo-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-indigo-700 transition ml-4">⚙️ MANAGE QUESTIONS</button>
+                            <button onclick="openSetupModal()" class="bg-indigo-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-indigo-700 transition ml-4">⚙️ SETUP TEAM & BOTS</button>
                             <button onclick="exportSalesExcel()" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2"><span>📊</span> EXPORT DATA</button>
                         </div>
                     </div>
@@ -331,31 +303,73 @@
         </div>
     </div>
 
-    <div id="question-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-xl shadow-xl w-[500px]">
-            <h2 class="text-xl font-bold mb-4 text-slate-800">Manage Bot Questions</h2>
-            <p class="text-xs text-slate-500 mb-4">Set questions for specific bot keywords so they map correctly in Excel.</p>
-            
-            <label class="block text-xs font-bold text-slate-700 mb-1">Select Bot Keyword</label>
-            <select id="q-keyword" class="w-full border p-2 rounded mb-4 text-sm" onchange="loadSpecificQuestions()">
-                <option value="SS12">SS12 (Morning 9:00 AM)</option>
-                <option value="SS46">SS46 (Afternoon 2:30 PM)</option>
-                <option value="SS70">SS70 (Evening 7:00 PM)</option>
-                <option value="B1">B1 (Buddies 9:00 AM)</option>
-                <option value="B46">B46 (Buddies 2:30 PM)</option>
-                <option value="B79">B79 (Buddies 7:00 PM)</option>
-            </select>
-
-            <div class="space-y-3">
-                <input type="text" id="q1" placeholder="Question 1" class="w-full border p-2 rounded text-sm outline-blue-500">
-                <input type="text" id="q2" placeholder="Question 2" class="w-full border p-2 rounded text-sm outline-blue-500">
-                <input type="text" id="q3" placeholder="Question 3" class="w-full border p-2 rounded text-sm outline-blue-500">
-                <input type="text" id="q4" placeholder="Question 4" class="w-full border p-2 rounded text-sm outline-blue-500">
+    <div id="setup-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-full overflow-y-auto flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-800 text-white sticky top-0 z-20">
+                <h2 class="text-lg font-bold">⚙️ SYSTEM SETUP: Sales Team & Bots</h2>
+                <button onclick="document.getElementById('setup-modal').classList.add('hidden')" class="text-white hover:text-red-400 font-bold text-xl">&times;</button>
             </div>
+            
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <div class="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                    <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-700 border-b flex justify-between items-center">
+                        <span>👥 Manage Sales Team</span>
+                    </div>
+                    <div class="p-3 border-b bg-white flex gap-2">
+                        <input type="text" id="nt-name" placeholder="Name" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
+                        <input type="text" id="nt-phone" placeholder="Phone (91...)" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
+                        <select id="nt-team" class="border p-1.5 text-xs rounded outline-blue-500">
+                            <option value="SS">SS (Senior)</option><option value="B">B (Buddies)</option>
+                        </select>
+                        <button onclick="addSalesPerson()" class="bg-blue-600 text-white px-3 rounded text-xs font-bold hover:bg-blue-700">+</button>
+                    </div>
+                    <div class="max-h-64 overflow-y-auto p-2">
+                        <table class="w-full text-left text-[10px]">
+                            <tbody id="setup-team-list"></tbody>
+                        </table>
+                    </div>
+                </div>
 
-            <div class="mt-6 flex justify-end gap-2">
-                <button onclick="document.getElementById('question-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-200 text-slate-700 rounded font-bold text-sm">Cancel</button>
-                <button onclick="saveQuestions()" class="px-4 py-2 bg-blue-600 text-white rounded font-bold text-sm shadow">Save Questions</button>
+                <div class="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                    <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-700 border-b flex justify-between items-center">
+                        <span>🤖 Manage Bot Keywords</span>
+                        <select id="sb-select" class="border p-1 rounded text-xs font-normal" onchange="loadBotConfig()">
+                            <option value="">-- Setup New Bot --</option>
+                        </select>
+                    </div>
+                    <div class="p-4 bg-white">
+                        <div class="flex gap-2 mb-4">
+                            <div class="w-1/3">
+                                <label class="text-[10px] font-bold text-slate-500">Keyword</label>
+                                <input type="text" id="nb-keyword" placeholder="e.g. SS12" class="border p-1.5 text-xs rounded w-full outline-blue-500 uppercase">
+                            </div>
+                            <div class="w-1/3">
+                                <label class="text-[10px] font-bold text-slate-500">Team</label>
+                                <select id="nb-team" class="border p-1.5 text-xs rounded w-full outline-blue-500">
+                                    <option value="SS">SS (Senior)</option><option value="B">B (Buddies)</option>
+                                </select>
+                            </div>
+                            <div class="w-1/3">
+                                <label class="text-[10px] font-bold text-slate-500">Time</label>
+                                <input type="time" id="nb-time" class="border p-1.5 text-xs rounded w-full outline-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="mb-2 flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-700">Dynamic Questions:</label>
+                            <button onclick="addQuestionField()" class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded hover:bg-indigo-200">+ Add Question</button>
+                        </div>
+                        <div id="dynamic-q-container" class="space-y-2 mb-4 max-h-40 overflow-y-auto p-1 border rounded bg-slate-50">
+                            </div>
+
+                        <div class="flex justify-between border-t pt-4">
+                            <button onclick="deleteBot()" class="text-red-500 text-xs font-bold hover:underline">🗑️ Delete Bot</button>
+                            <button onclick="saveBot()" class="bg-green-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-green-700 shadow">Save Bot Config</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -363,9 +377,8 @@
     <script>
         const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
         
-        let globalLogs = [];
-        let filteredLogs = [];
-        let salesReportData = [];
+        let globalLogs = []; let filteredLogs = [];
+        let salesReportData = []; let allBotsConfig = []; let allTeamMembers = [];
 
         function formatDate(dateString) {
             if(!dateString) return '-';
@@ -380,18 +393,11 @@
             const p = document.getElementById('password').value;
             const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) });
             const data = await res.json();
-            if(data.success) { 
-                localStorage.setItem('role', data.role); 
-                showApp(data.role);
-            } else { 
-                document.getElementById('login-error').classList.remove('hidden'); 
-            }
+            if(data.success) { localStorage.setItem('role', data.role); showApp(data.role); } 
+            else { document.getElementById('login-error').classList.remove('hidden'); }
         }
 
-        function logout() { 
-            localStorage.removeItem('role'); 
-            location.reload(); 
-        }
+        function logout() { localStorage.removeItem('role'); location.reload(); }
 
         function showApp(role) {
             document.getElementById('login-view').classList.add('hidden');
@@ -401,7 +407,6 @@
             if(role === 'admin') { 
                 document.getElementById('admin-dashboard').classList.remove('hidden'); 
                 loadAdminData(); 
-                
                 checkSystemHealth();
                 setInterval(checkSystemHealth, 60000); 
                 setInterval(loadActivityLogs, 5000);
@@ -451,37 +456,19 @@
         async function resetSystemData() {
             const pass = prompt("Enter RESET PASSWORD to delete ALL coupons:");
             if(!pass) return;
-            const res = await fetch('/api/admin/reset-data', {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password: pass})
-            });
+            const res = await fetch('/api/admin/reset-data', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password: pass}) });
             const data = await res.json();
-            if(data.success) {
-                alert("DATABASE CLEARED SUCCESSFULLY!");
-                loadAdminData();
-            } else { alert(data.message); }
+            if(data.success) { alert("DATABASE CLEARED SUCCESSFULLY!"); loadAdminData(); } else { alert(data.message); }
         }
 
         async function loadActivityLogs() {
-            const res = await fetch('/api/admin/activity-logs');
-            const logs = await res.json();
-            document.getElementById('activity-logs').innerHTML = logs.map(l => `
-                <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
-                    <td class="p-2 text-blue-400 font-bold whitespace-nowrap w-24">${new Date(l.timestamp).toLocaleTimeString()}</td>
-                    <td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td>
-                    <td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td>
-                    <td class="p-2 text-slate-400">${l.details}</td>
-                </tr>
-            `).join('');
+            const res = await fetch('/api/admin/activity-logs'); const logs = await res.json();
+            document.getElementById('activity-logs').innerHTML = logs.map(l => `<tr class="border-b border-slate-700 hover:bg-slate-700 transition"><td class="p-2 text-blue-400 font-bold whitespace-nowrap w-24">${new Date(l.timestamp).toLocaleTimeString()}</td><td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td><td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td><td class="p-2 text-slate-400">${l.details}</td></tr>`).join('');
         }
 
         async function loadAdminData() {
             const agents = await fetch('/api/agents').then(r => r.json());
-            document.getElementById('agents-list').innerHTML = agents.map(a => `
-                <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}">
-                    <span class="text-xs font-bold">${a.name}</span>
-                    <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4 cursor-pointer">
-                </div>
-            `).join('');
+            document.getElementById('agents-list').innerHTML = agents.map(a => `<div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}"><span class="text-xs font-bold">${a.name}</span><input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4 cursor-pointer"></div>`).join('');
 
             globalLogs = await fetch('/api/admin/logs').then(r => r.json());
             
@@ -489,66 +476,33 @@
             const patLogs = globalLogs.filter(l => l.audienceType === 'Patient');
             const denLogs = globalLogs.filter(l => l.audienceType === 'Dental'); 
             
-            document.getElementById('stat-total-sent').innerText = globalLogs.length;
-            document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
-            
-            document.getElementById('stat-doc-sent').innerText = docLogs.length;
-            document.getElementById('stat-doc-redeemed').innerText = docLogs.filter(l => l.isUsed).length;
-            
-            document.getElementById('stat-pat-sent').innerText = patLogs.length;
-            document.getElementById('stat-pat-redeemed').innerText = patLogs.filter(l => l.isUsed).length;
-
-            document.getElementById('stat-den-sent').innerText = denLogs.length;
-            document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
+            document.getElementById('stat-total-sent').innerText = globalLogs.length; document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
+            document.getElementById('stat-doc-sent').innerText = docLogs.length; document.getElementById('stat-doc-redeemed').innerText = docLogs.filter(l => l.isUsed).length;
+            document.getElementById('stat-pat-sent').innerText = patLogs.length; document.getElementById('stat-pat-redeemed').innerText = patLogs.filter(l => l.isUsed).length;
+            document.getElementById('stat-den-sent').innerText = denLogs.length; document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
 
             applyFilters();
-            
-            if(!document.getElementById('sales-section').classList.contains('hidden')) {
-                loadSalesData();
-            }
+            if(!document.getElementById('sales-section').classList.contains('hidden')) loadSalesData();
         }
 
         function clearFilters() {
-            document.getElementById('search-filter').value = '';
-            document.getElementById('date-from').value = '';
-            document.getElementById('date-to').value = '';
-            document.getElementById('status-filter').value = '';
-            applyFilters();
+            document.getElementById('search-filter').value = ''; document.getElementById('date-from').value = ''; document.getElementById('date-to').value = ''; document.getElementById('status-filter').value = ''; applyFilters();
         }
 
         function applyFilters() {
             const search = document.getElementById('search-filter').value.toLowerCase();
-            const dateFrom = document.getElementById('date-from').value;
-            const dateTo = document.getElementById('date-to').value;
-            const status = document.getElementById('status-filter').value;
+            const dateFrom = document.getElementById('date-from').value; const dateTo = document.getElementById('date-to').value; const status = document.getElementById('status-filter').value;
             
             filteredLogs = globalLogs.filter(item => {
                 let matchSearch = true;
-                if (search) {
-                    const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''} ${item.patientRegNo || ''}`.toLowerCase();
-                    matchSearch = searchStr.includes(search);
-                }
-                
+                if (search) { const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''} ${item.patientRegNo || ''}`.toLowerCase(); matchSearch = searchStr.includes(search); }
                 let matchDate = true;
-                if (dateFrom || dateTo) {
-                    const itemDate = new Date(item.createdAt).toISOString().split('T')[0];
-                    if (dateFrom && itemDate < dateFrom) matchDate = false;
-                    if (dateTo && itemDate > dateTo) matchDate = false;
-                }
-                
+                if (dateFrom || dateTo) { const itemDate = new Date(item.createdAt).toISOString().split('T')[0]; if (dateFrom && itemDate < dateFrom) matchDate = false; if (dateTo && itemDate > dateTo) matchDate = false; }
                 let matchStatus = true;
-                if (status) {
-                    if (status === 'Redeemed' && !item.isUsed) matchStatus = false;
-                    if (status === 'Active' && item.isUsed) matchStatus = false;
-                    if (status === 'PendingCall' && item.callStatus !== 'Pending') matchStatus = false;
-                    if (status === 'CallCompleted' && item.callStatus !== 'Completed') matchStatus = false;
-                }
-                
+                if (status) { if (status === 'Redeemed' && !item.isUsed) matchStatus = false; if (status === 'Active' && item.isUsed) matchStatus = false; if (status === 'PendingCall' && item.callStatus !== 'Pending') matchStatus = false; if (status === 'CallCompleted' && item.callStatus !== 'Completed') matchStatus = false; }
                 return matchSearch && matchDate && matchStatus;
             });
-            
             filteredLogs.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
-            
             renderTables();
         }
 
@@ -571,36 +525,14 @@
                     actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`;
                 }
 
-                return `
-                <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td>
-                    <td class="p-4">
-                        <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
-                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
-                    </td>
-                    <td class="p-4 font-bold text-slate-700">${i.proPhone || '-'}</td>
-                    <td class="p-4 text-xs">${stars}</td>
-                    <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
-                    <td class="p-4">
-                        <div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${formatDate(i.requestCallAt)}</div>
-                        <div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div>
-                    </td>
-                    <td class="p-4">${statusBadge}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
-                </tr>
-            `}).join('');
+                return `<tr class="border-b hover:bg-slate-50 transition"><td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td><td class="p-4"><span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br><span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span></td><td class="p-4 font-bold text-slate-700">${i.proPhone || '-'}</td><td class="p-4 text-xs">${stars}</td><td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td><td class="p-4"><div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${formatDate(i.requestCallAt)}</div><div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div></td><td class="p-4">${statusBadge}</td><td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td><td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td></tr>`;
+            }).join('');
         }
 
         function renderTables() {
-            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
-            document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(docLogs);
-
-            const denLogs = filteredLogs.filter(l => l.audienceType === 'Dental');
-            document.getElementById('dental-logs').innerHTML = getTableRowsHTML(denLogs);
-
-            const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
-            document.getElementById('patient-logs').innerHTML = patLogs.map(i => {
+            document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Doctor'));
+            document.getElementById('dental-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Dental'));
+            document.getElementById('patient-logs').innerHTML = filteredLogs.filter(l => l.audienceType === 'Patient').map(i => {
                 let callBadge = '';
                 if(i.callStatus === 'Pending') callBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px]">⏳ PENDING</span>';
                 else if(i.callStatus === 'Completed') callBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px]">📞 CALL DONE</span>';
@@ -608,45 +540,20 @@
                 else callBadge = '-';
 
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
-
                 let actionHTML = '';
                 if (i.buttonClicked && i.buttonClicked.trim() !== '') {
-                    let buttons = i.buttonClicked.split(',');
-                    actionHTML = buttons.map(btn => `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">${btn.trim()}</span>`).join('');
-                } else {
-                    actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`;
-                }
+                    actionHTML = i.buttonClicked.split(',').map(btn => `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">${btn.trim()}</span>`).join('');
+                } else { actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`; }
 
-                return `
-                <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
-                    <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
-                    <td class="p-4">
-                        <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
-                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
-                    </td>
-                    <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
-                    <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
-                    <td class="p-4">${callBadge}</td>
-                    <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
-                </tr>
-            `}).join('');
+                return `<tr class="border-b hover:bg-slate-50 transition"><td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td><td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td><td class="p-4"><span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br><span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span></td><td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td><td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td><td class="p-4">${callBadge}</td><td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td><td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td><td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td></tr>`;
+            }).join('');
         }
 
-        async function toggleAgent(id, isOnline) {
-            await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) });
-            loadAdminData();
-        }
+        async function toggleAgent(id, isOnline) { await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) }); loadAdminData(); }
 
         async function exportFilteredExcel(type) {
             const dataToExport = filteredLogs.filter(i => i.audienceType === type);
-            if(dataToExport.length === 0) {
-                alert("No data to export based on current filters.");
-                return;
-            }
-            
+            if(dataToExport.length === 0) return alert("No data to export based on current filters.");
             let csv = "";
             if (type === 'Doctor' || type === 'Dental') {
                 csv = "Created_Date,Name,Phone,Code,Service/Discount,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Patient_Reg_No,Branch_Redeemed\n";
@@ -661,299 +568,223 @@
                     csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             }
-
             const blob = new Blob([csv], { type: 'text/csv' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `UIC_${type}_Filtered_Report_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+            link.download = `UIC_${type}_Filtered_Report_${new Date().toISOString().split('T')[0]}.csv`; link.click();
         }
 
         function downloadSample() {
             const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217\nDr. Sneha Dental Clinic,918888888888,Ahmedabad,917043001130";
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "uic_sample.csv";
-            link.click();
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "uic_sample.csv"; link.click();
         }
 
         function shoot() {
-            const f = document.getElementById('csv').files[0];
-            const btn = document.getElementById('btn-shoot');
+            const f = document.getElementById('csv').files[0]; const btn = document.getElementById('btn-shoot');
             if(!f || !document.getElementById('exp').value) return alert("Upload CSV and select expiry date!");
-            
             btn.innerText = "STARTING..."; btn.disabled = true;
-            
             Papa.parse(f, { header: true, skipEmptyLines: true, complete: async (res) => {
                 const validTargets = res.data.filter(row => row.phone && row.phone.trim() !== '');
-                if(validTargets.length === 0) { 
-                    alert("No valid phone numbers found in CSV!"); 
-                    btn.innerText = "SEND"; btn.disabled = false; return; 
-                }
-                
+                if(validTargets.length === 0) { alert("No valid phone numbers found in CSV!"); btn.innerText = "SEND"; btn.disabled = false; return; }
                 try {
-                    const req = await fetch('/api/campaign/shoot', { 
-                        method: 'POST', 
-                        headers: {'Content-Type': 'application/json'}, 
-                        body: JSON.stringify({ 
-                            targetList: validTargets, 
-                            discount: document.getElementById('disc').value, 
-                            expiryDate: document.getElementById('exp').value, 
-                            audienceType: document.getElementById('aud-type').value 
-                        }) 
-                    });
-                    const resData = await req.json();
-                    
-                    alert(resData.message || 'Campaign Started Safely in Background!'); 
-                    document.getElementById('csv').value = ''; 
-                    loadAdminData(); 
-                } catch(e) { 
-                    alert('Error starting campaign!'); 
-                } finally { 
-                    btn.innerText = "SEND"; btn.disabled = false; 
-                }
+                    const req = await fetch('/api/campaign/shoot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ targetList: validTargets, discount: document.getElementById('disc').value, expiryDate: document.getElementById('exp').value, audienceType: document.getElementById('aud-type').value }) });
+                    const resData = await req.json(); alert(resData.message || 'Campaign Started Safely in Background!'); document.getElementById('csv').value = ''; loadAdminData(); 
+                } catch(e) { alert('Error starting campaign!'); } finally { btn.innerText = "SEND"; btn.disabled = false; }
             }});
         }
 
-        // 🚨 SALES BOT LOGIC START 🚨
-        function renderSalesSummary(filteredData) {
-            const persons = {};
-            filteredData.forEach(row => {
-                if(!persons[row.phone]) {
-                    persons[row.phone] = { name: row.name, phone: row.phone, team: row.team, replies: {} };
-                }
-                if(row.status === 'Replied') {
-                    persons[row.phone].replies[row.keyword] = true;
-                }
-            });
-
-            let ssHTML = '';
-            let bHTML = '';
-            const yesBadge = '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-200">Yes</span>';
-            const noBadge = '<span class="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-200">No</span>';
-
-            Object.values(persons).forEach(p => {
-                if(p.team === 'SS') {
-                    ssHTML += `<tr class="border-b hover:bg-slate-50">
-                        <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
-                        <td class="p-2 text-slate-500">${p.phone}</td>
-                        <td class="p-2 text-center">${p.replies['SS12'] ? yesBadge : noBadge}</td>
-                        <td class="p-2 text-center">${p.replies['SS46'] ? yesBadge : noBadge}</td>
-                        <td class="p-2 text-center">${p.replies['SS70'] ? yesBadge : noBadge}</td>
-                    </tr>`;
-                } else if(p.team === 'B') {
-                    bHTML += `<tr class="border-b hover:bg-slate-50">
-                        <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
-                        <td class="p-2 text-slate-500">${p.phone}</td>
-                        <td class="p-2 text-center">${p.replies['B1'] ? yesBadge : noBadge}</td>
-                        <td class="p-2 text-center">${p.replies['B46'] ? yesBadge : noBadge}</td>
-                        <td class="p-2 text-center">${p.replies['B79'] ? yesBadge : noBadge}</td>
-                    </tr>`;
-                }
-            });
-
-            document.getElementById('summary-ss').innerHTML = ssHTML || `<tr><td colspan="5" class="p-4 text-center text-slate-400 font-semibold italic">No Activity Found</td></tr>`;
-            document.getElementById('summary-b').innerHTML = bHTML || `<tr><td colspan="5" class="p-4 text-center text-slate-400 font-semibold italic">No Activity Found</td></tr>`;
-        }
-
+        // 🚨 DYNAMIC SALES BOT LOGIC 🚨
         async function loadSalesData() {
             try {
-                let from = document.getElementById('s-from').value;
-                let to = document.getElementById('s-to').value;
+                let from = document.getElementById('s-from').value; let to = document.getElementById('s-to').value;
                 let url = '/api/sales/tracker';
                 if(from && to) url += `?from=${from}&to=${to}`;
-
-                salesReportData = await fetch(url).then(r => r.json());
+                const res = await fetch(url).then(r => r.json());
+                salesReportData = res.report; allBotsConfig = res.bots; allTeamMembers = res.team;
                 renderSalesTable();
             } catch(e) {}
         }
 
-        function renderSalesTable() {
-            const searchTerm = document.getElementById('s-search').value.toLowerCase();
-            const filtered = salesReportData.filter(r => 
-                r.name.toLowerCase().includes(searchTerm) || 
-                r.team.toLowerCase().includes(searchTerm) ||
-                r.date.includes(searchTerm)
-            );
+        function renderSalesSummary(filteredData) {
+            const persons = {};
+            filteredData.forEach(row => {
+                if(!persons[row.phone]) persons[row.phone] = { name: row.name, phone: row.phone, team: row.team, replies: {} };
+                if(row.status === 'Replied') persons[row.phone].replies[row.keyword] = true;
+            });
 
-            // Populate the Top Summary Tables
+            // Dynamic Bot Headers based on backend config
+            const ssBots = allBotsConfig.filter(b => b.team === 'SS').sort((a,b)=>a.time.localeCompare(b.time));
+            const bBots = allBotsConfig.filter(b => b.team === 'B').sort((a,b)=>a.time.localeCompare(b.time));
+
+            document.getElementById('th-ss-summary').innerHTML = `<tr><th class="p-2 pl-3">Name</th><th class="p-2">Phone</th>${ssBots.map(b=>`<th class="p-2 text-center" title="${b.time}">${b.keyword}</th>`).join('')}</tr>`;
+            document.getElementById('th-b-summary').innerHTML = `<tr><th class="p-2 pl-3">Name</th><th class="p-2">Phone</th>${bBots.map(b=>`<th class="p-2 text-center" title="${b.time}">${b.keyword}</th>`).join('')}</tr>`;
+
+            const yesBadge = '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-200">Yes</span>';
+            const noBadge = '<span class="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-200">No</span>';
+
+            let ssHTML = '', bHTML = '';
+            Object.values(persons).forEach(p => {
+                if(p.team === 'SS') {
+                    ssHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td><td class="p-2 text-slate-500">${p.phone}</td>${ssBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}</tr>`;
+                } else if(p.team === 'B') {
+                    bHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td><td class="p-2 text-slate-500">${p.phone}</td>${bBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}</tr>`;
+                }
+            });
+
+            document.getElementById('summary-ss').innerHTML = ssHTML || `<tr><td colspan="10" class="p-4 text-center text-slate-400 italic">No Activity Found</td></tr>`;
+            document.getElementById('summary-b').innerHTML = bHTML || `<tr><td colspan="10" class="p-4 text-center text-slate-400 italic">No Activity Found</td></tr>`;
+        }
+
+        function renderSalesTable() {
+            const search = document.getElementById('s-search').value.toLowerCase();
+            const filtered = salesReportData.filter(r => r.name.toLowerCase().includes(search) || r.team.toLowerCase().includes(search) || r.date.includes(search));
             renderSalesSummary(filtered);
 
             document.getElementById('sales-logs').innerHTML = filtered.map(r => {
-                let statusBadge = r.status === 'Replied' 
-                    ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 shadow-sm">✅ Replied</span><br><span class="text-[10px] text-slate-500 ml-1 font-bold mt-1 inline-block">⏱️ ${new Date(r.time).toLocaleTimeString()}</span>` 
-                    : `<span class="bg-red-50 text-red-600 font-bold px-2 py-1 rounded border border-red-200 shadow-sm">❌ Not Reply</span>`;
+                let statusBadge = r.status === 'Replied' ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 shadow-sm">✅ Replied</span><br><span class="text-[10px] text-slate-500 ml-1 font-bold mt-1 inline-block">⏱️ ${new Date(r.time).toLocaleTimeString()}</span>` : `<span class="bg-red-50 text-red-600 font-bold px-2 py-1 rounded border border-red-200 shadow-sm">❌ Not Reply</span>`;
                 
                 let qaHTML = '<div class="text-[10px] space-y-2 whitespace-normal">';
                 if(r.answers && r.answers.length > 0) {
                     r.answers.forEach((ans, idx) => {
                         let q = r.questions && r.questions[idx] ? r.questions[idx] : `Question ${idx+1}`;
-                        let formattedAns = ans.replace(/\n/g, '<br>');
-                        qaHTML += `<div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p><p class="text-blue-700 font-semibold leading-relaxed">👉 ${formattedAns}</p></div>`;
+                        qaHTML += `<div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p><p class="text-blue-700 font-semibold leading-relaxed">👉 ${ans.replace(/\n/g, '<br>')}</p></div>`;
                     });
-                } else {
-                    qaHTML += `<span class="text-slate-400 italic">No answers recorded.</span>`;
-                }
+                } else { qaHTML += `<span class="text-slate-400 italic">No answers recorded.</span>`; }
                 qaHTML += '</div>';
 
-                let replyHTML = r.adminReply 
-                    ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] block font-semibold whitespace-normal shadow-inner border border-blue-200 mb-1">Feedback: ${r.adminReply}</span>`
-                    : '';
-                
+                let replyHTML = r.adminReply ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] block font-semibold whitespace-normal shadow-inner border border-blue-200 mb-1">Feedback: ${r.adminReply}</span>` : '';
                 replyHTML += `<div class="flex gap-1 mt-1"><input type="text" id="reply-${r.phone}-${r.keyword}-${r.date}" placeholder="Type feedback..." class="border border-slate-300 p-1.5 rounded text-xs w-28 outline-blue-500"><button onclick="sendSalesReply('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm">Send</button></div>`;
 
-                let keywordBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded tracking-wider text-[10px] block w-max">${r.keyword}</span>`;
-                if(r.delayStr && r.delayStr !== '-') {
-                    let color = r.delayStr.includes('Early') ? 'text-green-600' : 'text-orange-600';
-                    keywordBadge += `<span class="text-[10px] font-bold ${color} mt-1 block">${r.delayStr}</span>`;
-                }
+                let kwBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded tracking-wider text-[10px] block w-max">${r.keyword}</span>`;
+                if(r.delayStr && r.delayStr !== '-') kwBadge += `<span class="text-[10px] font-bold ${r.delayStr.includes('Early')?'text-green-600':'text-orange-600'} mt-1 block">${r.delayStr}</span>`;
 
-                return `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td>
-                    <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td>
-                    <td class="p-4">${keywordBadge}</td>
-                    <td class="p-4">${statusBadge}</td>
-                    <td class="p-4">${qaHTML}</td>
-                    <td class="p-4">${replyHTML}</td>
-                </tr>
-                `;
+                return `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td><td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td><td class="p-4">${kwBadge}</td><td class="p-4">${statusBadge}</td><td class="p-4">${qaHTML}</td><td class="p-4">${replyHTML}</td></tr>`;
             }).join('');
         }
 
         async function sendSalesReply(phone, date, keyword) {
-            const input = document.getElementById(`reply-${phone}-${keyword}-${date}`);
-            if(!input.value.trim()) return;
-            try {
-                await fetch('/api/sales/reply', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone, text: input.value, date, keyword}) });
-                alert("Feedback sent successfully!");
-                loadSalesData();
-            } catch(e) { alert("Failed to send reply"); }
+            const val = document.getElementById(`reply-${phone}-${keyword}-${date}`).value;
+            if(!val.trim()) return;
+            await fetch('/api/sales/reply', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone, text: val, date, keyword}) });
+            alert("Feedback sent!"); loadSalesData();
         }
 
-        function openQuestionModal() {
-            document.getElementById('question-modal').classList.remove('hidden');
-            loadSpecificQuestions();
+        // --- Setup Modal Logic ---
+        async function openSetupModal() {
+            document.getElementById('setup-modal').classList.remove('hidden');
+            await fetchTeamSetup(); loadBotConfigList();
         }
 
-        async function loadSpecificQuestions() {
-            try {
-                const keyword = document.getElementById('q-keyword').value;
-                const questionsList = await fetch('/api/sales/questions').then(r => r.json());
-                const match = questionsList.find(q => q.keyword === keyword);
-                
-                document.getElementById('q1').value = match && match.questions[0] ? match.questions[0] : '';
-                document.getElementById('q2').value = match && match.questions[1] ? match.questions[1] : '';
-                document.getElementById('q3').value = match && match.questions[2] ? match.questions[2] : '';
-                document.getElementById('q4').value = match && match.questions[3] ? match.questions[3] : '';
-            } catch(e){}
+        async function fetchTeamSetup() {
+            const team = await fetch('/api/sales/team').then(r=>r.json());
+            document.getElementById('setup-team-list').innerHTML = team.map(t => `
+                <tr class="border-b ${!t.isActive?'opacity-50 bg-red-50':''}">
+                    <td class="p-2 font-bold">${t.name} <span class="bg-slate-200 px-1 rounded">${t.team}</span></td>
+                    <td class="p-2">${t.phone}</td>
+                    <td class="p-2 text-right">
+                        <button onclick="toggleSalesPerson('${t._id}', ${!t.isActive})" class="px-2 py-1 rounded text-white ${t.isActive?'bg-red-500':'bg-green-500'}">${t.isActive?'Disable':'Enable'}</button>
+                        <button onclick="deleteSalesPerson('${t._id}')" class="px-2 py-1 text-slate-500 hover:text-red-600">❌</button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        async function saveQuestions() {
-            const keyword = document.getElementById('q-keyword').value;
-            const questions = [
-                document.getElementById('q1').value, document.getElementById('q2').value,
-                document.getElementById('q3').value, document.getElementById('q4').value
-            ].filter(q => q.trim() !== '');
+        async function addSalesPerson() {
+            const data = { name: document.getElementById('nt-name').value, phone: document.getElementById('nt-phone').value, team: document.getElementById('nt-team').value };
+            if(!data.name || !data.phone) return alert("Fill name and phone");
+            await fetch('/api/sales/team', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+            fetchTeamSetup(); loadSalesData();
+        }
 
-            await fetch('/api/sales/questions', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({keyword, questions}) });
-            alert('Questions saved successfully!');
-            document.getElementById('question-modal').classList.add('hidden');
-            loadSalesData();
+        async function toggleSalesPerson(id, state) { await fetch(`/api/sales/team/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({isActive:state})}); fetchTeamSetup(); loadSalesData(); }
+        async function deleteSalesPerson(id) { if(confirm("Delete this person?")) { await fetch(`/api/sales/team/${id}`, {method:'DELETE'}); fetchTeamSetup(); loadSalesData(); } }
+
+        function loadBotConfigList() {
+            const sel = document.getElementById('sb-select');
+            sel.innerHTML = `<option value="">-- Setup New Bot --</option>` + allBotsConfig.map(b => `<option value="${b.keyword}">${b.keyword} (${b.team})</option>`).join('');
+            clearBotForm();
+        }
+
+        function clearBotForm() {
+            document.getElementById('nb-keyword').value = ''; document.getElementById('nb-team').value = 'SS'; document.getElementById('nb-time').value = '09:00';
+            document.getElementById('dynamic-q-container').innerHTML = ''; addQuestionField();
+        }
+
+        function addQuestionField(val = '') {
+            const div = document.createElement('div'); div.className = "flex gap-1";
+            div.innerHTML = `<input type="text" value="${val}" class="dyn-q border p-1.5 text-xs rounded w-full outline-blue-500" placeholder="Type question..."><button onclick="this.parentElement.remove()" class="text-red-500 px-2 font-bold">X</button>`;
+            document.getElementById('dynamic-q-container').appendChild(div);
+        }
+
+        function loadBotConfig() {
+            const kw = document.getElementById('sb-select').value;
+            if(!kw) return clearBotForm();
+            const bot = allBotsConfig.find(b=>b.keyword === kw);
+            if(bot) {
+                document.getElementById('nb-keyword').value = bot.keyword; document.getElementById('nb-team').value = bot.team; document.getElementById('nb-time').value = bot.time;
+                document.getElementById('dynamic-q-container').innerHTML = '';
+                bot.questions.forEach(q => addQuestionField(q));
+                if(bot.questions.length === 0) addQuestionField();
+            }
+        }
+
+        async function saveBot() {
+            const keyword = document.getElementById('nb-keyword').value.toUpperCase();
+            const team = document.getElementById('nb-team').value; const time = document.getElementById('nb-time').value;
+            let questions = []; document.querySelectorAll('.dyn-q').forEach(inp => { if(inp.value.trim()) questions.push(inp.value.trim()); });
+            if(!keyword || !time) return alert("Keyword and Time required!");
+            await fetch('/api/sales/questions', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({keyword, team, time, questions}) });
+            alert('Bot saved!'); loadSalesData(); openSetupModal();
+        }
+
+        async function deleteBot() {
+            const kw = document.getElementById('nb-keyword').value; const bot = allBotsConfig.find(b=>b.keyword === kw);
+            if(!bot || !confirm(`Delete Bot ${kw}?`)) return;
+            await fetch(`/api/sales/questions/${bot._id}`, { method: 'DELETE' }); alert('Deleted!'); loadSalesData(); openSetupModal();
         }
 
         function exportSalesExcel() {
-            if(salesReportData.length === 0) return alert("No sales data available");
-            
-            let csv = "Date,Name,Phone,Team,Status,Keyword,Delay,Reply Time,Admin Feedback,Q1,Ans1,Q2,Ans2,Q3,Ans3,Q4,Ans4\n";
+            if(salesReportData.length === 0) return alert("No data");
+            let maxQ = 0; salesReportData.forEach(r => { if(r.questions.length > maxQ) maxQ = r.questions.length; });
+            if (maxQ < 4) maxQ = 4; 
+            let csv = "Date,Name,Phone,Team,Status,Keyword,Delay,Reply Time,Admin Feedback";
+            for(let i=0; i<maxQ; i++) csv += `,Q${i+1},Ans${i+1}`; csv += "\n";
+
             salesReportData.forEach(r => {
                 let row = `"${r.date}","${r.name}","${r.phone}","${r.team}","${r.status}","${r.keyword}","${r.delayStr || ''}","${r.time ? new Date(r.time).toLocaleString() : ''}","${r.adminReply || ''}"`;
-                
-                for(let i=0; i<4; i++) {
+                for(let i=0; i<maxQ; i++) {
                     let q = r.questions[i] ? r.questions[i].replace(/"/g, '""') : '';
                     let ans = r.answers[i] ? r.answers[i].replace(/"/g, '""') : '';
                     row += `,"${q}","${ans}"`;
                 }
                 csv += row + "\n";
             });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-            link.download = `UIC_Sales_Tracker_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); link.download = `UIC_Sales_Tracker.csv`; link.click();
         }
 
         let currentValidCode = null;
         async function verifyCode() {
-            const code = document.getElementById('verify-code').value;
-            const resBox = document.getElementById('verify-result');
-            if(!code) return;
-            
+            const code = document.getElementById('verify-code').value; const resBox = document.getElementById('verify-result'); if(!code) return;
             const res = await fetch('/api/coupon/validate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code}) });
-            const data = await res.json();
-            resBox.classList.remove('hidden');
-            
+            const data = await res.json(); resBox.classList.remove('hidden');
             if(data.valid) {
-                currentValidCode = code;
-                let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
-                
+                currentValidCode = code; let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
                 const displayDiscount = data.discount === 'CBCT' ? 'CBCT Special' : `${data.discount}% OFF`;
-
                 resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-500 bg-green-50";
-                resBox.innerHTML = `
-                    <p class="text-green-700 font-black text-xl mb-2">✅ VALID COUPON</p>
-                    <p class="text-slate-800 font-bold mb-1">Name: <span class="font-normal">${data.name}</span></p>
-                    <p class="text-slate-800 font-bold mb-6">Service/Discount: <span class="font-normal text-blue-600">${displayDiscount}</span></p>
-                    
-                    <label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label>
-                    <select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-4 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select>
-                    
-                    <label class="text-xs font-black tracking-widest text-slate-600 block mb-2 mt-2">PATIENT REG. NO *</label>
-                    <input type="text" id="redeem-regno" placeholder="Enter Reg No" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-6 font-bold text-slate-700 focus:outline-none focus:border-blue-500">
-                    
-                    <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-black tracking-wider py-4 rounded-xl shadow-lg hover:bg-green-700 transition">CONFIRM & REDEEM</button>
-                `;
-            } else { 
-                resBox.className = "mt-6 w-full p-4 rounded-xl border-2 border-red-500 bg-red-50"; 
-                resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`; 
-            }
+                resBox.innerHTML = `<p class="text-green-700 font-black text-xl mb-2">✅ VALID COUPON</p><p class="text-slate-800 font-bold mb-1">Name: <span class="font-normal">${data.name}</span></p><p class="text-slate-800 font-bold mb-6">Service/Discount: <span class="font-normal text-blue-600">${displayDiscount}</span></p><label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label><select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-4 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select><label class="text-xs font-black tracking-widest text-slate-600 block mb-2 mt-2">PATIENT REG. NO *</label><input type="text" id="redeem-regno" placeholder="Enter Reg No" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-6 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><button onclick="redeemCode()" class="w-full bg-green-600 text-white font-black tracking-wider py-4 rounded-xl shadow-lg hover:bg-green-700 transition">CONFIRM & REDEEM</button>`;
+            } else { resBox.className = "mt-6 w-full p-4 rounded-xl border-2 border-red-500 bg-red-50"; resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`; }
         }
 
         async function redeemCode() {
-            const branch = document.getElementById('redeem-branch').value;
-            const regNo = document.getElementById('redeem-regno').value;
-            
-            if(!branch) return alert("Please select a branch first!");
-            if(!regNo || regNo.trim() === '') return alert("Please enter Patient Reg. No!");
-
-            await fetch('/api/coupon/redeem', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({
-                    code: currentValidCode, 
-                    branch: branch, 
-                    patientRegNo: regNo.trim()
-                }) 
-            });
-            
-            document.getElementById('verify-code').value = ''; 
-            document.getElementById('verify-result').classList.add('hidden');
-            loadUserData(); loadAdminData(); 
-            alert(`Success! Redeemed at ${branch} with Reg No: ${regNo}`);
+            const branch = document.getElementById('redeem-branch').value; const regNo = document.getElementById('redeem-regno').value;
+            if(!branch) return alert("Please select a branch first!"); if(!regNo || regNo.trim() === '') return alert("Please enter Patient Reg. No!");
+            await fetch('/api/coupon/redeem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode, branch: branch, patientRegNo: regNo.trim()}) });
+            document.getElementById('verify-code').value = ''; document.getElementById('verify-result').classList.add('hidden'); loadUserData(); loadAdminData(); alert(`Success! Redeemed at ${branch} with Reg No: ${regNo}`);
         }
 
         async function loadUserData() {
-            const res = await fetch('/api/user/redeemed-today');
-            const logs = await res.json();
-            document.getElementById('redeemed-list').innerHTML = logs.map(l => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td>
-                    <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
-                    <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
-                    <td class="p-4 font-bold text-slate-600">${l.patientRegNo || '-'}</td>
-                    <td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
-                </tr>
-            `).join('');
+            const logs = await fetch('/api/user/redeemed-today').then(r => r.json());
+            document.getElementById('redeemed-list').innerHTML = logs.map(l => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td><td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td><td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td><td class="p-4 font-bold text-slate-600">${l.patientRegNo || '-'}</td><td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td></tr>`).join('');
         }
     </script>
 </body>
