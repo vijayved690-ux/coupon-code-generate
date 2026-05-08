@@ -250,8 +250,34 @@
                 </div>
 
                 <div id="sales-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 border-b border-slate-200 bg-slate-50" id="sales-summary-container">
+                        <div class="border border-slate-300 rounded-lg shadow-sm overflow-hidden bg-white">
+                            <div class="bg-slate-200 p-2 font-bold text-[11px] text-slate-700 text-center border-b uppercase tracking-wider">Senior Sales (SS) - Quick Status</div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-[10px] text-left whitespace-nowrap">
+                                    <thead class="bg-slate-50 text-slate-500 uppercase border-b">
+                                        <tr><th class="p-2 pl-3">Name</th><th class="p-2">Phone</th><th class="p-2 text-center">SS12</th><th class="p-2 text-center">SS46</th><th class="p-2 text-center">SS70</th></tr>
+                                    </thead>
+                                    <tbody id="summary-ss"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="border border-slate-300 rounded-lg shadow-sm overflow-hidden bg-white">
+                            <div class="bg-slate-200 p-2 font-bold text-[11px] text-slate-700 text-center border-b uppercase tracking-wider">Buddies (B) - Quick Status</div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-[10px] text-left whitespace-nowrap">
+                                    <thead class="bg-slate-50 text-slate-500 uppercase border-b">
+                                        <tr><th class="p-2 pl-3">Name</th><th class="p-2">Phone</th><th class="p-2 text-center">B1</th><th class="p-2 text-center">B46</th><th class="p-2 text-center">B79</th></tr>
+                                    </thead>
+                                    <tbody id="summary-b"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="p-4 border-b bg-amber-50 flex flex-wrap justify-between items-center gap-4">
-                        <h3 class="font-bold text-amber-800 text-sm">Sales Team Responses</h3>
+                        <h3 class="font-bold text-amber-800 text-sm">Detailed Bot Responses</h3>
                         
                         <div class="flex gap-2 items-center flex-wrap">
                             <input type="date" id="s-from" class="border p-1.5 text-xs rounded border-amber-300">
@@ -265,6 +291,7 @@
                             <button onclick="exportSalesExcel()" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2"><span>📊</span> EXPORT DATA</button>
                         </div>
                     </div>
+                    
                     <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
@@ -690,6 +717,46 @@
         }
 
         // 🚨 SALES BOT LOGIC START 🚨
+        function renderSalesSummary(filteredData) {
+            const persons = {};
+            filteredData.forEach(row => {
+                if(!persons[row.phone]) {
+                    persons[row.phone] = { name: row.name, phone: row.phone, team: row.team, replies: {} };
+                }
+                if(row.status === 'Replied') {
+                    persons[row.phone].replies[row.keyword] = true;
+                }
+            });
+
+            let ssHTML = '';
+            let bHTML = '';
+            const yesBadge = '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-200">Yes</span>';
+            const noBadge = '<span class="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-200">No</span>';
+
+            Object.values(persons).forEach(p => {
+                if(p.team === 'SS') {
+                    ssHTML += `<tr class="border-b hover:bg-slate-50">
+                        <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
+                        <td class="p-2 text-slate-500">${p.phone}</td>
+                        <td class="p-2 text-center">${p.replies['SS12'] ? yesBadge : noBadge}</td>
+                        <td class="p-2 text-center">${p.replies['SS46'] ? yesBadge : noBadge}</td>
+                        <td class="p-2 text-center">${p.replies['SS70'] ? yesBadge : noBadge}</td>
+                    </tr>`;
+                } else if(p.team === 'B') {
+                    bHTML += `<tr class="border-b hover:bg-slate-50">
+                        <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
+                        <td class="p-2 text-slate-500">${p.phone}</td>
+                        <td class="p-2 text-center">${p.replies['B1'] ? yesBadge : noBadge}</td>
+                        <td class="p-2 text-center">${p.replies['B46'] ? yesBadge : noBadge}</td>
+                        <td class="p-2 text-center">${p.replies['B79'] ? yesBadge : noBadge}</td>
+                    </tr>`;
+                }
+            });
+
+            document.getElementById('summary-ss').innerHTML = ssHTML || `<tr><td colspan="5" class="p-4 text-center text-slate-400 font-semibold italic">No Activity Found</td></tr>`;
+            document.getElementById('summary-b').innerHTML = bHTML || `<tr><td colspan="5" class="p-4 text-center text-slate-400 font-semibold italic">No Activity Found</td></tr>`;
+        }
+
         async function loadSalesData() {
             try {
                 let from = document.getElementById('s-from').value;
@@ -709,6 +776,9 @@
                 r.team.toLowerCase().includes(searchTerm) ||
                 r.date.includes(searchTerm)
             );
+
+            // Populate the Top Summary Tables
+            renderSalesSummary(filtered);
 
             document.getElementById('sales-logs').innerHTML = filtered.map(r => {
                 let statusBadge = r.status === 'Replied' 
@@ -812,7 +882,6 @@
             link.download = `UIC_Sales_Tracker_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
         }
-        // 🚨 SALES BOT LOGIC END 🚨
 
         let currentValidCode = null;
         async function verifyCode() {
