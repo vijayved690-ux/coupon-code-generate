@@ -11,6 +11,7 @@ const Activity = require('./models/Activity');
 // 🚨 SALES BOT MODELS
 const SalesQuestion = require('./models/SalesQuestion');
 const SalesLog = require('./models/SalesLog');
+const SalesPerson = require('./models/SalesPerson'); // 🚨 DYNAMIC TEAM MODEL
 
 const app = express();
 
@@ -22,11 +23,13 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // -----------------------------------------
-// DATABASE CONNECTION & AGENT SEEDING
+// DATABASE CONNECTION & AUTO-SEEDING
 // -----------------------------------------
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('MongoDB Connected Successfully!');
+        
+        // --- SEED CALL CENTER AGENTS ---
         const team = [
             { name: 'Ruchit', phone: '917600082217' },
             { name: 'Mital', phone: '919558591212' },
@@ -45,30 +48,35 @@ mongoose.connect(process.env.MONGODB_URI)
                 await Agent.create(person);
             }
         }
+
+        // 🚨 AUTO-SEED INITIAL SALES TEAM (Makes it dynamic from now on)
+        if ((await SalesPerson.countDocuments()) === 0) {
+            const initialSalesTeam = [
+                { name: "ALPESH ROHIT", phone: "919574767971", team: "SS" }, { name: "HARDIK PAREKH", phone: "919737900092", team: "SS" },
+                { name: "NAGJI DESAI", phone: "919737248086", team: "SS" }, { name: "NARENDRA NAI", phone: "918347016137", team: "SS" },
+                { name: "SANDEEP UPDHAYAY", phone: "918980776879", team: "SS" }, { name: "HITEN SHAH", phone: "919601952094", team: "SS" },
+                { name: "AMAN DESAI", phone: "919998070509", team: "B" }, { name: "ARPIT PATEL", phone: "917600083723", team: "B" },
+                { name: "CHETAN TUSHAVARA", phone: "919274682548", team: "B" }, { name: "JITENDRA MEHTA", phone: "918511015012", team: "B" },
+                { name: "NISHAL CHOKSI", phone: "919974360230", team: "B" }, { name: "PRASHANT GARANGE", phone: "919998974351", team: "B" },
+                { name: "SHAHEBAJ SHAIKH", phone: "917600085461", team: "B" }, { name: "YOGESH SOLANKI", phone: "916352950760", team: "B" }
+            ];
+            await SalesPerson.insertMany(initialSalesTeam);
+            console.log("Seeded Initial Sales Team into DB.");
+        }
+
+        // 🚨 AUTO-SEED INITIAL BOTS
+        if ((await SalesQuestion.countDocuments()) === 0) {
+            const initialBots = [
+                { keyword: "SS12", team: "SS", time: "09:00", questions: [] }, { keyword: "SS46", team: "SS", time: "14:30", questions: [] }, { keyword: "SS70", team: "SS", time: "19:00", questions: [] },
+                { keyword: "B1", team: "B", time: "09:00", questions: [] }, { keyword: "B46", team: "B", time: "14:30", questions: [] }, { keyword: "B79", team: "B", time: "19:00", questions: [] }
+            ];
+            await SalesQuestion.insertMany(initialBots);
+            console.log("Seeded Initial Bot Configurations into DB.");
+        }
+
     })
     .catch(err => console.error('MongoDB Error:', err));
 
-// -----------------------------------------
-// SALES TEAM CONFIGURATION
-// -----------------------------------------
-const SALES_TEAM = [
-    // Senior Sales (SS)
-    { name: "ALPESH ROHIT", phone: "919574767971", team: "SS" },
-    { name: "HARDIK PAREKH", phone: "919737900092", team: "SS" },
-    { name: "NAGJI DESAI", phone: "919737248086", team: "SS" },
-    { name: "NARENDRA NAI", phone: "918347016137", team: "SS" },
-    { name: "SANDEEP UPDHAYAY", phone: "918980776879", team: "SS" },
-    { name: "HITEN SHAH", phone: "919601952094", team: "SS" },
-    // Buddies (B)
-    { name: "AMAN DESAI", phone: "919998070509", team: "B" },
-    { name: "ARPIT PATEL", phone: "917600083723", team: "B" },
-    { name: "CHETAN TUSHAVARA", phone: "919274682548", team: "B" },
-    { name: "JITENDRA MEHTA", phone: "918511015012", team: "B" },
-    { name: "NISHAL CHOKSI", phone: "919974360230", team: "B" },
-    { name: "PRASHANT GARANGE", phone: "919998974351", team: "B" },
-    { name: "SHAHEBAJ SHAIKH", phone: "917600085461", team: "B" },
-    { name: "YOGESH SOLANKI", phone: "916352950760", team: "B" }
-];
 
 // -----------------------------------------
 // HELPERS & TATA CONFIG
@@ -84,13 +92,11 @@ function getIndianDateStr(dateObj = new Date()) {
 }
 
 // 🚨 TIME CALCULATION FOR DELAY TRACKING
-function getScheduledTime(dateStr, keyword) {
+function getScheduledTime(dateStr, timeStr) {
+    if(!timeStr) return Date.now();
     const [year, month, day] = dateStr.split('-');
-    let hours = 0, mins = 0;
-    if (['SS12', 'B1'].includes(keyword)) { hours = 9; mins = 0; } // 9:00 AM
-    else if (['SS46', 'B46'].includes(keyword)) { hours = 14; mins = 30; } // 2:30 PM
-    else if (['SS70', 'B79'].includes(keyword)) { hours = 19; mins = 0; } // 7:00 PM
-    return new Date(year, month - 1, day, hours, mins, 0).getTime();
+    const [hours, mins] = timeStr.split(':');
+    return new Date(year, month - 1, day, parseInt(hours), parseInt(mins), 0).getTime();
 }
 
 async function generateUniqueCode() {
@@ -289,19 +295,52 @@ app.get('/api/trigger-call/:code', async (req, res) => {
     }
 });
 
+
 // -----------------------------------------
-// 🚨 SALES BOT APIs
+// 🚨 DYNAMIC SALES BOT APIs
 // -----------------------------------------
-app.get('/api/sales/questions', async (req, res) => {
-    res.json(await SalesQuestion.find());
+
+// --- Team Management ---
+app.get('/api/sales/team', async (req, res) => { 
+    res.json(await SalesPerson.find().sort({ team: -1, name: 1 })); 
 });
 
-app.post('/api/sales/questions', async (req, res) => {
-    const { keyword, questions } = req.body; 
-    await SalesQuestion.findOneAndUpdate({ keyword }, { keyword, questions }, { upsert: true, new: true });
+app.post('/api/sales/team', async (req, res) => {
+    try { 
+        await SalesPerson.create(req.body); 
+        res.json({ success: true }); 
+    } catch (e) { 
+        res.status(400).json({ success: false, error: e.message }); 
+    }
+});
+
+app.put('/api/sales/team/:id', async (req, res) => {
+    await SalesPerson.findByIdAndUpdate(req.params.id, { isActive: req.body.isActive }); 
     res.json({ success: true });
 });
 
+app.delete('/api/sales/team/:id', async (req, res) => {
+    await SalesPerson.findByIdAndDelete(req.params.id); 
+    res.json({ success: true });
+});
+
+// --- Bot Questions Management ---
+app.get('/api/sales/questions', async (req, res) => { 
+    res.json(await SalesQuestion.find().sort({ team: -1, time: 1 })); 
+});
+
+app.post('/api/sales/questions', async (req, res) => {
+    const { keyword, team, time, questions } = req.body; 
+    await SalesQuestion.findOneAndUpdate({ keyword }, { keyword, team, time, questions }, { upsert: true, new: true });
+    res.json({ success: true });
+});
+
+app.delete('/api/sales/questions/:id', async (req, res) => {
+    await SalesQuestion.findByIdAndDelete(req.params.id); 
+    res.json({ success: true });
+});
+
+// --- Tracker API ---
 app.get('/api/sales/tracker', async (req, res) => {
     const { from, to } = req.query;
     let targetDates = [];
@@ -311,17 +350,16 @@ app.get('/api/sales/tracker', async (req, res) => {
     } else { targetDates = [getIndianDateStr()]; }
 
     const logs = await SalesLog.find({ dateStr: { $in: targetDates } });
-    const questions = await SalesQuestion.find();
-    let report = [];
+    const allBots = await SalesQuestion.find();
+    const activeTeam = await SalesPerson.find({ isActive: true }); 
 
+    let report = [];
     for (let d of targetDates) {
-        SALES_TEAM.forEach(member => {
-            // Har person ke liye uski team ke according 3 row (Morning, Aft, Eve)
-            const expectedKeywords = member.team === 'SS' ? ['SS12', 'SS46', 'SS70'] : ['B1', 'B46', 'B79'];
-            expectedKeywords.forEach(kw => {
-                const log = logs.find(l => l.phone === member.phone && l.dateStr === d && l.keyword === kw);
+        activeTeam.forEach(member => {
+            const memberBots = allBots.filter(b => b.team === member.team);
+            memberBots.forEach(bot => {
+                const log = logs.find(l => l.phone === member.phone && l.dateStr === d && l.keyword === bot.keyword);
                 
-                // Calculate delay text
                 let delayStr = "-";
                 if (log && log.responseTimeMins != null) {
                     const m = Math.floor(log.responseTimeMins);
@@ -331,29 +369,25 @@ app.get('/api/sales/tracker', async (req, res) => {
                 }
 
                 report.push({
-                    date: d,
-                    name: member.name, phone: member.phone, team: member.team,
+                    date: d, name: member.name, phone: member.phone, team: member.team,
                     status: log ? 'Replied' : 'Not Reply',
-                    keyword: kw,
+                    keyword: bot.keyword,
                     delayStr: delayStr,
                     answers: log ? log.answers : [],
                     adminReply: log ? log.adminReplyText : null,
                     time: log ? log.updatedAt : null,
-                    questions: (questions.find(q => q.keyword === kw)?.questions || [])
+                    questions: bot.questions
                 });
             });
         });
     }
 
-    // 🚨 SORTING: Jinhone recently reply kiya wo TOP pe. 
     report.sort((a, b) => {
-        if (a.time && b.time) return new Date(b.time) - new Date(a.time); // Dono me se naya top par
-        if (a.time) return -1; // A ne kiya, B ne nahi
-        if (b.time) return 1;  // B ne kiya, A ne nahi
-        return 0;
+        if (a.time && b.time) return new Date(b.time) - new Date(a.time); 
+        if (a.time) return -1; if (b.time) return 1; return 0;
     });
 
-    res.json(report);
+    res.json({ report, bots: allBots, team: activeTeam });
 });
 
 app.post('/api/sales/reply', async (req, res) => {
@@ -364,7 +398,6 @@ app.post('/api/sales/reply', async (req, res) => {
     await logActivity('Admin', 'SALES BOT REPLY', `Sent feedback to ${phone} for ${keyword}`);
     res.json({ success: true });
 });
-
 
 // -----------------------------------------
 // WATI WEBHOOK (CALLING & INTELLIGENCE & SALES)
@@ -389,26 +422,27 @@ app.post('/api/wati/webhook', async (req, res) => {
 
         if (!waId) return;
 
-        // 🚨 NEW LOGIC: IS IT A SALES TEAM MEMBER?
-        const salesMember = SALES_TEAM.find(s => formatTataNumber(s.phone) === formatTataNumber(waId));
+        // 🚨 DYNAMIC SALES TEAM LOGIC
+        const [activeTeam, allBots] = await Promise.all([ SalesPerson.find({ isActive: true }), SalesQuestion.find() ]);
+        const salesMember = activeTeam.find(s => formatTataNumber(s.phone) === formatTataNumber(waId));
+
         if (salesMember) {
             const today = getIndianDateStr();
             
-            // IF THEY CLICK "YES I WILL REPLY"
-            if (btnLower.includes('yes i will reply')) {
-                const keywordMatch = rawBtn.match(/(SS\d+|B\d+)/i);
-                const keyword = keywordMatch ? keywordMatch[0].toUpperCase() : 'UNKNOWN';
-                
+            // Check if they clicked the Bot Trigger Button
+            let matchedBot = allBots.find(b => btnLower.includes(`yes i will reply ${b.keyword.toLowerCase()}`));
+            
+            if (matchedBot) {
                 // Calculate Delay Tracker
-                const scheduledTime = getScheduledTime(today, keyword);
+                const scheduledTime = getScheduledTime(today, matchedBot.time);
                 const delayMins = (Date.now() - scheduledTime) / 60000; 
 
                 await SalesLog.findOneAndUpdate(
-                    { phone: salesMember.phone, dateStr: today, keyword: keyword },
-                    { name: salesMember.name, team: salesMember.team, keyword: keyword, adminReplyText: '', responseTimeMins: delayMins },
+                    { phone: salesMember.phone, dateStr: today, keyword: matchedBot.keyword },
+                    { name: salesMember.name, team: salesMember.team, keyword: matchedBot.keyword, adminReplyText: '', responseTimeMins: delayMins },
                     { upsert: true }
                 );
-                await logActivity('Sales Bot', 'SESSION STARTED', `${salesMember.name} started ${keyword}`);
+                await logActivity('Sales Bot', 'SESSION STARTED', `${salesMember.name} started ${matchedBot.keyword}`);
                 return;
             } 
             
@@ -420,7 +454,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                     const lastUpdate = new Date(log.updatedAt);
                     const diffSecs = (now - lastUpdate) / 1000;
                     
-                    // 👈 YAHAN PE 1 SECOND KA LOGIC LAGA HAI 
                     if (log.answers.length > 0 && diffSecs <= 1) {
                         log.answers[log.answers.length - 1] += "\n" + rawBtn;
                     } else {
