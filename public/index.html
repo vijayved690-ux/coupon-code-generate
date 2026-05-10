@@ -79,6 +79,58 @@
                     </div>
                 </div>
 
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-lg font-black text-slate-800">📈 Campaign & PRO Intelligence</h2>
+                        <div class="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full">Last Campaign Shoot: <span id="last-campaign-date" class="text-blue-600">Loading...</span></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">⭐ Ratings Summary</h3>
+                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>5 Star:</span><span id="stat-r5" class="text-green-600">0</span></div>
+                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>4 Star:</span><span id="stat-r4" class="text-blue-600">0</span></div>
+                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>3 Star:</span><span id="stat-r3" class="text-yellow-600">0</span></div>
+                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>2 Star:</span><span id="stat-r2" class="text-orange-600">0</span></div>
+                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>1 Star:</span><span id="stat-r1" class="text-red-600">0</span></div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🔥 Engagement</h3>
+                            <div class="bg-purple-50 p-3 rounded-lg border border-purple-100 flex justify-between items-center mb-3">
+                                <span class="font-bold text-purple-800 text-xs">Requested 'More Coupons'</span>
+                                <span id="stat-more-coupons" class="font-black text-lg text-purple-600">0</span>
+                            </div>
+                            <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-1">Top Buttons Clicked:</h4>
+                            <div id="top-buttons" class="overflow-y-auto max-h-20"></div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🏥 Branch Redemptions</h3>
+                            <div id="branch-leaderboard" class="overflow-y-auto max-h-32 space-y-1"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-red-50 p-3 border-b border-red-100 flex justify-between items-center">
+                            <h3 class="text-sm font-bold text-red-800">📞 PRO Call Requests (Pending vs Done)</h3>
+                        </div>
+                        <div class="overflow-x-auto max-h-48 overflow-y-auto">
+                            <table class="w-full text-xs text-left whitespace-nowrap">
+                                <thead class="bg-slate-100 text-slate-500 uppercase sticky top-0">
+                                    <tr>
+                                        <th class="p-2 pl-4">PRO Name & Phone</th>
+                                        <th class="p-2 text-center">Total Requests</th>
+                                        <th class="p-2 text-center">Pending Calls</th>
+                                        <th class="p-2 text-center">Completed Calls</th>
+                                        <th class="p-2 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pro-tracker-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
                 <div class="flex justify-end mb-6">
                     <button onclick="resetSystemData()" class="bg-red-600 text-white text-xs font-bold px-6 py-3 rounded-lg shadow-md hover:bg-red-700 transition">
                         ⚠️ RESET ALL DATA
@@ -179,7 +231,15 @@
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
-                                    <th class="p-4">Details</th><th class="p-4">Coupon</th><th class="p-4">PRO Info</th><th class="p-4">Rating</th><th class="p-4">Action</th><th class="p-4">Call Tracking</th><th class="p-4">Status</th><th class="p-4">Reg. No</th><th class="p-4">Branch</th>
+                                    <th class="p-4">Details</th>
+                                    <th class="p-4">Coupon</th>
+                                    <th class="p-4">PRO Info</th>
+                                    <th class="p-4">Rating</th>
+                                    <th class="p-4">Action</th>
+                                    <th class="p-4">Call Tracking</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4">Reg. No</th>
+                                    <th class="p-4">Branch</th>
                                 </tr>
                             </thead>
                             <tbody id="doctor-logs"></tbody>
@@ -198,7 +258,15 @@
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
-                                    <th class="p-4">Details</th><th class="p-4">Service</th><th class="p-4">PRO Info</th><th class="p-4">Rating</th><th class="p-4">Action</th><th class="p-4">Call Tracking</th><th class="p-4">Status</th><th class="p-4">Reg. No</th><th class="p-4">Branch</th>
+                                    <th class="p-4">Details</th>
+                                    <th class="p-4">Service</th>
+                                    <th class="p-4">PRO Info</th>
+                                    <th class="p-4">Rating</th>
+                                    <th class="p-4">Action</th>
+                                    <th class="p-4">Call Tracking</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4">Reg. No</th>
+                                    <th class="p-4">Branch</th>
                                 </tr>
                             </thead>
                             <tbody id="dental-logs"></tbody>
@@ -217,7 +285,15 @@
                         <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
-                                    <th class="p-4">Name</th><th class="p-4">Phone</th><th class="p-4">Coupon</th><th class="p-4">Agent</th><th class="p-4">Action</th><th class="p-4">Call Status</th><th class="p-4">Status</th><th class="p-4">Reg. No</th><th class="p-4">Branch</th>
+                                    <th class="p-4">Name</th>
+                                    <th class="p-4">Phone</th>
+                                    <th class="p-4">Coupon</th>
+                                    <th class="p-4">Agent</th>
+                                    <th class="p-4">Action</th>
+                                    <th class="p-4">Call Status</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4">Reg. No</th>
+                                    <th class="p-4">Branch</th>
                                 </tr>
                             </thead>
                             <tbody id="patient-logs"></tbody>
@@ -286,8 +362,8 @@
             <div id="user-dashboard" class="hidden">
                 <div class="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center max-w-lg mx-auto mb-8">
                     <h2 class="text-2xl font-black text-slate-800 mb-6">REDEEM COUPON</h2>
-                    <input type="text" id="verify-code" placeholder="ENTER 5-DIGIT CODE" maxlength="5" class="w-full border-4 border-slate-200 p-4 rounded-xl text-center text-3xl font-black tracking-[10px] outline-none focus:border-blue-500 transition-all mb-4">
-                    <button onclick="verifyCode()" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-xl hover:bg-slate-900 transition shadow-md">CHECK CODE</button>
+                    <input type="text" id="verify-code" placeholder="ENTER 5-DIGIT CODE" maxlength="5" class="w-full border-4 border-slate-200 p-4 rounded-xl text-center text-3xl font-black tracking-[10px] outline-none focus:border-blue-500 mb-4">
+                    <button onclick="verifyCode()" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-xl hover:bg-slate-900 shadow-md">CHECK CODE</button>
                     <div id="verify-result" class="mt-8 w-full hidden"></div>
                 </div>
                 
@@ -361,7 +437,7 @@
                             <button onclick="addQuestionField()" class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded hover:bg-indigo-200">+ Add Question</button>
                         </div>
                         <div id="dynamic-q-container" class="space-y-2 mb-4 max-h-40 overflow-y-auto p-1 border rounded bg-slate-50">
-                            </div>
+                        </div>
 
                         <div class="flex justify-between border-t pt-4">
                             <button onclick="deleteBot()" class="text-red-500 text-xs font-bold hover:underline">🗑️ Delete Bot</button>
@@ -377,8 +453,12 @@
     <script>
         const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
         
-        let globalLogs = []; let filteredLogs = [];
-        let salesReportData = []; let allBotsConfig = []; let allTeamMembers = [];
+        let globalLogs = [];
+        let filteredLogs = [];
+        let salesReportData = [];
+        let allBotsConfig = [];
+        let allTeamMembers = [];
+        let proList = [];
 
         function formatDate(dateString) {
             if(!dateString) return '-';
@@ -393,11 +473,18 @@
             const p = document.getElementById('password').value;
             const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) });
             const data = await res.json();
-            if(data.success) { localStorage.setItem('role', data.role); showApp(data.role); } 
-            else { document.getElementById('login-error').classList.remove('hidden'); }
+            if(data.success) { 
+                localStorage.setItem('role', data.role); 
+                showApp(data.role);
+            } else { 
+                document.getElementById('login-error').classList.remove('hidden'); 
+            }
         }
 
-        function logout() { localStorage.removeItem('role'); location.reload(); }
+        function logout() { 
+            localStorage.removeItem('role'); 
+            location.reload(); 
+        }
 
         function showApp(role) {
             document.getElementById('login-view').classList.add('hidden');
@@ -407,6 +494,7 @@
             if(role === 'admin') { 
                 document.getElementById('admin-dashboard').classList.remove('hidden'); 
                 loadAdminData(); 
+                
                 checkSystemHealth();
                 setInterval(checkSystemHealth, 60000); 
                 setInterval(loadActivityLogs, 5000);
@@ -456,19 +544,39 @@
         async function resetSystemData() {
             const pass = prompt("Enter RESET PASSWORD to delete ALL coupons:");
             if(!pass) return;
-            const res = await fetch('/api/admin/reset-data', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password: pass}) });
+            const res = await fetch('/api/admin/reset-data', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password: pass})
+            });
             const data = await res.json();
-            if(data.success) { alert("DATABASE CLEARED SUCCESSFULLY!"); loadAdminData(); } else { alert(data.message); }
+            if(data.success) {
+                alert("DATABASE CLEARED SUCCESSFULLY!");
+                loadAdminData();
+            } else { alert(data.message); }
         }
 
         async function loadActivityLogs() {
-            const res = await fetch('/api/admin/activity-logs'); const logs = await res.json();
-            document.getElementById('activity-logs').innerHTML = logs.map(l => `<tr class="border-b border-slate-700 hover:bg-slate-700 transition"><td class="p-2 text-blue-400 font-bold whitespace-nowrap w-24">${new Date(l.timestamp).toLocaleTimeString()}</td><td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td><td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td><td class="p-2 text-slate-400">${l.details}</td></tr>`).join('');
+            const res = await fetch('/api/admin/activity-logs');
+            const logs = await res.json();
+            document.getElementById('activity-logs').innerHTML = logs.map(l => `
+                <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
+                    <td class="p-2 text-blue-400 font-bold whitespace-nowrap w-24">${new Date(l.timestamp).toLocaleTimeString()}</td>
+                    <td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td>
+                    <td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td>
+                    <td class="p-2 text-slate-400">${l.details}</td>
+                </tr>
+            `).join('');
         }
 
         async function loadAdminData() {
             const agents = await fetch('/api/agents').then(r => r.json());
-            document.getElementById('agents-list').innerHTML = agents.map(a => `<div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}"><span class="text-xs font-bold">${a.name}</span><input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4 cursor-pointer"></div>`).join('');
+            document.getElementById('agents-list').innerHTML = agents.map(a => `
+                <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}">
+                    <span class="text-xs font-bold">${a.name}</span>
+                    <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4 cursor-pointer">
+                </div>
+            `).join('');
+
+            proList = await fetch('/api/sales/team').then(r => r.json());
 
             globalLogs = await fetch('/api/admin/logs').then(r => r.json());
             
@@ -476,34 +584,174 @@
             const patLogs = globalLogs.filter(l => l.audienceType === 'Patient');
             const denLogs = globalLogs.filter(l => l.audienceType === 'Dental'); 
             
-            document.getElementById('stat-total-sent').innerText = globalLogs.length; document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
-            document.getElementById('stat-doc-sent').innerText = docLogs.length; document.getElementById('stat-doc-redeemed').innerText = docLogs.filter(l => l.isUsed).length;
-            document.getElementById('stat-pat-sent').innerText = patLogs.length; document.getElementById('stat-pat-redeemed').innerText = patLogs.filter(l => l.isUsed).length;
-            document.getElementById('stat-den-sent').innerText = denLogs.length; document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
+            document.getElementById('stat-total-sent').innerText = globalLogs.length;
+            document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
+            
+            document.getElementById('stat-doc-sent').innerText = docLogs.length;
+            document.getElementById('stat-doc-redeemed').innerText = docLogs.filter(l => l.isUsed).length;
+            
+            document.getElementById('stat-pat-sent').innerText = patLogs.length;
+            document.getElementById('stat-pat-redeemed').innerText = patLogs.filter(l => l.isUsed).length;
+
+            document.getElementById('stat-den-sent').innerText = denLogs.length;
+            document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
+
+            if(!document.getElementById('date-from').value) {
+                const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+                document.getElementById('date-from').value = todayStr;
+                document.getElementById('date-to').value = todayStr;
+            }
 
             applyFilters();
-            if(!document.getElementById('sales-section').classList.contains('hidden')) loadSalesData();
+            
+            if(!document.getElementById('sales-section').classList.contains('hidden')) {
+                loadSalesData();
+            }
         }
 
         function clearFilters() {
-            document.getElementById('search-filter').value = ''; document.getElementById('date-from').value = ''; document.getElementById('date-to').value = ''; document.getElementById('status-filter').value = ''; applyFilters();
+            document.getElementById('search-filter').value = '';
+            document.getElementById('date-from').value = '';
+            document.getElementById('date-to').value = '';
+            document.getElementById('status-filter').value = '';
+            applyFilters();
         }
 
         function applyFilters() {
             const search = document.getElementById('search-filter').value.toLowerCase();
-            const dateFrom = document.getElementById('date-from').value; const dateTo = document.getElementById('date-to').value; const status = document.getElementById('status-filter').value;
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+            const status = document.getElementById('status-filter').value;
             
             filteredLogs = globalLogs.filter(item => {
                 let matchSearch = true;
-                if (search) { const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''} ${item.patientRegNo || ''}`.toLowerCase(); matchSearch = searchStr.includes(search); }
+                if (search) {
+                    const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''} ${item.patientRegNo || ''}`.toLowerCase();
+                    matchSearch = searchStr.includes(search);
+                }
+                
                 let matchDate = true;
-                if (dateFrom || dateTo) { const itemDate = new Date(item.createdAt).toISOString().split('T')[0]; if (dateFrom && itemDate < dateFrom) matchDate = false; if (dateTo && itemDate > dateTo) matchDate = false; }
+                if (dateFrom || dateTo) {
+                    const itemDate = new Date(item.createdAt).toISOString().split('T')[0];
+                    if (dateFrom && itemDate < dateFrom) matchDate = false;
+                    if (dateTo && itemDate > dateTo) matchDate = false;
+                }
+                
                 let matchStatus = true;
-                if (status) { if (status === 'Redeemed' && !item.isUsed) matchStatus = false; if (status === 'Active' && item.isUsed) matchStatus = false; if (status === 'PendingCall' && item.callStatus !== 'Pending') matchStatus = false; if (status === 'CallCompleted' && item.callStatus !== 'Completed') matchStatus = false; }
+                if (status) {
+                    if (status === 'Redeemed' && !item.isUsed) matchStatus = false;
+                    if (status === 'Active' && item.isUsed) matchStatus = false;
+                    if (status === 'PendingCall' && item.callStatus !== 'Pending') matchStatus = false;
+                    if (status === 'CallCompleted' && item.callStatus !== 'Completed') matchStatus = false;
+                }
+                
                 return matchSearch && matchDate && matchStatus;
             });
+            
             filteredLogs.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+            
             renderTables();
+            renderAnalytics();
+        }
+
+        // 🚨 MEGA ANALYTICS FUNCTION 🚨
+        function renderAnalytics() {
+            if (!filteredLogs) return;
+
+            let r5=0, r4=0, r3=0, r2=0, r1=0; 
+            let moreCoupons = 0; 
+            let btnCounts = {}; 
+            let branchCounts = {}; 
+            let proStats = {};
+
+            filteredLogs.forEach(l => {
+                if(l.rating === 5) r5++; 
+                else if(l.rating === 4) r4++; 
+                else if(l.rating === 3) r3++; 
+                else if(l.rating === 2) r2++; 
+                else if(l.rating === 1) r1++;
+                
+                if(l.buttonClicked) {
+                    const bl = l.buttonClicked.toLowerCase();
+                    if(bl.includes('more coupon') || bl.includes('વધુ કૂપન')) moreCoupons++;
+                    
+                    l.buttonClicked.split(',').forEach(b => { 
+                        let btn = b.trim(); 
+                        if(btn) btnCounts[btn] = (btnCounts[btn] || 0) + 1; 
+                    });
+                }
+                
+                if(l.isUsed && l.branchRedeemed) { 
+                    branchCounts[l.branchRedeemed] = (branchCounts[l.branchRedeemed] || 0) + 1; 
+                }
+                
+                if(l.requestCallAt && l.proPhone) {
+                    if(!proStats[l.proPhone]) {
+                        let pName = "Unknown PRO";
+                        let matched = proList.find(p => p.phone === l.proPhone);
+                        if(matched) pName = matched.name;
+                        proStats[l.proPhone] = { phone: l.proPhone, name: pName, total: 0, pending: 0, completed: 0, data: [] };
+                    }
+                    proStats[l.proPhone].total++;
+                    if(l.callStatus === 'Pending') proStats[l.proPhone].pending++;
+                    if(l.callStatus === 'Completed') proStats[l.proPhone].completed++;
+                }
+            });
+
+            document.getElementById('stat-r5').innerText = r5; 
+            document.getElementById('stat-r4').innerText = r4; 
+            document.getElementById('stat-r3').innerText = r3; 
+            document.getElementById('stat-r2').innerText = r2; 
+            document.getElementById('stat-r1').innerText = r1;
+            document.getElementById('stat-more-coupons').innerText = moreCoupons;
+
+            let sortedBranches = Object.entries(branchCounts).sort((a,b)=>b[1]-a[1]);
+            document.getElementById('branch-leaderboard').innerHTML = sortedBranches.length 
+                ? sortedBranches.map(b => `<div class="flex justify-between text-xs border-b py-1"><span>${b[0]}</span><span class="font-bold text-green-600">${b[1]}</span></div>`).join('') 
+                : '<span class="text-xs text-slate-400">No redemptions yet</span>';
+
+            let sortedBtns = Object.entries(btnCounts).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+            document.getElementById('top-buttons').innerHTML = sortedBtns.length 
+                ? sortedBtns.map(b => `<span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded m-1 inline-block">${b[0]} <span class="text-blue-500">(${b[1]})</span></span>`).join('') 
+                : '<span class="text-xs text-slate-400">No clicks yet</span>';
+
+            let sortedPros = Object.values(proStats).sort((a,b)=>b.total - a.total);
+            document.getElementById('pro-tracker-list').innerHTML = sortedPros.length 
+                ? sortedPros.map(p => {
+                    let pendingClass = p.pending > 0 ? 'bg-red-100 text-red-700 animate-pulse border-red-300' : 'bg-green-50 text-green-700 border-green-200';
+                    return `
+                    <tr class="border-b">
+                        <td class="p-2 pl-4 font-bold text-slate-800">${p.name}<br><span class="text-[9px] text-slate-500 font-normal">${p.phone}</span></td>
+                        <td class="p-2 font-black text-blue-600 text-center">${p.total}</td>
+                        <td class="p-2 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold border ${pendingClass}">${p.pending} Pending</span></td>
+                        <td class="p-2 text-center font-bold text-green-600">${p.completed} Done</td>
+                        <td class="p-2 text-center"><button onclick="exportProDocs('${p.phone}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3 py-1 rounded shadow">⬇️ Excel</button></td>
+                    </tr>`;
+                }).join('') 
+                : '<tr><td colspan="5" class="p-4 text-center text-xs text-slate-400">No Call Requests</td></tr>';
+
+            if(globalLogs.length > 0) {
+                let lastLog = globalLogs.reduce((latest, current) => new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest);
+                document.getElementById('last-campaign-date').innerText = new Date(lastLog.createdAt).toLocaleString('en-IN');
+            } else { 
+                document.getElementById('last-campaign-date').innerText = 'N/A'; 
+            }
+        }
+
+        function exportProDocs(proPhone) {
+            const dataToExport = filteredLogs.filter(i => i.proPhone === proPhone && i.requestCallAt);
+            if(dataToExport.length === 0) return alert("No data for this PRO in current date filter.");
+            
+            let csv = "Created_Date,Doctor_Name,Doctor_Phone,Code,Discount,Call_Status,Req_Call_At\n";
+            dataToExport.forEach(i => {
+                const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.callStatus || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}"\n`;
+            });
+            
+            const link = document.createElement("a"); 
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); 
+            link.download = `PRO_${proPhone}_Requests.csv`; 
+            link.click();
         }
 
         function getTableRowsHTML(logsArray) {
@@ -525,13 +773,37 @@
                     actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`;
                 }
 
-                return `<tr class="border-b hover:bg-slate-50 transition"><td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td><td class="p-4"><span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br><span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span></td><td class="p-4 font-bold text-slate-700">${i.proPhone || '-'}</td><td class="p-4 text-xs">${stars}</td><td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td><td class="p-4"><div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${formatDate(i.requestCallAt)}</div><div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div></td><td class="p-4">${statusBadge}</td><td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td><td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td></tr>`;
-            }).join('');
+                let pName = "Unknown PRO";
+                if(i.proPhone) { 
+                    let matched = proList.find(p => p.phone === i.proPhone); 
+                    if(matched) pName = matched.name; 
+                }
+
+                return `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td>
+                    <td class="p-4">
+                        <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
+                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
+                    </td>
+                    <td class="p-4 font-bold text-slate-800">${pName}<br><span class="text-[9px] text-slate-500 font-normal">${i.proPhone || '-'}</span></td>
+                    <td class="p-4 text-xs">${stars}</td>
+                    <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
+                    <td class="p-4">
+                        <div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${formatDate(i.requestCallAt)}</div>
+                        <div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div>
+                    </td>
+                    <td class="p-4">${statusBadge}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
+                </tr>
+            `}).join('');
         }
 
         function renderTables() {
             document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Doctor'));
             document.getElementById('dental-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Dental'));
+            
             document.getElementById('patient-logs').innerHTML = filteredLogs.filter(l => l.audienceType === 'Patient').map(i => {
                 let callBadge = '';
                 if(i.callStatus === 'Pending') callBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px]">⏳ PENDING</span>';
@@ -543,23 +815,51 @@
                 let actionHTML = '';
                 if (i.buttonClicked && i.buttonClicked.trim() !== '') {
                     actionHTML = i.buttonClicked.split(',').map(btn => `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">${btn.trim()}</span>`).join('');
-                } else { actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`; }
+                } else { 
+                    actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`; 
+                }
 
-                return `<tr class="border-b hover:bg-slate-50 transition"><td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td><td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td><td class="p-4"><span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br><span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span></td><td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td><td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td><td class="p-4">${callBadge}</td><td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td><td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td><td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td></tr>`;
-            }).join('');
+                return `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
+                    <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
+                    <td class="p-4">
+                        <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
+                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
+                    </td>
+                    <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
+                    <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
+                    <td class="p-4">${callBadge}</td>
+                    <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
+                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
+                </tr>
+            `}).join('');
         }
 
-        async function toggleAgent(id, isOnline) { await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) }); loadAdminData(); }
+        async function toggleAgent(id, isOnline) {
+            await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) });
+            loadAdminData();
+        }
 
         async function exportFilteredExcel(type) {
             const dataToExport = filteredLogs.filter(i => i.audienceType === type);
-            if(dataToExport.length === 0) return alert("No data to export based on current filters.");
+            if(dataToExport.length === 0) {
+                alert("No data to export based on current filters.");
+                return;
+            }
+            
             let csv = "";
             if (type === 'Doctor' || type === 'Dental') {
-                csv = "Created_Date,Name,Phone,Code,Service/Discount,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Patient_Reg_No,Branch_Redeemed\n";
+                csv = "Created_Date,Name,Phone,Code,Service/Discount,PRO_Name,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Patient_Reg_No,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
                     const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
-                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+                    let pName = "Unknown PRO"; 
+                    if(i.proPhone) { 
+                        let matched = proList.find(p => p.phone === i.proPhone); 
+                        if(matched) pName = matched.name; 
+                    }
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${pName}","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             } else {
                 csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Patient_Reg_No,Branch_Redeemed\n";
@@ -568,39 +868,73 @@
                     csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             }
+
             const blob = new Blob([csv], { type: 'text/csv' });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-            link.download = `UIC_${type}_Filtered_Report_${new Date().toISOString().split('T')[0]}.csv`; link.click();
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `UIC_${type}_Filtered_Report.csv`;
+            link.click();
         }
 
         function downloadSample() {
             const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217\nDr. Sneha Dental Clinic,918888888888,Ahmedabad,917043001130";
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "uic_sample.csv"; link.click();
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "uic_sample.csv";
+            link.click();
         }
 
         function shoot() {
-            const f = document.getElementById('csv').files[0]; const btn = document.getElementById('btn-shoot');
+            const f = document.getElementById('csv').files[0];
+            const btn = document.getElementById('btn-shoot');
             if(!f || !document.getElementById('exp').value) return alert("Upload CSV and select expiry date!");
+            
             btn.innerText = "STARTING..."; btn.disabled = true;
+            
             Papa.parse(f, { header: true, skipEmptyLines: true, complete: async (res) => {
                 const validTargets = res.data.filter(row => row.phone && row.phone.trim() !== '');
-                if(validTargets.length === 0) { alert("No valid phone numbers found in CSV!"); btn.innerText = "SEND"; btn.disabled = false; return; }
+                if(validTargets.length === 0) { 
+                    alert("No valid phone numbers found in CSV!"); 
+                    btn.innerText = "SEND"; btn.disabled = false; return; 
+                }
+                
                 try {
-                    const req = await fetch('/api/campaign/shoot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ targetList: validTargets, discount: document.getElementById('disc').value, expiryDate: document.getElementById('exp').value, audienceType: document.getElementById('aud-type').value }) });
-                    const resData = await req.json(); alert(resData.message || 'Campaign Started Safely in Background!'); document.getElementById('csv').value = ''; loadAdminData(); 
-                } catch(e) { alert('Error starting campaign!'); } finally { btn.innerText = "SEND"; btn.disabled = false; }
+                    const req = await fetch('/api/campaign/shoot', { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify({ 
+                            targetList: validTargets, 
+                            discount: document.getElementById('disc').value, 
+                            expiryDate: document.getElementById('exp').value, 
+                            audienceType: document.getElementById('aud-type').value 
+                        }) 
+                    });
+                    const resData = await req.json();
+                    
+                    alert(resData.message || 'Campaign Started Safely in Background!'); 
+                    document.getElementById('csv').value = ''; 
+                    loadAdminData(); 
+                } catch(e) { 
+                    alert('Error starting campaign!'); 
+                } finally { 
+                    btn.innerText = "SEND"; btn.disabled = false; 
+                }
             }});
         }
 
         // 🚨 DYNAMIC SALES BOT LOGIC 🚨
         async function loadSalesData() {
             try {
-                let from = document.getElementById('s-from').value; let to = document.getElementById('s-to').value;
+                let from = document.getElementById('s-from').value;
+                let to = document.getElementById('s-to').value;
                 let url = '/api/sales/tracker';
                 if(from && to) url += `?from=${from}&to=${to}`;
+
                 const res = await fetch(url).then(r => r.json());
-                salesReportData = res.report; allBotsConfig = res.bots; allTeamMembers = res.team;
+                salesReportData = res.report; 
+                allBotsConfig = res.bots; 
+                allTeamMembers = res.team;
                 renderSalesTable();
             } catch(e) {}
         }
@@ -608,11 +942,15 @@
         function renderSalesSummary(filteredData) {
             const persons = {};
             filteredData.forEach(row => {
-                if(!persons[row.phone]) persons[row.phone] = { name: row.name, phone: row.phone, team: row.team, replies: {} };
-                if(row.status === 'Replied') persons[row.phone].replies[row.keyword] = true;
+                if(!persons[row.phone]) {
+                    persons[row.phone] = { name: row.name, phone: row.phone, team: row.team, replies: {} };
+                }
+                if(row.status === 'Replied') {
+                    persons[row.phone].replies[row.keyword] = true;
+                }
             });
 
-            // Dynamic Bot Headers based on backend config
+            // Dynamic Bot Headers
             const ssBots = allBotsConfig.filter(b => b.team === 'SS').sort((a,b)=>a.time.localeCompare(b.time));
             const bBots = allBotsConfig.filter(b => b.team === 'B').sort((a,b)=>a.time.localeCompare(b.time));
 
@@ -637,46 +975,76 @@
 
         function renderSalesTable() {
             const search = document.getElementById('s-search').value.toLowerCase();
-            const filtered = salesReportData.filter(r => r.name.toLowerCase().includes(search) || r.team.toLowerCase().includes(search) || r.date.includes(search));
+            const filtered = salesReportData.filter(r => 
+                r.name.toLowerCase().includes(search) || 
+                r.team.toLowerCase().includes(search) ||
+                r.date.includes(search)
+            );
+
             renderSalesSummary(filtered);
 
             document.getElementById('sales-logs').innerHTML = filtered.map(r => {
-                let statusBadge = r.status === 'Replied' ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 shadow-sm">✅ Replied</span><br><span class="text-[10px] text-slate-500 ml-1 font-bold mt-1 inline-block">⏱️ ${new Date(r.time).toLocaleTimeString()}</span>` : `<span class="bg-red-50 text-red-600 font-bold px-2 py-1 rounded border border-red-200 shadow-sm">❌ Not Reply</span>`;
+                let statusBadge = r.status === 'Replied' 
+                    ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 shadow-sm">✅ Replied</span><br><span class="text-[10px] text-slate-500 ml-1 font-bold mt-1 inline-block">⏱️ ${new Date(r.time).toLocaleTimeString()}</span>` 
+                    : `<span class="bg-red-50 text-red-600 font-bold px-2 py-1 rounded border border-red-200 shadow-sm">❌ Not Reply</span>`;
                 
                 let qaHTML = '<div class="text-[10px] space-y-2 whitespace-normal">';
                 if(r.answers && r.answers.length > 0) {
                     r.answers.forEach((ans, idx) => {
                         let q = r.questions && r.questions[idx] ? r.questions[idx] : `Question ${idx+1}`;
-                        qaHTML += `<div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p><p class="text-blue-700 font-semibold leading-relaxed">👉 ${ans.replace(/\n/g, '<br>')}</p></div>`;
+                        let formattedAns = ans.replace(/\n/g, '<br>');
+                        qaHTML += `<div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p><p class="text-blue-700 font-semibold leading-relaxed">👉 ${formattedAns}</p></div>`;
                     });
-                } else { qaHTML += `<span class="text-slate-400 italic">No answers recorded.</span>`; }
+                } else {
+                    qaHTML += `<span class="text-slate-400 italic">No answers recorded.</span>`;
+                }
                 qaHTML += '</div>';
 
-                let replyHTML = r.adminReply ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] block font-semibold whitespace-normal shadow-inner border border-blue-200 mb-1">Feedback: ${r.adminReply}</span>` : '';
+                let replyHTML = r.adminReply 
+                    ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] block font-semibold whitespace-normal shadow-inner border border-blue-200 mb-1">Feedback: ${r.adminReply}</span>`
+                    : '';
+                
                 replyHTML += `<div class="flex gap-1 mt-1"><input type="text" id="reply-${r.phone}-${r.keyword}-${r.date}" placeholder="Type feedback..." class="border border-slate-300 p-1.5 rounded text-xs w-28 outline-blue-500"><button onclick="sendSalesReply('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm">Send</button></div>`;
 
                 let kwBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded tracking-wider text-[10px] block w-max">${r.keyword}</span>`;
-                if(r.delayStr && r.delayStr !== '-') kwBadge += `<span class="text-[10px] font-bold ${r.delayStr.includes('Early')?'text-green-600':'text-orange-600'} mt-1 block">${r.delayStr}</span>`;
+                if(r.delayStr && r.delayStr !== '-') {
+                    let color = r.delayStr.includes('Early') ? 'text-green-600' : 'text-orange-600';
+                    keywordBadge += `<span class="text-[10px] font-bold ${color} mt-1 block">${r.delayStr}</span>`;
+                }
 
-                return `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td><td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td><td class="p-4">${kwBadge}</td><td class="p-4">${statusBadge}</td><td class="p-4">${qaHTML}</td><td class="p-4">${replyHTML}</td></tr>`;
+                return `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td>
+                    <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td>
+                    <td class="p-4">${keywordBadge}</td>
+                    <td class="p-4">${statusBadge}</td>
+                    <td class="p-4">${qaHTML}</td>
+                    <td class="p-4">${replyHTML}</td>
+                </tr>
+                `;
             }).join('');
         }
 
         async function sendSalesReply(phone, date, keyword) {
             const val = document.getElementById(`reply-${phone}-${keyword}-${date}`).value;
             if(!val.trim()) return;
-            await fetch('/api/sales/reply', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone, text: val, date, keyword}) });
-            alert("Feedback sent!"); loadSalesData();
+            try {
+                await fetch('/api/sales/reply', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone, text: val, date, keyword}) });
+                alert("Feedback sent successfully!");
+                loadSalesData();
+            } catch(e) { alert("Failed to send reply"); }
         }
 
         // --- Setup Modal Logic ---
         async function openSetupModal() {
             document.getElementById('setup-modal').classList.remove('hidden');
-            await fetchTeamSetup(); loadBotConfigList();
+            await fetchTeamSetup();
+            loadBotConfigList();
         }
 
         async function fetchTeamSetup() {
             const team = await fetch('/api/sales/team').then(r=>r.json());
+            proList = team; 
             document.getElementById('setup-team-list').innerHTML = team.map(t => `
                 <tr class="border-b ${!t.isActive?'opacity-50 bg-red-50':''}">
                     <td class="p-2 font-bold">${t.name} <span class="bg-slate-200 px-1 rounded">${t.team}</span></td>
@@ -693,11 +1061,20 @@
             const data = { name: document.getElementById('nt-name').value, phone: document.getElementById('nt-phone').value, team: document.getElementById('nt-team').value };
             if(!data.name || !data.phone) return alert("Fill name and phone");
             await fetch('/api/sales/team', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-            fetchTeamSetup(); loadSalesData();
+            fetchTeamSetup(); loadSalesData(); loadAdminData();
         }
 
-        async function toggleSalesPerson(id, state) { await fetch(`/api/sales/team/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({isActive:state})}); fetchTeamSetup(); loadSalesData(); }
-        async function deleteSalesPerson(id) { if(confirm("Delete this person?")) { await fetch(`/api/sales/team/${id}`, {method:'DELETE'}); fetchTeamSetup(); loadSalesData(); } }
+        async function toggleSalesPerson(id, state) {
+            await fetch(`/api/sales/team/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({isActive:state})});
+            fetchTeamSetup(); loadSalesData(); loadAdminData();
+        }
+
+        async function deleteSalesPerson(id) {
+            if(confirm("Delete this person?")) {
+                await fetch(`/api/sales/team/${id}`, {method:'DELETE'});
+                fetchTeamSetup(); loadSalesData(); loadAdminData();
+            }
+        }
 
         function loadBotConfigList() {
             const sel = document.getElementById('sb-select');
@@ -706,8 +1083,11 @@
         }
 
         function clearBotForm() {
-            document.getElementById('nb-keyword').value = ''; document.getElementById('nb-team').value = 'SS'; document.getElementById('nb-time').value = '09:00';
-            document.getElementById('dynamic-q-container').innerHTML = ''; addQuestionField();
+            document.getElementById('nb-keyword').value = '';
+            document.getElementById('nb-team').value = 'SS';
+            document.getElementById('nb-time').value = '09:00';
+            document.getElementById('dynamic-q-container').innerHTML = '';
+            addQuestionField();
         }
 
         function addQuestionField(val = '') {
@@ -721,7 +1101,9 @@
             if(!kw) return clearBotForm();
             const bot = allBotsConfig.find(b=>b.keyword === kw);
             if(bot) {
-                document.getElementById('nb-keyword').value = bot.keyword; document.getElementById('nb-team').value = bot.team; document.getElementById('nb-time').value = bot.time;
+                document.getElementById('nb-keyword').value = bot.keyword;
+                document.getElementById('nb-team').value = bot.team;
+                document.getElementById('nb-time').value = bot.time;
                 document.getElementById('dynamic-q-container').innerHTML = '';
                 bot.questions.forEach(q => addQuestionField(q));
                 if(bot.questions.length === 0) addQuestionField();
@@ -730,25 +1112,33 @@
 
         async function saveBot() {
             const keyword = document.getElementById('nb-keyword').value.toUpperCase();
-            const team = document.getElementById('nb-team').value; const time = document.getElementById('nb-time').value;
-            let questions = []; document.querySelectorAll('.dyn-q').forEach(inp => { if(inp.value.trim()) questions.push(inp.value.trim()); });
+            const team = document.getElementById('nb-team').value;
+            const time = document.getElementById('nb-time').value;
+            let questions = []; 
+            document.querySelectorAll('.dyn-q').forEach(inp => { if(inp.value.trim()) questions.push(inp.value.trim()); });
+            
             if(!keyword || !time) return alert("Keyword and Time required!");
             await fetch('/api/sales/questions', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({keyword, team, time, questions}) });
             alert('Bot saved!'); loadSalesData(); openSetupModal();
         }
 
         async function deleteBot() {
-            const kw = document.getElementById('nb-keyword').value; const bot = allBotsConfig.find(b=>b.keyword === kw);
+            const kw = document.getElementById('nb-keyword').value;
+            const bot = allBotsConfig.find(b=>b.keyword === kw);
             if(!bot || !confirm(`Delete Bot ${kw}?`)) return;
-            await fetch(`/api/sales/questions/${bot._id}`, { method: 'DELETE' }); alert('Deleted!'); loadSalesData(); openSetupModal();
+            await fetch(`/api/sales/questions/${bot._id}`, { method: 'DELETE' });
+            alert('Deleted!'); loadSalesData(); openSetupModal();
         }
 
         function exportSalesExcel() {
             if(salesReportData.length === 0) return alert("No data");
-            let maxQ = 0; salesReportData.forEach(r => { if(r.questions.length > maxQ) maxQ = r.questions.length; });
+            let maxQ = 0; 
+            salesReportData.forEach(r => { if(r.questions.length > maxQ) maxQ = r.questions.length; });
             if (maxQ < 4) maxQ = 4; 
+            
             let csv = "Date,Name,Phone,Team,Status,Keyword,Delay,Reply Time,Admin Feedback";
-            for(let i=0; i<maxQ; i++) csv += `,Q${i+1},Ans${i+1}`; csv += "\n";
+            for(let i=0; i<maxQ; i++) csv += `,Q${i+1},Ans${i+1}`; 
+            csv += "\n";
 
             salesReportData.forEach(r => {
                 let row = `"${r.date}","${r.name}","${r.phone}","${r.team}","${r.status}","${r.keyword}","${r.delayStr || ''}","${r.time ? new Date(r.time).toLocaleString() : ''}","${r.adminReply || ''}"`;
@@ -759,32 +1149,82 @@
                 }
                 csv += row + "\n";
             });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); link.download = `UIC_Sales_Tracker.csv`; link.click();
+            const link = document.createElement("a"); 
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); 
+            link.download = `UIC_Sales_Tracker.csv`; 
+            link.click();
         }
 
         let currentValidCode = null;
         async function verifyCode() {
-            const code = document.getElementById('verify-code').value; const resBox = document.getElementById('verify-result'); if(!code) return;
+            const code = document.getElementById('verify-code').value;
+            const resBox = document.getElementById('verify-result');
+            if(!code) return;
+            
             const res = await fetch('/api/coupon/validate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code}) });
-            const data = await res.json(); resBox.classList.remove('hidden');
+            const data = await res.json();
+            resBox.classList.remove('hidden');
+            
             if(data.valid) {
-                currentValidCode = code; let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
+                currentValidCode = code;
+                let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
+                
                 const displayDiscount = data.discount === 'CBCT' ? 'CBCT Special' : `${data.discount}% OFF`;
+
                 resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-500 bg-green-50";
-                resBox.innerHTML = `<p class="text-green-700 font-black text-xl mb-2">✅ VALID COUPON</p><p class="text-slate-800 font-bold mb-1">Name: <span class="font-normal">${data.name}</span></p><p class="text-slate-800 font-bold mb-6">Service/Discount: <span class="font-normal text-blue-600">${displayDiscount}</span></p><label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label><select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-4 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select><label class="text-xs font-black tracking-widest text-slate-600 block mb-2 mt-2">PATIENT REG. NO *</label><input type="text" id="redeem-regno" placeholder="Enter Reg No" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-6 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><button onclick="redeemCode()" class="w-full bg-green-600 text-white font-black tracking-wider py-4 rounded-xl shadow-lg hover:bg-green-700 transition">CONFIRM & REDEEM</button>`;
-            } else { resBox.className = "mt-6 w-full p-4 rounded-xl border-2 border-red-500 bg-red-50"; resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`; }
+                resBox.innerHTML = `
+                    <p class="text-green-700 font-black text-xl mb-2">✅ VALID COUPON</p>
+                    <p class="text-slate-800 font-bold mb-1">Name: <span class="font-normal">${data.name}</span></p>
+                    <p class="text-slate-800 font-bold mb-6">Service/Discount: <span class="font-normal text-blue-600">${displayDiscount}</span></p>
+                    
+                    <label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label>
+                    <select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-4 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select>
+                    
+                    <label class="text-xs font-black tracking-widest text-slate-600 block mb-2 mt-2">PATIENT REG. NO *</label>
+                    <input type="text" id="redeem-regno" placeholder="Enter Reg No" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-6 font-bold text-slate-700 focus:outline-none focus:border-blue-500">
+                    
+                    <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-black tracking-wider py-4 rounded-xl shadow-lg hover:bg-green-700 transition">CONFIRM & REDEEM</button>
+                `;
+            } else { 
+                resBox.className = "mt-6 w-full p-4 rounded-xl border-2 border-red-500 bg-red-50"; 
+                resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`; 
+            }
         }
 
         async function redeemCode() {
-            const branch = document.getElementById('redeem-branch').value; const regNo = document.getElementById('redeem-regno').value;
-            if(!branch) return alert("Please select a branch first!"); if(!regNo || regNo.trim() === '') return alert("Please enter Patient Reg. No!");
-            await fetch('/api/coupon/redeem', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code: currentValidCode, branch: branch, patientRegNo: regNo.trim()}) });
-            document.getElementById('verify-code').value = ''; document.getElementById('verify-result').classList.add('hidden'); loadUserData(); loadAdminData(); alert(`Success! Redeemed at ${branch} with Reg No: ${regNo}`);
+            const branch = document.getElementById('redeem-branch').value;
+            const regNo = document.getElementById('redeem-regno').value;
+            
+            if(!branch) return alert("Please select a branch first!");
+            if(!regNo || regNo.trim() === '') return alert("Please enter Patient Reg. No!");
+
+            await fetch('/api/coupon/redeem', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({
+                    code: currentValidCode, 
+                    branch: branch, 
+                    patientRegNo: regNo.trim()
+                }) 
+            });
+            
+            document.getElementById('verify-code').value = ''; 
+            document.getElementById('verify-result').classList.add('hidden');
+            loadUserData(); loadAdminData(); 
+            alert(`Success! Redeemed at ${branch} with Reg No: ${regNo}`);
         }
 
         async function loadUserData() {
             const logs = await fetch('/api/user/redeemed-today').then(r => r.json());
-            document.getElementById('redeemed-list').innerHTML = logs.map(l => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td><td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td><td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td><td class="p-4 font-bold text-slate-600">${l.patientRegNo || '-'}</td><td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td></tr>`).join('');
+            document.getElementById('redeemed-list').innerHTML = logs.map(l => `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td>
+                    <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
+                    <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
+                    <td class="p-4 font-bold text-slate-600">${l.patientRegNo || '-'}</td>
+                    <td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
+                </tr>
+            `).join('');
         }
     </script>
 </body>
