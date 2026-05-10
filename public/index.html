@@ -79,58 +79,6 @@
                     </div>
                 </div>
 
-                <div class="mb-6">
-                    <div class="flex justify-between items-center mb-2">
-                        <h2 class="text-lg font-black text-slate-800">📈 Campaign & PRO Intelligence</h2>
-                        <div class="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full">Last Campaign Shoot: <span id="last-campaign-date" class="text-blue-600">Loading...</span></div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">⭐ Ratings Summary</h3>
-                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>5 Star:</span><span id="stat-r5" class="text-green-600">0</span></div>
-                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>4 Star:</span><span id="stat-r4" class="text-blue-600">0</span></div>
-                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>3 Star:</span><span id="stat-r3" class="text-yellow-600">0</span></div>
-                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>2 Star:</span><span id="stat-r2" class="text-orange-600">0</span></div>
-                            <div class="flex justify-between text-sm font-bold text-slate-700"><span>1 Star:</span><span id="stat-r1" class="text-red-600">0</span></div>
-                        </div>
-
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🔥 Engagement</h3>
-                            <div class="bg-purple-50 p-3 rounded-lg border border-purple-100 flex justify-between items-center mb-3">
-                                <span class="font-bold text-purple-800 text-xs">Requested 'More Coupons'</span>
-                                <span id="stat-more-coupons" class="font-black text-lg text-purple-600">0</span>
-                            </div>
-                            <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-1">Top Buttons Clicked:</h4>
-                            <div id="top-buttons" class="overflow-y-auto max-h-20"></div>
-                        </div>
-
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🏥 Branch Redemptions</h3>
-                            <div id="branch-leaderboard" class="overflow-y-auto max-h-32 space-y-1"></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="bg-red-50 p-3 border-b border-red-100 flex justify-between items-center">
-                            <h3 class="text-sm font-bold text-red-800">📞 PRO Call Requests (Pending vs Done)</h3>
-                        </div>
-                        <div class="overflow-x-auto max-h-48 overflow-y-auto">
-                            <table class="w-full text-xs text-left whitespace-nowrap">
-                                <thead class="bg-slate-100 text-slate-500 uppercase sticky top-0">
-                                    <tr>
-                                        <th class="p-2 pl-4">PRO Name & Phone</th>
-                                        <th class="p-2 text-center">Total Requests</th>
-                                        <th class="p-2 text-center">Pending Calls</th>
-                                        <th class="p-2 text-center">Completed Calls</th>
-                                        <th class="p-2 text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="pro-tracker-list"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
                 <div class="flex justify-end mb-6">
                     <button onclick="resetSystemData()" class="bg-red-600 text-white text-xs font-bold px-6 py-3 rounded-lg shadow-md hover:bg-red-700 transition">
                         ⚠️ RESET ALL DATA
@@ -220,30 +168,86 @@
                     <button onclick="switchTab('sales')" id="tab-sales" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">📊 SALES BOT TRACKER</button>
                 </div>
 
-                <div id="doctor-section" class="bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
-                    <div class="p-4 border-b flex justify-between items-center bg-blue-50">
-                        <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Latest Activity First)</h3>
-                        <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
-                            <span>📊</span> EXPORT DOCTORS
-                        </button>
+                <div id="doctor-section" class="bg-transparent mb-6">
+                    
+                    <div id="doctor-analytics" class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="text-lg font-black text-slate-800">📈 Campaign & PRO Intelligence (Doctors)</h2>
+                            <div class="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full">Last Campaign Shoot: <span id="last-campaign-date" class="text-blue-600">Loading...</span></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">⭐ Ratings Summary</h3>
+                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>5 Star:</span><span id="stat-r5" class="text-green-600">0</span></div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>4 Star:</span><span id="stat-r4" class="text-blue-600">0</span></div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>3 Star:</span><span id="stat-r3" class="text-yellow-600">0</span></div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>2 Star:</span><span id="stat-r2" class="text-orange-600">0</span></div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>1 Star:</span><span id="stat-r1" class="text-red-600">0</span></div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🔥 Engagement</h3>
+                                <div class="bg-purple-50 p-3 rounded-lg border border-purple-100 flex justify-between items-center mb-3">
+                                    <span class="font-bold text-purple-800 text-xs">Requested 'More Coupons'</span>
+                                    <span id="stat-more-coupons" class="font-black text-lg text-purple-600">0</span>
+                                </div>
+                                <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-1">Top Buttons Clicked:</h4>
+                                <div id="top-buttons" class="overflow-y-auto max-h-20"></div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🏥 Branch Redemptions</h3>
+                                <div id="branch-leaderboard" class="overflow-y-auto max-h-32 space-y-1"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="bg-red-50 p-3 border-b border-red-100 flex justify-between items-center">
+                                <h3 class="text-sm font-bold text-red-800">📞 PRO Call Requests (Pending vs Done)</h3>
+                            </div>
+                            <div class="overflow-x-auto max-h-48 overflow-y-auto">
+                                <table class="w-full text-xs text-left whitespace-nowrap">
+                                    <thead class="bg-slate-100 text-slate-500 uppercase sticky top-0">
+                                        <tr>
+                                            <th class="p-2 pl-4">PRO Name & Phone</th>
+                                            <th class="p-2 text-center">Total Requests</th>
+                                            <th class="p-2 text-center">Pending Calls</th>
+                                            <th class="p-2 text-center">Completed Calls</th>
+                                            <th class="p-2 text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pro-tracker-list"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                    <div class="overflow-x-auto max-h-96 overflow-y-auto">
-                        <table class="w-full text-left text-xs whitespace-nowrap">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
-                                    <th class="p-4">Details</th>
-                                    <th class="p-4">Coupon</th>
-                                    <th class="p-4">PRO Info</th>
-                                    <th class="p-4">Rating</th>
-                                    <th class="p-4">Action</th>
-                                    <th class="p-4">Call Tracking</th>
-                                    <th class="p-4">Status</th>
-                                    <th class="p-4">Reg. No</th>
-                                    <th class="p-4">Branch</th>
-                                </tr>
-                            </thead>
-                            <tbody id="doctor-logs"></tbody>
-                        </table>
+
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                        <div class="p-4 border-b flex justify-between items-center bg-blue-50">
+                            <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Latest Activity First)</h3>
+                            <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
+                                <span>📊</span> EXPORT DOCTORS
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                            <table class="w-full text-left text-xs whitespace-nowrap">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
+                                        <th class="p-4">Details</th>
+                                        <th class="p-4">Coupon</th>
+                                        <th class="p-4">PRO Info</th>
+                                        <th class="p-4">Rating</th>
+                                        <th class="p-4">Action</th>
+                                        <th class="p-4">Call Tracking</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4">Reg. No</th>
+                                        <th class="p-4">Branch</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="doctor-logs"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -362,8 +366,8 @@
             <div id="user-dashboard" class="hidden">
                 <div class="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center max-w-lg mx-auto mb-8">
                     <h2 class="text-2xl font-black text-slate-800 mb-6">REDEEM COUPON</h2>
-                    <input type="text" id="verify-code" placeholder="ENTER 5-DIGIT CODE" maxlength="5" class="w-full border-4 border-slate-200 p-4 rounded-xl text-center text-3xl font-black tracking-[10px] outline-none focus:border-blue-500 mb-4">
-                    <button onclick="verifyCode()" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-xl hover:bg-slate-900 shadow-md">CHECK CODE</button>
+                    <input type="text" id="verify-code" placeholder="ENTER 5-DIGIT CODE" maxlength="5" class="w-full border-4 border-slate-200 p-4 rounded-xl text-center text-3xl font-black tracking-[10px] outline-none focus:border-blue-500 transition-all mb-4">
+                    <button onclick="verifyCode()" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-xl hover:bg-slate-900 transition shadow-md">CHECK CODE</button>
                     <div id="verify-result" class="mt-8 w-full hidden"></div>
                 </div>
                 
@@ -632,7 +636,10 @@
                 
                 let matchDate = true;
                 if (dateFrom || dateTo) {
-                    const itemDate = new Date(item.createdAt).toISOString().split('T')[0];
+                    // Use robust ISO string extraction to match standard input dates accurately without timezone drift shifting the day back
+                    const itemDateObj = new Date(item.createdAt);
+                    const itemDate = itemDateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+                    
                     if (dateFrom && itemDate < dateFrom) matchDate = false;
                     if (dateTo && itemDate > dateTo) matchDate = false;
                 }
@@ -654,9 +661,10 @@
             renderAnalytics();
         }
 
-        // 🚨 MEGA ANALYTICS FUNCTION 🚨
+        // 🚨 MEGA ANALYTICS FUNCTION (Only For Doctors Data Now) 🚨
         function renderAnalytics() {
-            if (!filteredLogs) return;
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
+            if (!docLogs) return;
 
             let r5=0, r4=0, r3=0, r2=0, r1=0; 
             let moreCoupons = 0; 
@@ -664,7 +672,7 @@
             let branchCounts = {}; 
             let proStats = {};
 
-            filteredLogs.forEach(l => {
+            docLogs.forEach(l => {
                 if(l.rating === 5) r5++; 
                 else if(l.rating === 4) r4++; 
                 else if(l.rating === 3) r3++; 
@@ -690,6 +698,7 @@
                         let pName = "Unknown PRO";
                         let matched = proList.find(p => p.phone === l.proPhone);
                         if(matched) pName = matched.name;
+                        
                         proStats[l.proPhone] = { phone: l.proPhone, name: pName, total: 0, pending: 0, completed: 0, data: [] };
                     }
                     proStats[l.proPhone].total++;
@@ -707,12 +716,19 @@
 
             let sortedBranches = Object.entries(branchCounts).sort((a,b)=>b[1]-a[1]);
             document.getElementById('branch-leaderboard').innerHTML = sortedBranches.length 
-                ? sortedBranches.map(b => `<div class="flex justify-between text-xs border-b py-1"><span>${b[0]}</span><span class="font-bold text-green-600">${b[1]}</span></div>`).join('') 
+                ? sortedBranches.map(b => `
+                    <div class="flex justify-between text-xs border-b py-1">
+                        <span>${b[0]}</span>
+                        <span class="font-bold text-green-600">${b[1]}</span>
+                    </div>`).join('') 
                 : '<span class="text-xs text-slate-400">No redemptions yet</span>';
 
             let sortedBtns = Object.entries(btnCounts).sort((a,b)=>b[1]-a[1]).slice(0, 10);
             document.getElementById('top-buttons').innerHTML = sortedBtns.length 
-                ? sortedBtns.map(b => `<span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded m-1 inline-block">${b[0]} <span class="text-blue-500">(${b[1]})</span></span>`).join('') 
+                ? sortedBtns.map(b => `
+                    <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded m-1 inline-block">
+                        ${b[0]} <span class="text-blue-500">(${b[1]})</span>
+                    </span>`).join('') 
                 : '<span class="text-xs text-slate-400">No clicks yet</span>';
 
             let sortedPros = Object.values(proStats).sort((a,b)=>b.total - a.total);
@@ -723,15 +739,19 @@
                     <tr class="border-b">
                         <td class="p-2 pl-4 font-bold text-slate-800">${p.name}<br><span class="text-[9px] text-slate-500 font-normal">${p.phone}</span></td>
                         <td class="p-2 font-black text-blue-600 text-center">${p.total}</td>
-                        <td class="p-2 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold border ${pendingClass}">${p.pending} Pending</span></td>
+                        <td class="p-2 text-center">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold border ${pendingClass}">${p.pending} Pending</span>
+                        </td>
                         <td class="p-2 text-center font-bold text-green-600">${p.completed} Done</td>
-                        <td class="p-2 text-center"><button onclick="exportProDocs('${p.phone}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3 py-1 rounded shadow">⬇️ Excel</button></td>
+                        <td class="p-2 text-center">
+                            <button onclick="exportProDocs('${p.phone}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3 py-1 rounded shadow">⬇️ Excel</button>
+                        </td>
                     </tr>`;
                 }).join('') 
                 : '<tr><td colspan="5" class="p-4 text-center text-xs text-slate-400">No Call Requests</td></tr>';
 
-            if(globalLogs.length > 0) {
-                let lastLog = globalLogs.reduce((latest, current) => new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest);
+            if(docLogs.length > 0) {
+                let lastLog = docLogs.reduce((latest, current) => new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest);
                 document.getElementById('last-campaign-date').innerText = new Date(lastLog.createdAt).toLocaleString('en-IN');
             } else { 
                 document.getElementById('last-campaign-date').innerText = 'N/A'; 
@@ -739,7 +759,7 @@
         }
 
         function exportProDocs(proPhone) {
-            const dataToExport = filteredLogs.filter(i => i.proPhone === proPhone && i.requestCallAt);
+            const dataToExport = filteredLogs.filter(i => i.proPhone === proPhone && i.requestCallAt && i.audienceType === 'Doctor');
             if(dataToExport.length === 0) return alert("No data for this PRO in current date filter.");
             
             let csv = "Created_Date,Doctor_Name,Doctor_Phone,Code,Discount,Call_Status,Req_Call_At\n";
@@ -768,9 +788,15 @@
                 let actionHTML = '';
                 if (i.buttonClicked && i.buttonClicked.trim() !== '') {
                     let buttons = i.buttonClicked.split(',');
-                    actionHTML = buttons.map(btn => `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">${btn.trim()}</span>`).join('');
+                    actionHTML = buttons.map(btn => `
+                        <span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">
+                            ${btn.trim()}
+                        </span>`).join('');
                 } else {
-                    actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`;
+                    actionHTML = `
+                        <span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">
+                            ✅ Template Sent
+                        </span>`;
                 }
 
                 let pName = "Unknown PRO";
@@ -802,6 +828,7 @@
 
         function renderTables() {
             document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Doctor'));
+            
             document.getElementById('dental-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Dental'));
             
             document.getElementById('patient-logs').innerHTML = filteredLogs.filter(l => l.audienceType === 'Patient').map(i => {
@@ -812,11 +839,18 @@
                 else callBadge = '-';
 
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
+                
                 let actionHTML = '';
                 if (i.buttonClicked && i.buttonClicked.trim() !== '') {
-                    actionHTML = i.buttonClicked.split(',').map(btn => `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">${btn.trim()}</span>`).join('');
+                    actionHTML = i.buttonClicked.split(',').map(btn => `
+                        <span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">
+                            ${btn.trim()}
+                        </span>`).join('');
                 } else { 
-                    actionHTML = `<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">✅ Template Sent</span>`; 
+                    actionHTML = `
+                        <span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">
+                            ✅ Template Sent
+                        </span>`; 
                 }
 
                 return `
@@ -950,12 +984,23 @@
                 }
             });
 
-            // Dynamic Bot Headers
+            // Dynamic Bot Headers based on backend config
             const ssBots = allBotsConfig.filter(b => b.team === 'SS').sort((a,b)=>a.time.localeCompare(b.time));
             const bBots = allBotsConfig.filter(b => b.team === 'B').sort((a,b)=>a.time.localeCompare(b.time));
 
-            document.getElementById('th-ss-summary').innerHTML = `<tr><th class="p-2 pl-3">Name</th><th class="p-2">Phone</th>${ssBots.map(b=>`<th class="p-2 text-center" title="${b.time}">${b.keyword}</th>`).join('')}</tr>`;
-            document.getElementById('th-b-summary').innerHTML = `<tr><th class="p-2 pl-3">Name</th><th class="p-2">Phone</th>${bBots.map(b=>`<th class="p-2 text-center" title="${b.time}">${b.keyword}</th>`).join('')}</tr>`;
+            document.getElementById('th-ss-summary').innerHTML = `
+                <tr>
+                    <th class="p-2 pl-3">Name</th>
+                    <th class="p-2">Phone</th>
+                    ${ssBots.map(b=>`<th class="p-2 text-center" title="${b.time}">${b.keyword}</th>`).join('')}
+                </tr>`;
+            
+            document.getElementById('th-b-summary').innerHTML = `
+                <tr>
+                    <th class="p-2 pl-3">Name</th>
+                    <th class="p-2">Phone</th>
+                    ${bBots.map(b=>`<th class="p-2 text-center" title="${b.time}">${b.keyword}</th>`).join('')}
+                </tr>`;
 
             const yesBadge = '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-200">Yes</span>';
             const noBadge = '<span class="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-200">No</span>';
@@ -963,9 +1008,19 @@
             let ssHTML = '', bHTML = '';
             Object.values(persons).forEach(p => {
                 if(p.team === 'SS') {
-                    ssHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td><td class="p-2 text-slate-500">${p.phone}</td>${ssBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}</tr>`;
+                    ssHTML += `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
+                            <td class="p-2 text-slate-500">${p.phone}</td>
+                            ${ssBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}
+                        </tr>`;
                 } else if(p.team === 'B') {
-                    bHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td><td class="p-2 text-slate-500">${p.phone}</td>${bBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}</tr>`;
+                    bHTML += `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
+                            <td class="p-2 text-slate-500">${p.phone}</td>
+                            ${bBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}
+                        </tr>`;
                 }
             });
 
@@ -993,7 +1048,11 @@
                     r.answers.forEach((ans, idx) => {
                         let q = r.questions && r.questions[idx] ? r.questions[idx] : `Question ${idx+1}`;
                         let formattedAns = ans.replace(/\n/g, '<br>');
-                        qaHTML += `<div class="bg-slate-50 p-2 rounded border border-slate-200"><p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p><p class="text-blue-700 font-semibold leading-relaxed">👉 ${formattedAns}</p></div>`;
+                        qaHTML += `
+                            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                                <p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p>
+                                <p class="text-blue-700 font-semibold leading-relaxed">👉 ${formattedAns}</p>
+                            </div>`;
                     });
                 } else {
                     qaHTML += `<span class="text-slate-400 italic">No answers recorded.</span>`;
@@ -1004,19 +1063,23 @@
                     ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] block font-semibold whitespace-normal shadow-inner border border-blue-200 mb-1">Feedback: ${r.adminReply}</span>`
                     : '';
                 
-                replyHTML += `<div class="flex gap-1 mt-1"><input type="text" id="reply-${r.phone}-${r.keyword}-${r.date}" placeholder="Type feedback..." class="border border-slate-300 p-1.5 rounded text-xs w-28 outline-blue-500"><button onclick="sendSalesReply('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm">Send</button></div>`;
+                replyHTML += `
+                    <div class="flex gap-1 mt-1">
+                        <input type="text" id="reply-${r.phone}-${r.keyword}-${r.date}" placeholder="Type feedback..." class="border border-slate-300 p-1.5 rounded text-xs w-28 outline-blue-500">
+                        <button onclick="sendSalesReply('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm">Send</button>
+                    </div>`;
 
                 let kwBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded tracking-wider text-[10px] block w-max">${r.keyword}</span>`;
                 if(r.delayStr && r.delayStr !== '-') {
                     let color = r.delayStr.includes('Early') ? 'text-green-600' : 'text-orange-600';
-                    keywordBadge += `<span class="text-[10px] font-bold ${color} mt-1 block">${r.delayStr}</span>`;
+                    kwBadge += `<span class="text-[10px] font-bold ${color} mt-1 block">${r.delayStr}</span>`;
                 }
 
                 return `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td>
                     <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td>
-                    <td class="p-4">${keywordBadge}</td>
+                    <td class="p-4">${kwBadge}</td>
                     <td class="p-4">${statusBadge}</td>
                     <td class="p-4">${qaHTML}</td>
                     <td class="p-4">${replyHTML}</td>
@@ -1149,6 +1212,7 @@
                 }
                 csv += row + "\n";
             });
+            
             const link = document.createElement("a"); 
             link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); 
             link.download = `UIC_Sales_Tracker.csv`; 
