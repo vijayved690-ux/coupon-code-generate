@@ -104,7 +104,7 @@
                                 <option value="Doctor">Doctors</option>
                                 <option value="Patient">Patients</option>
                                 <option value="Dental">Dental (CBCT)</option>
-                            </select>
+                                <option value="CGHS_Dental">CGHS Dental (CBCT)</option> </select>
                         </div>
                         <div>
                             <label class="text-xs font-bold text-slate-500 block mb-1">DISCOUNT / SERVICE</label>
@@ -253,7 +253,7 @@
 
                 <div id="dental-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-indigo-50">
-                        <h3 class="font-bold text-indigo-800 text-sm">Dental CBCT Database (Latest Activity First)</h3>
+                        <h3 class="font-bold text-indigo-800 text-sm">Dental & CGHS CBCT Database (Latest Activity First)</h3>
                         <button onclick="exportFilteredExcel('Dental')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
                             <span>📊</span> EXPORT DENTISTS
                         </button>
@@ -586,7 +586,7 @@
             
             const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
             const patLogs = globalLogs.filter(l => l.audienceType === 'Patient');
-            const denLogs = globalLogs.filter(l => l.audienceType === 'Dental'); 
+            const denLogs = globalLogs.filter(l => l.audienceType === 'Dental' || l.audienceType === 'CGHS_Dental'); 
             
             document.getElementById('stat-total-sent').innerText = globalLogs.length;
             document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
@@ -636,7 +636,6 @@
                 
                 let matchDate = true;
                 if (dateFrom || dateTo) {
-                    // Use robust ISO string extraction to match standard input dates accurately without timezone drift shifting the day back
                     const itemDateObj = new Date(item.createdAt);
                     const itemDate = itemDateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
                     
@@ -829,7 +828,8 @@
         function renderTables() {
             document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Doctor'));
             
-            document.getElementById('dental-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Dental'));
+            // 🚨 RENDER DENTAL & CGHS DENTAL IN DENTAL TAB
+            document.getElementById('dental-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Dental' || l.audienceType === 'CGHS_Dental'));
             
             document.getElementById('patient-logs').innerHTML = filteredLogs.filter(l => l.audienceType === 'Patient').map(i => {
                 let callBadge = '';
@@ -877,7 +877,7 @@
         }
 
         async function exportFilteredExcel(type) {
-            const dataToExport = filteredLogs.filter(i => i.audienceType === type);
+            const dataToExport = filteredLogs.filter(i => type === 'Dental' ? (i.audienceType === 'Dental' || i.audienceType === 'CGHS_Dental') : i.audienceType === type);
             if(dataToExport.length === 0) {
                 alert("No data to export based on current filters.");
                 return;
@@ -1072,14 +1072,14 @@
                 let kwBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded tracking-wider text-[10px] block w-max">${r.keyword}</span>`;
                 if(r.delayStr && r.delayStr !== '-') {
                     let color = r.delayStr.includes('Early') ? 'text-green-600' : 'text-orange-600';
-                    kwBadge += `<span class="text-[10px] font-bold ${color} mt-1 block">${r.delayStr}</span>`;
+                    keywordBadge += `<span class="text-[10px] font-bold ${color} mt-1 block">${r.delayStr}</span>`;
                 }
 
                 return `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td>
                     <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td>
-                    <td class="p-4">${kwBadge}</td>
+                    <td class="p-4">${keywordBadge}</td>
                     <td class="p-4">${statusBadge}</td>
                     <td class="p-4">${qaHTML}</td>
                     <td class="p-4">${replyHTML}</td>
