@@ -252,6 +252,7 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 expiryDate: new Date(expiryDate)
             });
 
+            // 🚨 UPDATE: CGHS DENTAL TEMPLATE MAPPING
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon', 
                 'Doctor_20': 'temp_20_doctor_coupon', 
@@ -259,16 +260,21 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 'Patient_10': 'patient_10_dis_temp', 
                 'Patient_20': 'patient_20_dis_temp', 
                 'Patient_30': 'patient_30_temp_new_dis',
-                'Dental_CBCT': 'dental_temp_final_2k' 
+                'Dental_CBCT': 'dental_temp_final_2k',
+                'CGHS_Dental_CBCT': 'uic_dental_cghs_templates'
             };
 
-            const templateName = templateMap[`${audienceType}_${discount}`] || (audienceType === 'Dental' ? 'dental_temp_final_2k' : null);
+            let templateName = templateMap[`${audienceType}_${discount}`];
+            if(!templateName) {
+                if(audienceType === 'Dental') templateName = 'dental_temp_final_2k';
+                else if(audienceType === 'CGHS_Dental') templateName = 'uic_dental_cghs_templates';
+            }
             
             if (templateName) {
                 const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
                 let params = [];
                 
-                if (audienceType === 'Dental') {
+                if (audienceType === 'Dental' || audienceType === 'CGHS_Dental') {
                     params = [{ name: '1', value: safeName }];
                 } else {
                     params = [ 
@@ -584,8 +590,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                 }
             }
         }
-        // 🚨 NEW PRO TEMPLATE LOGIC
-        else if (['connect with doctor', 'sales team please call me', 'સેલ્સ ટીમ, મને કોલ કરો', 'ask sales team to call', 'ask sales team to call me'].includes(btnLower)) {
+        // 🚨 UPDATE: NEW PRO TEMPLATE LOGIC + CGHS CBCT DENTAL SUPPORT
+        else if (['connect with doctor', 'sales team please call me', 'સેલ્સ ટીમ, મને કોલ કરો', 'ask sales team to call', 'ask sales team to call me', 'i want details about cbct'].includes(btnLower)) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon && lastCoupon.proPhone) {
                 const twoMinsAgo = new Date(Date.now() - 2 * 60000);
@@ -601,7 +607,8 @@ app.post('/api/wati/webhook', async (req, res) => {
 
                 const discountValue = lastCoupon.discountPercentage === 'CBCT' ? 'CBCT Service' : `${lastCoupon.discountPercentage}%`;
 
-                if (lastCoupon.audienceType === 'Dental' || lastCoupon.discountPercentage === 'CBCT') {
+                // Handle both Dental and CGHS Dental through old dental notify format for PRO
+                if (lastCoupon.audienceType === 'Dental' || lastCoupon.audienceType === 'CGHS_Dental' || lastCoupon.discountPercentage === 'CBCT') {
                     const dentalParams = [
                         { name: "1", value: lastCoupon.targetName || "Doctor" },
                         { name: "2", value: `+${lastCoupon.doctorPhone}` }, 
@@ -610,6 +617,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                     ];
                     await sendWatiMessage(lastCoupon.proPhone, 'pro_doc_dental_notify', dentalParams);
                 } else {
+                    // Doctor Pro Template {{1}}, {{2}}, {{3}} update logic
                     const newProParams = [
                         { name: "1", value: `+${lastCoupon.doctorPhone}` }, // Doctor Number
                         { name: "2", value: discountValue },                // Discount %
