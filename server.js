@@ -95,7 +95,7 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION
+// 🚨 SMART DELAY FUNCTION (Best for 3000+ shoots)
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // 🚨 STRICT IST DATE FUNCTION (Fix for Server UTC vs India Time)
@@ -106,6 +106,14 @@ function getIndianDateStr(dateObj = new Date()) {
     const m = String(ist.getMonth() + 1).padStart(2, '0');
     const d = String(ist.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+}
+
+// 🚨 TIME CALCULATION FOR DELAY TRACKING
+function getScheduledTime(dateStr, timeStr) {
+    if(!timeStr) return Date.now();
+    const [year, month, day] = dateStr.split('-');
+    const [hours, mins] = timeStr.split(':');
+    return new Date(year, month - 1, day, parseInt(hours), parseInt(mins), 0).getTime();
 }
 
 async function generateUniqueCode() {
@@ -250,6 +258,7 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 expiryDate: new Date(expiryDate)
             });
 
+            // 🚨 UPDATE: CGHS DENTAL TEMPLATE MAPPING
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon', 
                 'Doctor_20': 'temp_20_doctor_coupon', 
@@ -427,9 +436,13 @@ app.get('/api/sales/tracker', async (req, res) => {
                 let delayStr = "-";
                 if (log && log.responseTimeMins != null) {
                     const m = Math.floor(log.responseTimeMins);
-                    if (m < 0) { delayStr = "Early Reply ⚡"; } 
-                    else if (m < 60) { delayStr = `${m} mins delay`; } 
-                    else { delayStr = `${Math.floor(m/60)} hr ${m%60} mins delay`; }
+                    if (m < 0) {
+                        delayStr = "Early Reply ⚡";
+                    } else if (m < 60) {
+                        delayStr = `${m} mins delay`;
+                    } else {
+                        delayStr = `${Math.floor(m/60)} hr ${m%60} mins delay`;
+                    }
                 }
 
                 report.push({
@@ -506,11 +519,17 @@ app.post('/api/wati/webhook', async (req, res) => {
         if (salesMember) {
             const today = getIndianDateStr(); // Now using strict IST Date
             
-            // 🚨 IMPROVED EXACT MATCHING LOGIC (Fixed SB11 vs B1 bug)
+            // 🚨 BULLETPROOF EXACT MATCHING LOGIC
             let matchedBot = allBots.find(b => {
-                let pureKw = b.keyword.toLowerCase().replace('yes i will reply', '').trim();
-                let btnWords = btnLower.replace(/-/g, ' ').split(' '); // Split words to avoid substring matches
-                return btnLower.includes('yes i will reply') && btnWords.includes(pureKw);
+                let cleanKeyword = b.keyword.toLowerCase().replace('yes i will reply', '').trim();
+                let cleanBtn = btnLower.replace('yes i will reply', '').trim();
+                
+                // 1. Direct Exact Match (If user clicks SB112)
+                if (cleanBtn === cleanKeyword) return true;
+                
+                // 2. Exact word existence (Fixes SB112 matching as B1 bug)
+                let btnWords = btnLower.replace(/[^a-z0-9]/g, ' ').split(' ');
+                return btnWords.includes(cleanKeyword);
             });
             
             if (matchedBot) {
