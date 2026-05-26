@@ -611,7 +611,7 @@
             document.getElementById('stat-den-sent').innerText = denLogs.length;
             document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
 
-            // 🚨 Strict IST Date Fix
+            // 🚨 Strict IST Date Fix (Ensure UI sets today correctly on load)
             if(!document.getElementById('date-from').value) {
                 const todayStr = getStrictDateString(new Date()); 
                 document.getElementById('date-from').value = todayStr;
@@ -648,7 +648,8 @@
                 
                 let matchDate = true;
                 if (dateFrom || dateTo) {
-                    const itemDate = getStrictDateString(new Date(item.createdAt)); 
+                    // 🚨 Safely calculate item's original date
+                    const itemDate = getStrictDateString(new Date(item.createdAt));
                     
                     if (dateFrom && itemDate < dateFrom) matchDate = false;
                     if (dateTo && itemDate > dateTo) matchDate = false;
@@ -671,6 +672,7 @@
             renderAnalytics();
         }
 
+        // 🚨 MEGA ANALYTICS FUNCTION (Only For Doctors Data Now) 🚨
         function renderAnalytics() {
             const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             if (!docLogs) return;
@@ -1208,37 +1210,70 @@
             alert('Deleted!'); loadSalesData(); openSetupModal();
         }
 
-        // 🚨 EXACT VERTICAL EXCEL EXPORT LOGIC
+        // 🚨 EXACT VERTICAL EXCEL EXPORT LOGIC (Name Once, Qs/Ans below each other)
         function exportSalesExcel() {
             if(salesReportData.length === 0) return alert("No data to export");
             
             let csv = "Date,Reply_Time,Sales_Person,Phone,Team,Keyword,Status,Delay,Admin_Feedback,Question,Answer\n";
 
+            // Data ko ek PRO ke hisaab se group kar rahe hain taaki naam ek baar print ho
+            let groupedData = {};
             salesReportData.forEach(r => {
-                let replyTime = r.time ? new Date(r.time).toLocaleTimeString('en-IN') : '';
-                let adminRep = r.adminReply ? r.adminReply.replace(/"/g, '""').replace(/\n/g, ' ') : '';
-                let delay = r.delayStr && r.delayStr !== '-' ? r.delayStr : '';
-                let pureKw = r.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
-                
-                let qLen = r.questions ? r.questions.length : 0;
-                let aLen = r.answers ? r.answers.length : 0;
-                let maxIter = Math.max(qLen, aLen, 1);
-                
-                for(let i = 0; i < maxIter; i++) {
-                    let q = r.questions && r.questions[i] ? r.questions[i].replace(/"/g, '""').replace(/\n/g, ' ') : '';
-                    let ans = r.answers && r.answers[i] ? r.answers[i].replace(/"/g, '""').replace(/\n/g, ' ') : '';
+                if (!groupedData[r.name]) groupedData[r.name] = [];
+                groupedData[r.name].push(r);
+            });
+
+            Object.keys(groupedData).forEach(personName => {
+                let personSessions = groupedData[personName];
+                let isFirstRowForPerson = true; // Yahi check karega ki naam ek hi baar print ho
+
+                personSessions.forEach(session => {
+                    let replyTime = session.time ? new Date(session.time).toLocaleTimeString('en-IN') : '';
+                    let adminRep = session.adminReply ? session.adminReply.replace(/"/g, '""').replace(/\n/g, ' ') : '';
+                    let delay = session.delayStr && session.delayStr !== '-' ? session.delayStr : '';
+                    let pureKw = session.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
                     
-                    if (i === 0) {
-                        csv += `"${r.date}","${replyTime}","${r.name}","${r.phone}","${r.team}","${pureKw}","${r.status}","${delay}","${adminRep}","${q}","${ans}"\n`;
-                    } else {
-                        csv += `"","","","","","","","","","${q}","${ans}"\n`;
+                    // Agar line-breaks hai toh usko alag-alag split karna (Flatten array)
+                    let allQs = [];
+                    if (session.questions && session.questions.length > 0) {
+                        session.questions.forEach(qStr => {
+                            if (qStr) qStr.split('\n').forEach(line => { if(line.trim()) allQs.push(line.trim()); });
+                        });
                     }
-                }
+                    
+                    let allAs = [];
+                    if (session.answers && session.answers.length > 0) {
+                        session.answers.forEach(aStr => {
+                            if (aStr) aStr.split('\n').forEach(line => { if(line.trim()) allAs.push(line.trim()); });
+                        });
+                    }
+                    
+                    let maxIter = Math.max(allQs.length, allAs.length, 1); // Minimum 1 row chalegi 
+                    
+                    for(let i = 0; i < maxIter; i++) {
+                        let q = allQs[i] ? allQs[i].replace(/"/g, '""') : '';
+                        let ans = allAs[i] ? allAs[i].replace(/"/g, '""') : '';
+                        
+                        if (isFirstRowForPerson) {
+                            // First Row with PRO details
+                            csv += `"${session.date}","${replyTime}","${personName}","${session.phone}","${session.team}","${pureKw}","${session.status}","${delay}","${adminRep}","${q}","${ans}"\n`;
+                            isFirstRowForPerson = false;
+                        } else if (i === 0) {
+                            // Agar same person ka dusra session/keyword hai toh naam blank rakhein
+                            csv += `"${session.date}","${replyTime}","","","","${pureKw}","${session.status}","${delay}","${adminRep}","${q}","${ans}"\n`;
+                        } else {
+                            // Baki saare Q/A ko neeche blank row me vertically daalein
+                            csv += `"","","","","","","","","","${q}","${ans}"\n`;
+                        }
+                    }
+                });
+                // Har PRO ke data ke baad ek blank row thodi spacing ke liye
                 csv += `"","","","","","","","","","",""\n`;
             });
             
             const link = document.createElement("a"); 
-            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); 
+            // '\uFEFF' se UTF-8 format proper rehta hai MS Excel mein
+            link.href = URL.createObjectURL(new Blob(["\uFEFF"+csv], { type: 'text/csv;charset=utf-8;' })); 
             link.download = `UIC_Sales_Tracker_${getStrictDateString(new Date())}.csv`; 
             link.click();
         }
