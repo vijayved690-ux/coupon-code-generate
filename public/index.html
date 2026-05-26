@@ -104,7 +104,8 @@
                                 <option value="Doctor">Doctors</option>
                                 <option value="Patient">Patients</option>
                                 <option value="Dental">Dental (CBCT)</option>
-                                <option value="CGHS_Dental">CGHS Dental (CBCT)</option> </select>
+                                <option value="CGHS_Dental">CGHS Dental (CBCT)</option>
+                            </select>
                         </div>
                         <div>
                             <label class="text-xs font-bold text-slate-500 block mb-1">DISCOUNT / SERVICE</label>
@@ -422,7 +423,7 @@
                         <div class="flex gap-2 mb-4">
                             <div class="w-1/3">
                                 <label class="text-[10px] font-bold text-slate-500">Keyword</label>
-                                <input type="text" id="nb-keyword" placeholder="e.g. SS12" class="border p-1.5 text-xs rounded w-full outline-blue-500 uppercase">
+                                <input type="text" id="nb-keyword" placeholder="e.g. SB112" class="border p-1.5 text-xs rounded w-full outline-blue-500 uppercase">
                             </div>
                             <div class="w-1/3">
                                 <label class="text-[10px] font-bold text-slate-500">Team</label>
@@ -468,6 +469,16 @@
             if(!dateString) return '-';
             const d = new Date(dateString);
             return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+        }
+
+        // 🚨 STRICT IST DATE FORMATTER (To fix yesterday's date bug)
+        function getStrictDateString(dObj) {
+            const utc = dObj.getTime() + (dObj.getTimezoneOffset() * 60000);
+            const ist = new Date(utc + (3600000 * 5.5));
+            const y = ist.getFullYear();
+            const m = String(ist.getMonth() + 1).padStart(2, '0');
+            const d = String(ist.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
         }
 
         window.onload = () => { const role = localStorage.getItem('role'); if (role) showApp(role); };
@@ -600,8 +611,9 @@
             document.getElementById('stat-den-sent').innerText = denLogs.length;
             document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
 
+            // 🚨 Strict IST Date Fix
             if(!document.getElementById('date-from').value) {
-                const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+                const todayStr = getStrictDateString(new Date()); 
                 document.getElementById('date-from').value = todayStr;
                 document.getElementById('date-to').value = todayStr;
             }
@@ -636,8 +648,7 @@
                 
                 let matchDate = true;
                 if (dateFrom || dateTo) {
-                    const itemDateObj = new Date(item.createdAt);
-                    const itemDate = itemDateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+                    const itemDate = getStrictDateString(new Date(item.createdAt)); 
                     
                     if (dateFrom && itemDate < dateFrom) matchDate = false;
                     if (dateTo && itemDate > dateTo) matchDate = false;
@@ -660,7 +671,6 @@
             renderAnalytics();
         }
 
-        // 🚨 MEGA ANALYTICS FUNCTION (Only For Doctors Data Now) 🚨
         function renderAnalytics() {
             const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             if (!docLogs) return;
@@ -828,7 +838,6 @@
         function renderTables() {
             document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Doctor'));
             
-            // 🚨 RENDER DENTAL & CGHS DENTAL IN DENTAL TAB
             document.getElementById('dental-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Dental' || l.audienceType === 'CGHS_Dental'));
             
             document.getElementById('patient-logs').innerHTML = filteredLogs.filter(l => l.audienceType === 'Patient').map(i => {
@@ -984,7 +993,6 @@
                 }
             });
 
-            // Dynamic Bot Headers based on backend config
             const ssBots = allBotsConfig.filter(b => b.team === 'SS').sort((a,b)=>a.time.localeCompare(b.time));
             const bBots = allBotsConfig.filter(b => b.team === 'B').sort((a,b)=>a.time.localeCompare(b.time));
 
@@ -992,14 +1000,20 @@
                 <tr>
                     <th class="p-2 pl-3">Name</th>
                     <th class="p-2">Phone</th>
-                    ${ssBots.map(b=>`<th class="p-2 text-center" title="${b.time}">${b.keyword}</th>`).join('')}
+                    ${ssBots.map(b=>{
+                        let displayKw = b.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
+                        return `<th class="p-2 text-center" title="${b.time}">${displayKw}</th>`;
+                    }).join('')}
                 </tr>`;
             
             document.getElementById('th-b-summary').innerHTML = `
                 <tr>
                     <th class="p-2 pl-3">Name</th>
                     <th class="p-2">Phone</th>
-                    ${bBots.map(b=>`<th class="p-2 text-center" title="${b.time}">${b.keyword}</th>`).join('')}
+                    ${bBots.map(b=>{
+                        let displayKw = b.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
+                        return `<th class="p-2 text-center" title="${b.time}">${displayKw}</th>`;
+                    }).join('')}
                 </tr>`;
 
             const yesBadge = '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-200">Yes</span>';
@@ -1069,17 +1083,18 @@
                         <button onclick="sendSalesReply('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm">Send</button>
                     </div>`;
 
-                let kwBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded tracking-wider text-[10px] block w-max">${r.keyword}</span>`;
+                let displayKw = r.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
+                let kwBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded tracking-wider text-[10px] block w-max">${displayKw}</span>`;
                 if(r.delayStr && r.delayStr !== '-') {
                     let color = r.delayStr.includes('Early') ? 'text-green-600' : 'text-orange-600';
-                    keywordBadge += `<span class="text-[10px] font-bold ${color} mt-1 block">${r.delayStr}</span>`;
+                    kwBadge += `<span class="text-[10px] font-bold ${color} mt-1 block">${r.delayStr}</span>`;
                 }
 
                 return `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td>
                     <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td>
-                    <td class="p-4">${keywordBadge}</td>
+                    <td class="p-4">${kwBadge}</td>
                     <td class="p-4">${statusBadge}</td>
                     <td class="p-4">${qaHTML}</td>
                     <td class="p-4">${replyHTML}</td>
@@ -1193,29 +1208,38 @@
             alert('Deleted!'); loadSalesData(); openSetupModal();
         }
 
+        // 🚨 EXACT VERTICAL EXCEL EXPORT LOGIC
         function exportSalesExcel() {
-            if(salesReportData.length === 0) return alert("No data");
-            let maxQ = 0; 
-            salesReportData.forEach(r => { if(r.questions.length > maxQ) maxQ = r.questions.length; });
-            if (maxQ < 4) maxQ = 4; 
+            if(salesReportData.length === 0) return alert("No data to export");
             
-            let csv = "Date,Name,Phone,Team,Status,Keyword,Delay,Reply Time,Admin Feedback";
-            for(let i=0; i<maxQ; i++) csv += `,Q${i+1},Ans${i+1}`; 
-            csv += "\n";
+            let csv = "Date,Reply_Time,Sales_Person,Phone,Team,Keyword,Status,Delay,Admin_Feedback,Question,Answer\n";
 
             salesReportData.forEach(r => {
-                let row = `"${r.date}","${r.name}","${r.phone}","${r.team}","${r.status}","${r.keyword}","${r.delayStr || ''}","${r.time ? new Date(r.time).toLocaleString() : ''}","${r.adminReply || ''}"`;
-                for(let i=0; i<maxQ; i++) {
-                    let q = r.questions[i] ? r.questions[i].replace(/"/g, '""') : '';
-                    let ans = r.answers[i] ? r.answers[i].replace(/"/g, '""') : '';
-                    row += `,"${q}","${ans}"`;
+                let replyTime = r.time ? new Date(r.time).toLocaleTimeString('en-IN') : '';
+                let adminRep = r.adminReply ? r.adminReply.replace(/"/g, '""').replace(/\n/g, ' ') : '';
+                let delay = r.delayStr && r.delayStr !== '-' ? r.delayStr : '';
+                let pureKw = r.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
+                
+                let qLen = r.questions ? r.questions.length : 0;
+                let aLen = r.answers ? r.answers.length : 0;
+                let maxIter = Math.max(qLen, aLen, 1);
+                
+                for(let i = 0; i < maxIter; i++) {
+                    let q = r.questions && r.questions[i] ? r.questions[i].replace(/"/g, '""').replace(/\n/g, ' ') : '';
+                    let ans = r.answers && r.answers[i] ? r.answers[i].replace(/"/g, '""').replace(/\n/g, ' ') : '';
+                    
+                    if (i === 0) {
+                        csv += `"${r.date}","${replyTime}","${r.name}","${r.phone}","${r.team}","${pureKw}","${r.status}","${delay}","${adminRep}","${q}","${ans}"\n`;
+                    } else {
+                        csv += `"","","","","","","","","","${q}","${ans}"\n`;
+                    }
                 }
-                csv += row + "\n";
+                csv += `"","","","","","","","","","",""\n`;
             });
             
             const link = document.createElement("a"); 
-            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); 
-            link.download = `UIC_Sales_Tracker.csv`; 
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); 
+            link.download = `UIC_Sales_Tracker_${getStrictDateString(new Date())}.csv`; 
             link.click();
         }
 
