@@ -95,19 +95,17 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION (Best for 3000+ shoots)
+// 🚨 SMART DELAY FUNCTION
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// 🚨 STRICT IST DATE FUNCTION (Fix for Server UTC vs India Time)
 function getIndianDateStr(dateObj = new Date()) {
-    return dateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); 
-}
-
-// 🚨 TIME CALCULATION FOR DELAY TRACKING
-function getScheduledTime(dateStr, timeStr) {
-    if(!timeStr) return Date.now();
-    const [year, month, day] = dateStr.split('-');
-    const [hours, mins] = timeStr.split(':');
-    return new Date(year, month - 1, day, parseInt(hours), parseInt(mins), 0).getTime();
+    const utc = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
+    const ist = new Date(utc + (3600000 * 5.5)); // +5:30 for India
+    const y = ist.getFullYear();
+    const m = String(ist.getMonth() + 1).padStart(2, '0');
+    const d = String(ist.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
 }
 
 async function generateUniqueCode() {
@@ -252,7 +250,6 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 expiryDate: new Date(expiryDate)
             });
 
-            // 🚨 UPDATE: CGHS DENTAL TEMPLATE MAPPING
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon', 
                 'Doctor_20': 'temp_20_doctor_coupon', 
@@ -359,7 +356,6 @@ app.get('/api/trigger-call/:code', async (req, res) => {
 // 🚨 DYNAMIC SALES BOT APIs
 // -----------------------------------------
 
-// --- Team Management ---
 app.get('/api/sales/team', async (req, res) => { 
     const team = await SalesPerson.find().sort({ team: -1, name: 1 });
     res.json(team); 
@@ -384,7 +380,6 @@ app.delete('/api/sales/team/:id', async (req, res) => {
     res.json({ success: true });
 });
 
-// --- Bot Questions Management ---
 app.get('/api/sales/questions', async (req, res) => { 
     const questions = await SalesQuestion.find().sort({ team: -1, time: 1 });
     res.json(questions); 
@@ -432,13 +427,9 @@ app.get('/api/sales/tracker', async (req, res) => {
                 let delayStr = "-";
                 if (log && log.responseTimeMins != null) {
                     const m = Math.floor(log.responseTimeMins);
-                    if (m < 0) {
-                        delayStr = "Early Reply ⚡";
-                    } else if (m < 60) {
-                        delayStr = `${m} mins delay`;
-                    } else {
-                        delayStr = `${Math.floor(m/60)} hr ${m%60} mins delay`;
-                    }
+                    if (m < 0) { delayStr = "Early Reply ⚡"; } 
+                    else if (m < 60) { delayStr = `${m} mins delay`; } 
+                    else { delayStr = `${Math.floor(m/60)} hr ${m%60} mins delay`; }
                 }
 
                 report.push({
@@ -513,15 +504,26 @@ app.post('/api/wati/webhook', async (req, res) => {
         const salesMember = activeTeam.find(s => formatTataNumber(s.phone) === formatTataNumber(waId));
 
         if (salesMember) {
-            const today = getIndianDateStr();
+            const today = getIndianDateStr(); // Now using strict IST Date
             
-            // Check if they clicked the Bot Trigger Button
-            let matchedBot = allBots.find(b => btnLower.includes(`yes i will reply ${b.keyword.toLowerCase()}`));
+            // 🚨 IMPROVED EXACT MATCHING LOGIC (Fixed SB11 vs B1 bug)
+            let matchedBot = allBots.find(b => {
+                let pureKw = b.keyword.toLowerCase().replace('yes i will reply', '').trim();
+                let btnWords = btnLower.replace(/-/g, ' ').split(' '); // Split words to avoid substring matches
+                return btnLower.includes('yes i will reply') && btnWords.includes(pureKw);
+            });
             
             if (matchedBot) {
-                // Calculate Delay Tracker
-                const scheduledTime = getScheduledTime(today, matchedBot.time);
-                const delayMins = (Date.now() - scheduledTime) / 60000; 
+                // Calculate Delay Tracker with strict IST time
+                const now = new Date();
+                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+                const istNow = new Date(utc + (3600000 * 5.5)); // Current IST Time
+                
+                const [hours, mins] = matchedBot.time.split(':').map(Number);
+                const scheduledIst = new Date(istNow);
+                scheduledIst.setHours(hours, mins, 0, 0); // Scheduled time in IST today
+                
+                const delayMins = (istNow.getTime() - scheduledIst.getTime()) / 60000; 
 
                 await SalesLog.findOneAndUpdate(
                     { phone: salesMember.phone, dateStr: today, keyword: matchedBot.keyword },
@@ -590,7 +592,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 }
             }
         }
-        // 🚨 UPDATE: NEW PRO TEMPLATE LOGIC + CGHS CBCT DENTAL SUPPORT
+        // 🚨 PRO TEMPLATE LOGIC + CGHS CBCT DENTAL SUPPORT
         else if (['connect with doctor', 'sales team please call me', 'સેલ્સ ટીમ, મને કોલ કરો', 'ask sales team to call', 'ask sales team to call me', 'i want details about cbct'].includes(btnLower)) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon && lastCoupon.proPhone) {
@@ -617,11 +619,10 @@ app.post('/api/wati/webhook', async (req, res) => {
                     ];
                     await sendWatiMessage(lastCoupon.proPhone, 'pro_doc_dental_notify', dentalParams);
                 } else {
-                    // Doctor Pro Template {{1}}, {{2}}, {{3}} update logic
                     const newProParams = [
-                        { name: "1", value: `+${lastCoupon.doctorPhone}` }, // Doctor Number
-                        { name: "2", value: discountValue },                // Discount %
-                        { name: "3", value: lastCoupon.code }               // Coupon Code URL Param {{3}}
+                        { name: "1", value: `+${lastCoupon.doctorPhone}` }, 
+                        { name: "2", value: discountValue },                
+                        { name: "3", value: lastCoupon.code }               
                     ];
                     await sendWatiMessage(lastCoupon.proPhone, 'doc_temp_discount_pro_message', newProParams);
                 }
