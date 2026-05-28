@@ -172,6 +172,22 @@
                 <div id="doctor-section" class="bg-transparent mb-6">
                     
                     <div id="doctor-analytics" class="mb-6">
+                        
+                        <div class="bg-indigo-900 text-white p-5 rounded-xl shadow-lg mb-6 flex flex-wrap justify-between items-center border border-indigo-700">
+                            <div>
+                                <p class="text-[10px] font-bold text-indigo-300 tracking-widest uppercase mb-1">Total Campaign Shoots (Doctors)</p>
+                                <h2 id="stat-total-dr-shoot" class="text-3xl font-black">0</h2>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-indigo-300 tracking-widest uppercase mb-1">Total Patients Redeemed</p>
+                                <h2 id="stat-total-dr-redeem" class="text-3xl font-black text-green-400">0</h2>
+                            </div>
+                            <div class="max-w-md text-right">
+                                <p class="text-[10px] font-bold text-indigo-300 tracking-widest uppercase mb-1">Active Branches (Redeemed Here)</p>
+                                <h2 id="stat-active-branches" class="text-sm font-bold text-indigo-100 leading-relaxed">-</h2>
+                            </div>
+                        </div>
+
                         <div class="flex justify-between items-center mb-2">
                             <h2 class="text-lg font-black text-slate-800">📈 Campaign & PRO Intelligence (Doctors)</h2>
                             <div class="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full">Last Campaign Shoot: <span id="last-campaign-date" class="text-blue-600">Loading...</span></div>
@@ -464,7 +480,12 @@
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-full overflow-y-auto flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-purple-800 text-white sticky top-0 z-20">
                 <h2 class="text-lg font-bold">📸 GP CAMPAIGN REPORT (Screenshot Friendly)</h2>
-                <button onclick="closeGPReport()" class="text-white hover:text-red-400 font-bold text-xl">&times;</button>
+                <div class="flex gap-4 items-center">
+                    <button onclick="exportGPReportExcel()" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow transition flex items-center gap-2">
+                        <span>📊</span> EXPORT REPORT DATA
+                    </button>
+                    <button onclick="closeGPReport()" class="text-white hover:text-red-400 font-bold text-2xl leading-none">&times;</button>
+                </div>
             </div>
             <div class="p-4">
                 <table class="w-full text-xs text-left border-collapse border border-slate-300">
@@ -502,7 +523,6 @@
             return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
         }
 
-        // 🚨 STRICT IST DATE FORMATTER (To fix yesterday's date bug)
         function getStrictDateString(dObj) {
             const utc = dObj.getTime() + (dObj.getTimezoneOffset() * 60000);
             const ist = new Date(utc + (3600000 * 5.5));
@@ -623,7 +643,6 @@
             `).join('');
 
             proList = await fetch('/api/sales/team').then(r => r.json());
-
             globalLogs = await fetch('/api/admin/logs').then(r => r.json());
             
             const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
@@ -711,6 +730,10 @@
             let branchCounts = {}; 
             let proStats = {};
 
+            // 🚨 MASTER DASHBOARD STATS CALCULATION
+            document.getElementById('stat-total-dr-shoot').innerText = docLogs.length;
+            document.getElementById('stat-total-dr-redeem').innerText = docLogs.filter(l => l.isUsed).length;
+
             docLogs.forEach(l => {
                 if(l.rating === 5) r5++; 
                 else if(l.rating === 4) r4++; 
@@ -745,6 +768,10 @@
                     if(l.callStatus === 'Completed') proStats[l.proPhone].completed++;
                 }
             });
+
+            // 🚨 RENDER ACTIVE BRANCHES IN MASTER DASHBOARD
+            let activeBranches = Object.keys(branchCounts).join(', ');
+            document.getElementById('stat-active-branches').innerText = activeBranches || '- None -';
 
             document.getElementById('stat-r5').innerText = r5; 
             document.getElementById('stat-r4').innerText = r4; 
@@ -789,8 +816,8 @@
                 }).join('') 
                 : '<tr><td colspan="5" class="p-4 text-center text-xs text-slate-400">No Call Requests</td></tr>';
 
-            if(globalLogs.length > 0) {
-                let lastLog = globalLogs.reduce((latest, current) => new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest);
+            if(docLogs.length > 0) {
+                let lastLog = docLogs.reduce((latest, current) => new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest);
                 document.getElementById('last-campaign-date').innerText = new Date(lastLog.createdAt).toLocaleString('en-IN');
             } else { 
                 document.getElementById('last-campaign-date').innerText = 'N/A'; 
@@ -799,7 +826,8 @@
 
         // 🚨 GP CAMPAIGN REPORT LOGIC 🚨
         function openGPReport() {
-            const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
+            // Respecting user's date filter for the GP Report
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             const reportMap = {};
 
             docLogs.forEach(l => {
@@ -885,6 +913,36 @@
 
         function closeGPReport() {
             document.getElementById('gp-report-modal').classList.add('hidden');
+        }
+
+        // 🚨 NEW FUNCTION: EXPORT GP REPORT DATA TO EXCEL
+        function exportGPReportExcel() {
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
+            if(docLogs.length === 0) {
+                alert("No data available to export based on current filters.");
+                return;
+            }
+            
+            let csv = "Date,Doctor Name,Doctor Phone,PRO Name,Discount %,Redeemed Status,Patient Reg No,Branch\n";
+            docLogs.forEach(i => {
+                const dateStr = getStrictDateString(new Date(i.createdAt));
+                const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                
+                let pName = "Unknown PRO"; 
+                if(i.proPhone) { 
+                    let matched = proList.find(p => p.phone === i.proPhone); 
+                    if(matched) pName = matched.name; 
+                }
+                
+                const redeemedStatus = i.isUsed ? 'Yes' : 'No';
+                
+                csv += `"${dateStr}","${i.targetName || ''}","${i.doctorPhone || ''}","${pName}","${disc}","${redeemedStatus}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+            });
+            
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            link.download = `GP_Campaign_Data_${getStrictDateString(new Date())}.csv`;
+            link.click();
         }
 
         function exportProDocs(proPhone) {
@@ -1329,14 +1387,14 @@
         }
 
         function exportSalesExcel() {
-            if(salesReportData.length === 0) return alert("No data");
+            if(salesReportData.length === 0) return alert("No data to export");
             
             let maxQ = 0; 
             salesReportData.forEach(r => { 
                 if(r.questions && r.questions.length > maxQ) maxQ = r.questions.length; 
                 if(r.answers && r.answers.length > maxQ) maxQ = r.answers.length;
             });
-            if (maxQ < 4) maxQ = 4; 
+            if (maxQ < 4) maxQ = 4; // At least show Q1 to Q4 columns
             
             let csv = "Date,Name,Phone,Team,Status,Keyword,Delay,Reply Time,Admin Feedback";
             for(let i=0; i<maxQ; i++) csv += `,Q${i+1},Ans${i+1}`; 
