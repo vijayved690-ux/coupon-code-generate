@@ -95,10 +95,10 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION
+// 🚨 SMART DELAY FUNCTION (Best for 3000+ shoots)
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// 🚨 STRICT IST DATE FUNCTION
+// 🚨 STRICT IST DATE FUNCTION (Fix for Server UTC vs India Time)
 function getIndianDateStr(dateObj = new Date()) {
     const utc = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
     const ist = new Date(utc + (3600000 * 5.5)); // +5:30 for India
@@ -207,6 +207,7 @@ app.get('/api/admin/activity-logs', async (req, res) => {
 // 🚨 SYSTEM HEALTH API FOR MEMORY WARNING
 app.get('/api/admin/system-health', async (req, res) => {
     const dbSize = await mongoose.connection.db.stats();
+    // Setting warning at 400MB
     const isMemoryFull = (dbSize.dataSize > 400 * 1024 * 1024); 
     res.json({ isMemoryFull, sizeMB: (dbSize.dataSize / (1024*1024)).toFixed(2) });
 });
@@ -257,6 +258,7 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 expiryDate: new Date(expiryDate)
             });
 
+            // 🚨 UPDATE: CGHS DENTAL TEMPLATE MAPPING
             const templateMap = {
                 'Doctor_10': 'temp_10_doctor_coupon', 
                 'Doctor_20': 'temp_20_doctor_coupon', 
@@ -522,16 +524,19 @@ app.post('/api/wati/webhook', async (req, res) => {
                 let cleanKeyword = b.keyword.toLowerCase().replace('yes i will reply', '').trim();
                 let cleanBtn = btnLower.replace('yes i will reply', '').trim();
                 
+                // 1. Direct Exact Match
                 if (cleanBtn === cleanKeyword) return true;
                 
+                // 2. Exact word existence 
                 let btnWords = btnLower.replace(/[^a-z0-9]/g, ' ').split(' ');
                 return btnWords.includes(cleanKeyword);
             });
             
             if (matchedBot) {
+                // Calculate Delay Tracker with strict IST time
                 const now = new Date();
                 const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-                const istNow = new Date(utc + (3600000 * 5.5)); 
+                const istNow = new Date(utc + (3600000 * 5.5)); // Current IST Time
                 
                 const [hours, mins] = matchedBot.time.split(':').map(Number);
                 const scheduledIst = new Date(istNow);
@@ -606,6 +611,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 }
             }
         }
+        // 🚨 PRO TEMPLATE LOGIC + CGHS CBCT DENTAL SUPPORT
         else if (['connect with doctor', 'sales team please call me', 'સેલ્સ ટીમ, મને કોલ કરો', 'ask sales team to call', 'ask sales team to call me', 'i want details about cbct'].includes(btnLower)) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon && lastCoupon.proPhone) {
