@@ -227,9 +227,14 @@
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
                         <div class="p-4 border-b flex justify-between items-center bg-blue-50">
                             <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Latest Activity First)</h3>
-                            <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
-                                <span>📊</span> EXPORT DOCTORS
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="openGPReport()" class="bg-purple-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-purple-700 transition flex items-center gap-2">
+                                    <span>📸</span> GP CAMPAIGN REPORT
+                                </button>
+                                <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
+                                    <span>📊</span> EXPORT DOCTORS
+                                </button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto max-h-96 overflow-y-auto">
                             <table class="w-full text-left text-xs whitespace-nowrap">
@@ -451,6 +456,32 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <div id="gp-report-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-full overflow-y-auto flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center bg-purple-800 text-white sticky top-0 z-20">
+                <h2 class="text-lg font-bold">📸 GP CAMPAIGN REPORT (Screenshot Friendly)</h2>
+                <button onclick="closeGPReport()" class="text-white hover:text-red-400 font-bold text-xl">&times;</button>
+            </div>
+            <div class="p-4">
+                <table class="w-full text-xs text-left border-collapse border border-slate-300">
+                    <thead>
+                        <tr class="bg-purple-100 text-purple-900 border-b border-slate-300">
+                            <th class="border border-slate-300 p-2">Date</th>
+                            <th class="border border-slate-300 p-2">Discount %</th>
+                            <th class="border border-slate-300 p-2 text-center">Shoots (Total Bheja)</th>
+                            <th class="border border-slate-300 p-2 text-center">Patients Aaye (Redeemed)</th>
+                            <th class="border border-slate-300 p-2 text-center">Call Requests</th>
+                            <th class="border border-slate-300 p-2">PROs Involved</th>
+                            <th class="border border-slate-300 p-2">Branches</th>
+                            <th class="border border-slate-300 p-2">Top Clicks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gp-report-tbody"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -758,12 +789,102 @@
                 }).join('') 
                 : '<tr><td colspan="5" class="p-4 text-center text-xs text-slate-400">No Call Requests</td></tr>';
 
-            if(docLogs.length > 0) {
-                let lastLog = docLogs.reduce((latest, current) => new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest);
+            if(globalLogs.length > 0) {
+                let lastLog = globalLogs.reduce((latest, current) => new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest);
                 document.getElementById('last-campaign-date').innerText = new Date(lastLog.createdAt).toLocaleString('en-IN');
             } else { 
                 document.getElementById('last-campaign-date').innerText = 'N/A'; 
             }
+        }
+
+        // 🚨 GP CAMPAIGN REPORT LOGIC 🚨
+        function openGPReport() {
+            const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
+            const reportMap = {};
+
+            docLogs.forEach(l => {
+                const dateStr = getStrictDateString(new Date(l.createdAt)); 
+                
+                const [y, m, d] = dateStr.split('-');
+                const displayDate = `${d}-${m}-${y}`;
+
+                if (!reportMap[dateStr]) {
+                    reportMap[dateStr] = {
+                        date: displayDate,
+                        rawDate: new Date(l.createdAt),
+                        discounts: new Set(),
+                        shoots: 0,
+                        redeemed: 0,
+                        callReqs: 0,
+                        pros: new Set(),
+                        branches: new Set(),
+                        buttons: {}
+                    };
+                }
+
+                const rep = reportMap[dateStr];
+                rep.shoots++;
+                
+                if (l.discountPercentage) rep.discounts.add(l.discountPercentage === 'CBCT' ? 'CBCT' : l.discountPercentage + '%');
+                
+                if (l.isUsed) {
+                    rep.redeemed++;
+                    if (l.branchRedeemed) rep.branches.add(l.branchRedeemed);
+                }
+                
+                if (l.requestCallAt) rep.callReqs++;
+                
+                if (l.proPhone) {
+                    let pName = "Unknown PRO";
+                    let matched = proList.find(p => p.phone === l.proPhone);
+                    if (matched) pName = matched.name;
+                    rep.pros.add(pName);
+                }
+
+                if (l.buttonClicked) {
+                    const btns = l.buttonClicked.split(',');
+                    btns.forEach(b => {
+                        const btnTrim = b.trim();
+                        if(btnTrim) {
+                            rep.buttons[btnTrim] = (rep.buttons[btnTrim] || 0) + 1;
+                        }
+                    });
+                }
+            });
+
+            const reportArr = Object.values(reportMap).sort((a,b) => b.rawDate - a.rawDate);
+
+            const tbody = document.getElementById('gp-report-tbody');
+            tbody.innerHTML = reportArr.map(r => {
+                const discStr = Array.from(r.discounts).join(', ');
+                const proStr = Array.from(r.pros).join(', ');
+                const branchStr = Array.from(r.branches).join(', ');
+                
+                const topBtns = Object.entries(r.buttons)
+                    .sort((a,b) => b[1] - a[1])
+                    .slice(0,3) 
+                    .map(b => `<span class="bg-purple-50 border border-purple-200 text-purple-700 px-1 py-0.5 rounded mr-1 inline-block">${b[0]}(${b[1]})</span>`)
+                    .join('');
+
+                return `
+                    <tr class="border-b border-slate-200 hover:bg-slate-50 transition">
+                        <td class="border border-slate-200 p-2 font-black text-slate-700">${r.date}</td>
+                        <td class="border border-slate-200 p-2 text-blue-600 font-bold">${discStr}</td>
+                        <td class="border border-slate-200 p-2 font-black text-slate-800 text-center text-lg">${r.shoots}</td>
+                        <td class="border border-slate-200 p-2 font-black text-green-600 text-center text-lg">${r.redeemed}</td>
+                        <td class="border border-slate-200 p-2 font-black text-red-600 text-center text-lg">${r.callReqs}</td>
+                        <td class="border border-slate-200 p-2 text-[10px] font-bold text-slate-600 leading-relaxed">${proStr || '-'}</td>
+                        <td class="border border-slate-200 p-2 text-[10px] font-bold text-indigo-600">${branchStr || '-'}</td>
+                        <td class="border border-slate-200 p-2 text-[9px]">${topBtns || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('gp-report-modal').classList.remove('hidden');
+        }
+
+        function closeGPReport() {
+            document.getElementById('gp-report-modal').classList.add('hidden');
         }
 
         function exportProDocs(proPhone) {
@@ -1207,16 +1328,15 @@
             alert('Deleted!'); loadSalesData(); openSetupModal();
         }
 
-        // 🚨 REVERTED TO OLD HORIZONTAL SINGLE ROW EXCEL EXPORT (Exactly like your screenshot)
         function exportSalesExcel() {
-            if(salesReportData.length === 0) return alert("No data to export");
+            if(salesReportData.length === 0) return alert("No data");
             
             let maxQ = 0; 
             salesReportData.forEach(r => { 
                 if(r.questions && r.questions.length > maxQ) maxQ = r.questions.length; 
                 if(r.answers && r.answers.length > maxQ) maxQ = r.answers.length;
             });
-            if (maxQ < 4) maxQ = 4; // At least show Q1 to Q4 columns
+            if (maxQ < 4) maxQ = 4; 
             
             let csv = "Date,Name,Phone,Team,Status,Keyword,Delay,Reply Time,Admin Feedback";
             for(let i=0; i<maxQ; i++) csv += `,Q${i+1},Ans${i+1}`; 
