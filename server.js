@@ -11,7 +11,7 @@ const Activity = require('./models/Activity');
 // 🚨 SALES BOT MODELS
 const SalesQuestion = require('./models/SalesQuestion');
 const SalesLog = require('./models/SalesLog');
-const SalesPerson = require('./models/SalesPerson'); // 🚨 DYNAMIC TEAM MODEL
+const SalesPerson = require('./models/SalesPerson'); 
 
 const app = express();
 
@@ -553,7 +553,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 return;
             } 
             
-            // 🚨 IF THEY TYPE AN ANSWER (SMART 5 SECOND GROUPING TO PREVENT DATA LOSS)
+            // 🚨🚨 EXTREME FIX: BUFFER REDUCED TO 1 SECOND TO PREVENT ANSWER MERGING 🚨🚨
             else if (body.eventType === 'message' && body.type === 'text') {
                 const log = await SalesLog.findOne({ phone: salesMember.phone, dateStr: today }).sort({ updatedAt: -1 });
                 
@@ -562,7 +562,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                     const lastUpdate = new Date(log.updatedAt);
                     const diffSecs = (now - lastUpdate) / 1000;
                     
-                    if (log.answers.length > 0 && diffSecs <= 5) { // 🚨 5 SECOND BUFFER ADDED
+                    // Ab sirf wahi messages mix honge jo 1 second ke andar type kiye gaye honge
+                    if (log.answers.length > 0 && diffSecs <= 1) { 
                         log.answers[log.answers.length - 1] += "\n" + rawBtn;
                     } else {
                         log.answers.push(rawBtn);
