@@ -146,7 +146,6 @@ async function sendWatiMessage(phone, templateName, params) {
         });
         return true;
     } catch (err) {
-        console.error(`WATI Template Error for ${phone} [${templateName}]:`, err.response?.data || err.message);
         return false; 
     }
 }
@@ -156,17 +155,13 @@ async function sendWatiTextMessage(phone, text) {
         await axios.post(`${process.env.WATI_API_ENDPOINT}/api/v1/sendSessionMessage/${phone}?messageText=${encodeURIComponent(text)}`, {}, {
             headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` }
         });
-    } catch (err) {
-        console.error(`WATI Text Error for ${phone}:`, err.message);
-    }
+    } catch (err) {}
 }
 
 async function logActivity(user, action, details) {
     try {
         await Activity.create({ user, action, details });
-    } catch (e) {
-        console.error('Logging Error:', e);
-    }
+    } catch (e) {}
 }
 
 // -----------------------------------------
@@ -227,9 +222,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
         processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate);
 
-    } catch (error) {
-        console.error("Shoot API Error:", error);
-    }
+    } catch (error) {}
 });
 
 async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate) {
@@ -487,6 +480,69 @@ app.post('/api/sales/reply', async (req, res) => {
 });
 
 // -----------------------------------------
+// 🤖 INTELLIGENT AUTO-SYNC (BACKLOG SCANNER)
+// -----------------------------------------
+app.post('/api/sales/sync-history', async (req, res) => {
+    try {
+        const { phone, dateStr, keyword } = req.body;
+        const log = await SalesLog.findOne({ phone, dateStr, keyword });
+        if (!log) return res.json({ success: false, message: "Pehle ek session hona chahiye jise hum sync karein." });
+
+        // Clean phone for WATI API (e.g. 91999...)
+        const cleanPhone = phone.replace(/\D/g, ''); 
+
+        // Fetch WATI Backlog History
+        const watiRes = await axios.get(`${process.env.WATI_API_ENDPOINT}/api/v1/getMessages/${cleanPhone}?pageSize=50`, {
+            headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` }
+        });
+
+        let items = watiRes.data?.messages?.items || watiRes.data?.items || [];
+        if(items.length === 0) return res.json({ success: false, message: "WATI mein chat history nahi mili." });
+
+        // Sort chronologically (Oldest first)
+        items.sort((a, b) => new Date(a.created || a.timestamp).getTime() - new Date(b.created || b.timestamp).getTime());
+
+        // Extract answers properly 
+        let rawAnswers = [];
+        let isSessionActive = false;
+
+        for (let i = 0; i < items.length; i++) {
+            const msg = items[i];
+            const text = (msg.text || '').trim();
+            const msgDate = getIndianDateStr(new Date(msg.created || msg.timestamp));
+            
+            if (!text || msgDate !== dateStr) continue;
+
+            // Start reading when Bot trigger is found
+            if (!msg.owner && text.toLowerCase().includes(keyword.toLowerCase())) {
+                isSessionActive = true;
+                rawAnswers = []; // Reset on new session
+                continue;
+            }
+
+            if (isSessionActive) {
+                if (msg.owner && text.toLowerCase().includes("thank you")) {
+                    isSessionActive = false; // End session
+                } else if (!msg.owner) {
+                    rawAnswers.push(text); // It's an incoming answer from PRO
+                }
+            }
+        }
+
+        if (rawAnswers.length > 0) {
+            log.answers = rawAnswers; // Set perfectly extracted answers
+            await log.save();
+            return res.json({ success: true, message: `Perfect! History se ${rawAnswers.length} answers recover kar liye gaye.` });
+        } else {
+            return res.json({ success: false, message: "Koi nayi answers history mein nahi mili." });
+        }
+
+    } catch (error) {
+        return res.json({ success: false, message: "Sync Error: WATI API se connection toot gaya." });
+    }
+});
+
+// -----------------------------------------
 // WATI WEBHOOK (CALLING & INTELLIGENCE & SALES)
 // -----------------------------------------
 app.post('/api/wati/webhook', async (req, res) => {
@@ -544,33 +600,39 @@ app.post('/api/wati/webhook', async (req, res) => {
                 
                 const delayMins = (istNow.getTime() - scheduledIst.getTime()) / 60000; 
 
+                // Reset Session securely
                 await SalesLog.findOneAndUpdate(
                     { phone: salesMember.phone, dateStr: today, keyword: matchedBot.keyword },
-                    { name: salesMember.name, team: salesMember.team, keyword: matchedBot.keyword, adminReplyText: '', responseTimeMins: delayMins },
-                    { upsert: true }
+                    { 
+                        $setOnInsert: { answers: [] }, // Never erase previous session answers
+                        $set: { name: salesMember.name, team: salesMember.team, adminReplyText: '', responseTimeMins: delayMins, updatedAt: new Date() } 
+                    },
+                    { upsert: true, new: true }
                 );
                 await logActivity('Sales Bot', 'SESSION STARTED', `${salesMember.name} started ${matchedBot.keyword}`);
                 return;
             } 
             
-            // 🚨🚨 EXTREME FIX: BUFFER REDUCED TO 1 SECOND TO PREVENT ANSWER MERGING 🚨🚨
+            // 🔥🔥 ATOMIC 1-MSG = 1-QUESTION FIX & AUTO-CATCH 🔥🔥
             else if (body.eventType === 'message' && body.type === 'text') {
-                const log = await SalesLog.findOne({ phone: salesMember.phone, dateStr: today }).sort({ updatedAt: -1 });
+                let log = await SalesLog.findOne({ phone: salesMember.phone, dateStr: today }).sort({ updatedAt: -1 });
                 
-                if (log) {
-                    const now = new Date();
-                    const lastUpdate = new Date(log.updatedAt);
-                    const diffSecs = (now - lastUpdate) / 1000;
+                // 🤖 INTELLIGENT AUTO-CATCH: If they forgot to click the button
+                if (!log) {
+                    const memberBots = allBots.filter(b => b.team === salesMember.team);
+                    let fallbackKeyword = memberBots.length > 0 ? memberBots[0].keyword : 'AUTO-CATCH';
                     
-                    // Ab sirf wahi messages mix honge jo 1 second ke andar type kiye gaye honge
-                    if (log.answers.length > 0 && diffSecs <= 1) { 
-                        log.answers[log.answers.length - 1] += "\n" + rawBtn;
-                    } else {
-                        log.answers.push(rawBtn);
-                    }
-                    log.markModified('answers'); 
-                    await log.save();
+                    log = await SalesLog.create({
+                        phone: salesMember.phone, dateStr: today, name: salesMember.name, team: salesMember.team,
+                        keyword: fallbackKeyword, answers: [], responseTimeMins: 0, updatedAt: new Date()
+                    });
                 }
+
+                // Yahan koi delay ya merging nahi hai. Ek message aayega, wo seedha naye column me jayega.
+                await SalesLog.updateOne(
+                    { _id: log._id },
+                    { $push: { answers: rawBtn }, $set: { updatedAt: new Date() } }
+                );
                 return;
             }
         }
