@@ -196,11 +196,26 @@
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
                             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">⭐ Ratings Summary</h3>
-                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>5 Star:</span><span id="stat-r5" class="text-green-600">0</span></div>
-                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>4 Star:</span><span id="stat-r4" class="text-blue-600">0</span></div>
-                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>3 Star:</span><span id="stat-r3" class="text-yellow-600">0</span></div>
-                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>2 Star:</span><span id="stat-r2" class="text-orange-600">0</span></div>
-                                <div class="flex justify-between text-sm font-bold text-slate-700"><span>1 Star:</span><span id="stat-r1" class="text-red-600">0</span></div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>5 Star:</span>
+                                    <span id="stat-r5" class="text-green-600">0</span>
+                                </div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>4 Star:</span>
+                                    <span id="stat-r4" class="text-blue-600">0</span>
+                                </div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>3 Star:</span>
+                                    <span id="stat-r3" class="text-yellow-600">0</span>
+                                </div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>2 Star:</span>
+                                    <span id="stat-r2" class="text-orange-600">0</span>
+                                </div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>1 Star:</span>
+                                    <span id="stat-r1" class="text-red-600">0</span>
+                                </div>
                             </div>
 
                             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col">
@@ -396,7 +411,15 @@
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden max-w-4xl mx-auto">
                     <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold">Recently Redeemed (Today)</h3></div>
                     <table class="w-full text-left text-sm">
-                        <thead><tr class="bg-white border-b text-slate-500"><th class="p-4">Code</th><th class="p-4">Name</th><th class="p-4">Branch</th><th class="p-4">Reg. No</th><th class="p-4">Time</th></tr></thead>
+                        <thead>
+                            <tr class="bg-white border-b text-slate-500">
+                                <th class="p-4">Code</th>
+                                <th class="p-4">Name</th>
+                                <th class="p-4">Branch</th>
+                                <th class="p-4">Reg. No</th>
+                                <th class="p-4">Time</th>
+                            </tr>
+                        </thead>
                         <tbody id="redeemed-list"></tbody>
                     </table>
                 </div>
@@ -422,7 +445,8 @@
                         <input type="text" id="nt-name" placeholder="Name" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
                         <input type="text" id="nt-phone" placeholder="Phone (91...)" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
                         <select id="nt-team" class="border p-1.5 text-xs rounded outline-blue-500">
-                            <option value="SS">SS (Senior)</option><option value="B">B (Buddies)</option>
+                            <option value="SS">SS (Senior)</option>
+                            <option value="B">B (Buddies)</option>
                         </select>
                         <button onclick="addSalesPerson()" class="bg-blue-600 text-white px-3 rounded text-xs font-bold hover:bg-blue-700">+</button>
                     </div>
@@ -449,7 +473,8 @@
                             <div class="w-1/3">
                                 <label class="text-[10px] font-bold text-slate-500">Team</label>
                                 <select id="nb-team" class="border p-1.5 text-xs rounded w-full outline-blue-500">
-                                    <option value="SS">SS (Senior)</option><option value="B">B (Buddies)</option>
+                                    <option value="SS">SS (Senior)</option>
+                                    <option value="B">B (Buddies)</option>
                                 </select>
                             </div>
                             <div class="w-1/3">
@@ -532,12 +557,19 @@
             return `${y}-${m}-${d}`;
         }
 
-        window.onload = () => { const role = localStorage.getItem('role'); if (role) showApp(role); };
+        window.onload = () => { 
+            const role = localStorage.getItem('role'); 
+            if (role) showApp(role); 
+        };
 
         async function login() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
-            const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) });
+            const res = await fetch('/api/login', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({username: u, password: p}) 
+            });
             const data = await res.json();
             if(data.success) { 
                 localStorage.setItem('role', data.role); 
@@ -574,8 +606,11 @@
         async function checkSystemHealth() {
             try {
                 const res = await fetch('/api/admin/system-health').then(r => r.json());
-                if(res.isMemoryFull) document.getElementById('memory-warning').classList.remove('hidden');
-                else document.getElementById('memory-warning').classList.add('hidden');
+                if(res.isMemoryFull) {
+                    document.getElementById('memory-warning').classList.remove('hidden');
+                } else {
+                    document.getElementById('memory-warning').classList.add('hidden');
+                }
             } catch(e){}
         }
 
@@ -611,36 +646,45 @@
             const pass = prompt("Enter RESET PASSWORD to delete ALL coupons:");
             if(!pass) return;
             const res = await fetch('/api/admin/reset-data', {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password: pass})
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({password: pass})
             });
             const data = await res.json();
             if(data.success) {
                 alert("DATABASE CLEARED SUCCESSFULLY!");
                 loadAdminData();
-            } else { alert(data.message); }
+            } else { 
+                alert(data.message); 
+            }
         }
 
         async function loadActivityLogs() {
             const res = await fetch('/api/admin/activity-logs');
             const logs = await res.json();
-            document.getElementById('activity-logs').innerHTML = logs.map(l => `
-                <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
-                    <td class="p-2 text-blue-400 font-bold whitespace-nowrap w-24">${new Date(l.timestamp).toLocaleTimeString()}</td>
-                    <td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td>
-                    <td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td>
-                    <td class="p-2 text-slate-400">${l.details}</td>
-                </tr>
-            `).join('');
+            
+            document.getElementById('activity-logs').innerHTML = logs.map(l => {
+                return `
+                    <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
+                        <td class="p-2 text-blue-400 font-bold whitespace-nowrap w-24">${new Date(l.timestamp).toLocaleTimeString()}</td>
+                        <td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td>
+                        <td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td>
+                        <td class="p-2 text-slate-400">${l.details}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         async function loadAdminData() {
             const agents = await fetch('/api/agents').then(r => r.json());
-            document.getElementById('agents-list').innerHTML = agents.map(a => `
-                <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}">
-                    <span class="text-xs font-bold">${a.name}</span>
-                    <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4 cursor-pointer">
-                </div>
-            `).join('');
+            document.getElementById('agents-list').innerHTML = agents.map(a => {
+                return `
+                    <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}">
+                        <span class="text-xs font-bold">${a.name}</span>
+                        <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4 cursor-pointer">
+                    </div>
+                `;
+            }).join('');
 
             proList = await fetch('/api/sales/team').then(r => r.json());
             globalLogs = await fetch('/api/admin/logs').then(r => r.json());
@@ -698,7 +742,6 @@
                 let matchDate = true;
                 if (dateFrom || dateTo) {
                     const itemDate = getStrictDateString(new Date(item.createdAt));
-                    
                     if (dateFrom && itemDate < dateFrom) matchDate = false;
                     if (dateTo && itemDate > dateTo) matchDate = false;
                 }
@@ -782,19 +825,25 @@
 
             let sortedBranches = Object.entries(branchCounts).sort((a,b)=>b[1]-a[1]);
             document.getElementById('branch-leaderboard').innerHTML = sortedBranches.length 
-                ? sortedBranches.map(b => `
-                    <div class="flex justify-between text-xs border-b py-1">
-                        <span>${b[0]}</span>
-                        <span class="font-bold text-green-600">${b[1]}</span>
-                    </div>`).join('') 
+                ? sortedBranches.map(b => {
+                    return `
+                        <div class="flex justify-between text-xs border-b py-1">
+                            <span>${b[0]}</span>
+                            <span class="font-bold text-green-600">${b[1]}</span>
+                        </div>
+                    `;
+                }).join('') 
                 : '<span class="text-xs text-slate-400">No redemptions yet</span>';
 
             let sortedBtns = Object.entries(btnCounts).sort((a,b)=>b[1]-a[1]).slice(0, 10);
             document.getElementById('top-buttons').innerHTML = sortedBtns.length 
-                ? sortedBtns.map(b => `
-                    <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded m-1 inline-block">
-                        ${b[0]} <span class="text-blue-500">(${b[1]})</span>
-                    </span>`).join('') 
+                ? sortedBtns.map(b => {
+                    return `
+                        <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded m-1 inline-block">
+                            ${b[0]} <span class="text-blue-500">(${b[1]})</span>
+                        </span>
+                    `;
+                }).join('') 
                 : '<span class="text-xs text-slate-400">No clicks yet</span>';
 
             let sortedPros = Object.values(proStats).sort((a,b)=>b.total - a.total);
@@ -802,17 +851,18 @@
                 ? sortedPros.map(p => {
                     let pendingClass = p.pending > 0 ? 'bg-red-100 text-red-700 animate-pulse border-red-300' : 'bg-green-50 text-green-700 border-green-200';
                     return `
-                    <tr class="border-b">
-                        <td class="p-2 pl-4 font-bold text-slate-800">${p.name}<br><span class="text-[9px] text-slate-500 font-normal">${p.phone}</span></td>
-                        <td class="p-2 font-black text-blue-600 text-center">${p.total}</td>
-                        <td class="p-2 text-center">
-                            <span class="px-2 py-1 rounded text-[10px] font-bold border ${pendingClass}">${p.pending} Pending</span>
-                        </td>
-                        <td class="p-2 text-center font-bold text-green-600">${p.completed} Done</td>
-                        <td class="p-2 text-center">
-                            <button onclick="exportProDocs('${p.phone}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3 py-1 rounded shadow">⬇️ Excel</button>
-                        </td>
-                    </tr>`;
+                        <tr class="border-b">
+                            <td class="p-2 pl-4 font-bold text-slate-800">${p.name}<br><span class="text-[9px] text-slate-500 font-normal">${p.phone}</span></td>
+                            <td class="p-2 font-black text-blue-600 text-center">${p.total}</td>
+                            <td class="p-2 text-center">
+                                <span class="px-2 py-1 rounded text-[10px] font-bold border ${pendingClass}">${p.pending} Pending</span>
+                            </td>
+                            <td class="p-2 text-center font-bold text-green-600">${p.completed} Done</td>
+                            <td class="p-2 text-center">
+                                <button onclick="exportProDocs('${p.phone}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3 py-1 rounded shadow">⬇️ Excel</button>
+                            </td>
+                        </tr>
+                    `;
                 }).join('') 
                 : '<tr><td colspan="5" class="p-4 text-center text-xs text-slate-400">No Call Requests</td></tr>';
 
@@ -923,7 +973,8 @@
                 return;
             }
             
-            let csv = "Date,Doctor Name,Doctor Phone,PRO Name,Discount %,Redeemed Status,Patient Reg No,Branch\n";
+            let csv = "Date,Doctor Name,Doctor Phone,PRO Name,Discount %,Redeemed Status,Patient Reg No,Branch Name\n";
+            
             docLogs.forEach(i => {
                 const dateStr = getStrictDateString(new Date(i.createdAt));
                 const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
@@ -947,9 +998,11 @@
 
         function exportProDocs(proPhone) {
             const dataToExport = filteredLogs.filter(i => i.proPhone === proPhone && i.requestCallAt && i.audienceType === 'Doctor');
+            
             if(dataToExport.length === 0) return alert("No data for this PRO in current date filter.");
             
             let csv = "Created_Date,Doctor_Name,Doctor_Phone,Code,Discount,Call_Status,Req_Call_At\n";
+            
             dataToExport.forEach(i => {
                 const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
                 csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.callStatus || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}"\n`;
@@ -964,6 +1017,7 @@
         function getTableRowsHTML(logsArray) {
             return logsArray.map(i => {
                 let stars = i.rating > 0 ? '⭐'.repeat(i.rating) : '<span class="text-slate-300 text-[10px]">None</span>';
+                
                 let statusBadge = '';
                 if(i.isUsed) statusBadge += '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-0.5 rounded block mb-1">✅ REDEEMED</span>';
                 if(i.callStatus === 'Pending') statusBadge += '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] block">⏳ PENDING CALL</span>';
@@ -978,12 +1032,14 @@
                     actionHTML = buttons.map(btn => `
                         <span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">
                             ${btn.trim()}
-                        </span>`).join('');
+                        </span>
+                    `).join('');
                 } else {
                     actionHTML = `
                         <span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">
                             ✅ Template Sent
-                        </span>`;
+                        </span>
+                    `;
                 }
 
                 let pName = "Unknown PRO";
@@ -993,24 +1049,25 @@
                 }
 
                 return `
-                <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td>
-                    <td class="p-4">
-                        <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
-                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
-                    </td>
-                    <td class="p-4 font-bold text-slate-800">${pName}<br><span class="text-[9px] text-slate-500 font-normal">${i.proPhone || '-'}</span></td>
-                    <td class="p-4 text-xs">${stars}</td>
-                    <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
-                    <td class="p-4">
-                        <div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${formatDate(i.requestCallAt)}</div>
-                        <div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div>
-                    </td>
-                    <td class="p-4">${statusBadge}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
-                </tr>
-            `}).join('');
+                    <tr class="border-b hover:bg-slate-50 transition">
+                        <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td>
+                        <td class="p-4">
+                            <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
+                            <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
+                        </td>
+                        <td class="p-4 font-bold text-slate-800">${pName}<br><span class="text-[9px] text-slate-500 font-normal">${i.proPhone || '-'}</span></td>
+                        <td class="p-4 text-xs">${stars}</td>
+                        <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
+                        <td class="p-4">
+                            <div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${formatDate(i.requestCallAt)}</div>
+                            <div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div>
+                        </td>
+                        <td class="p-4">${statusBadge}</td>
+                        <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
+                        <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function renderTables() {
@@ -1032,30 +1089,33 @@
                     actionHTML = i.buttonClicked.split(',').map(btn => `
                         <span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">
                             ${btn.trim()}
-                        </span>`).join('');
+                        </span>
+                    `).join('');
                 } else { 
                     actionHTML = `
                         <span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">
                             ✅ Template Sent
-                        </span>`; 
+                        </span>
+                    `; 
                 }
 
                 return `
-                <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
-                    <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
-                    <td class="p-4">
-                        <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
-                        <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
-                    </td>
-                    <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
-                    <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
-                    <td class="p-4">${callBadge}</td>
-                    <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
-                    <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
-                </tr>
-            `}).join('');
+                    <tr class="border-b hover:bg-slate-50 transition">
+                        <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
+                        <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
+                        <td class="p-4">
+                            <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
+                            <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
+                        </td>
+                        <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
+                        <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
+                        <td class="p-4">${callBadge}</td>
+                        <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
+                        <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
+                        <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         async function toggleAgent(id, isOnline) {
@@ -1182,7 +1242,8 @@
                         let displayKw = b.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
                         return `<th class="p-2 text-center" title="${b.time}">${displayKw}</th>`;
                     }).join('')}
-                </tr>`;
+                </tr>
+            `;
             
             document.getElementById('th-b-summary').innerHTML = `
                 <tr>
@@ -1192,7 +1253,8 @@
                         let displayKw = b.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
                         return `<th class="p-2 text-center" title="${b.time}">${displayKw}</th>`;
                     }).join('')}
-                </tr>`;
+                </tr>
+            `;
 
             const yesBadge = '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-200">Yes</span>';
             const noBadge = '<span class="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-200">No</span>';
@@ -1205,19 +1267,43 @@
                             <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
                             <td class="p-2 text-slate-500">${p.phone}</td>
                             ${ssBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}
-                        </tr>`;
+                        </tr>
+                    `;
                 } else if(p.team === 'B') {
                     bHTML += `
                         <tr class="border-b hover:bg-slate-50">
                             <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
                             <td class="p-2 text-slate-500">${p.phone}</td>
                             ${bBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}
-                        </tr>`;
+                        </tr>
+                    `;
                 }
             });
 
             document.getElementById('summary-ss').innerHTML = ssHTML || `<tr><td colspan="10" class="p-4 text-center text-slate-400 italic">No Activity Found</td></tr>`;
             document.getElementById('summary-b').innerHTML = bHTML || `<tr><td colspan="10" class="p-4 text-center text-slate-400 italic">No Activity Found</td></tr>`;
+        }
+
+        // 🚨 NEW AUTO-FIX SYNC LOGIC TRIGGER 🚨
+        async function syncWatiHistory(phone, date, keyword) {
+            try {
+                alert("Intelligent Sync Started! Checking WATI Backlog to auto-fix answers...");
+                const res = await fetch('/api/sales/sync-history', { 
+                    method: 'POST', 
+                    headers:{'Content-Type':'application/json'}, 
+                    body: JSON.stringify({phone, dateStr: date, keyword}) 
+                });
+                const data = await res.json();
+                
+                if(data.success) { 
+                    alert("Fix Complete! Data reconstructed successfully.\n\n" + data.message); 
+                    loadSalesData(); 
+                } else { 
+                    alert("Sync Result: " + data.message); 
+                }
+            } catch(e) { 
+                alert("Network Error during sync."); 
+            }
         }
 
         function renderSalesTable() {
@@ -1244,22 +1330,30 @@
                             <div class="bg-slate-50 p-2 rounded border border-slate-200">
                                 <p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p>
                                 <p class="text-blue-700 font-semibold leading-relaxed">👉 ${formattedAns}</p>
-                            </div>`;
+                            </div>
+                        `;
                     });
                 } else {
                     qaHTML += `<span class="text-slate-400 italic">No answers recorded.</span>`;
                 }
                 qaHTML += '</div>';
 
+                // 🚨 ADDED 🔄 AUTO-FIX SYNC BUTTON HERE
                 let replyHTML = r.adminReply 
                     ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] block font-semibold whitespace-normal shadow-inner border border-blue-200 mb-1">Feedback: ${r.adminReply}</span>`
                     : '';
                 
                 replyHTML += `
-                    <div class="flex gap-1 mt-1">
-                        <input type="text" id="reply-${r.phone}-${r.keyword}-${r.date}" placeholder="Type feedback..." class="border border-slate-300 p-1.5 rounded text-xs w-28 outline-blue-500">
-                        <button onclick="sendSalesReply('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm">Send</button>
-                    </div>`;
+                    <div class="flex flex-col gap-2 mt-1">
+                        <div class="flex gap-1">
+                            <input type="text" id="reply-${r.phone}-${r.keyword}-${r.date}" placeholder="Type feedback..." class="border border-slate-300 p-1.5 rounded text-xs w-28 outline-blue-500">
+                            <button onclick="sendSalesReply('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm">Send</button>
+                        </div>
+                        <button onclick="syncWatiHistory('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-purple-600 hover:bg-purple-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm flex items-center justify-center gap-1 w-[150px]">
+                            🔄 Auto-Fix Sync
+                        </button>
+                    </div>
+                `;
 
                 let displayKw = r.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
                 let kwBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded tracking-wider text-[10px] block w-max">${displayKw}</span>`;
@@ -1269,14 +1363,14 @@
                 }
 
                 return `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td>
-                    <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td>
-                    <td class="p-4">${kwBadge}</td>
-                    <td class="p-4">${statusBadge}</td>
-                    <td class="p-4">${qaHTML}</td>
-                    <td class="p-4">${replyHTML}</td>
-                </tr>
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td>
+                        <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td>
+                        <td class="p-4">${kwBadge}</td>
+                        <td class="p-4">${statusBadge}</td>
+                        <td class="p-4">${qaHTML}</td>
+                        <td class="p-4">${replyHTML}</td>
+                    </tr>
                 `;
             }).join('');
         }
@@ -1288,7 +1382,9 @@
                 await fetch('/api/sales/reply', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone, text: val, date, keyword}) });
                 alert("Feedback sent successfully!");
                 loadSalesData();
-            } catch(e) { alert("Failed to send reply"); }
+            } catch(e) { 
+                alert("Failed to send reply"); 
+            }
         }
 
         // --- Setup Modal Logic ---
@@ -1301,20 +1397,26 @@
         async function fetchTeamSetup() {
             const team = await fetch('/api/sales/team').then(r=>r.json());
             proList = team; 
-            document.getElementById('setup-team-list').innerHTML = team.map(t => `
-                <tr class="border-b ${!t.isActive?'opacity-50 bg-red-50':''}">
-                    <td class="p-2 font-bold">${t.name} <span class="bg-slate-200 px-1 rounded">${t.team}</span></td>
-                    <td class="p-2">${t.phone}</td>
-                    <td class="p-2 text-right">
-                        <button onclick="toggleSalesPerson('${t._id}', ${!t.isActive})" class="px-2 py-1 rounded text-white ${t.isActive?'bg-red-500':'bg-green-500'}">${t.isActive?'Disable':'Enable'}</button>
-                        <button onclick="deleteSalesPerson('${t._id}')" class="px-2 py-1 text-slate-500 hover:text-red-600">❌</button>
-                    </td>
-                </tr>
-            `).join('');
+            document.getElementById('setup-team-list').innerHTML = team.map(t => {
+                return `
+                    <tr class="border-b ${!t.isActive?'opacity-50 bg-red-50':''}">
+                        <td class="p-2 font-bold">${t.name} <span class="bg-slate-200 px-1 rounded">${t.team}</span></td>
+                        <td class="p-2">${t.phone}</td>
+                        <td class="p-2 text-right">
+                            <button onclick="toggleSalesPerson('${t._id}', ${!t.isActive})" class="px-2 py-1 rounded text-white ${t.isActive?'bg-red-500':'bg-green-500'}">${t.isActive?'Disable':'Enable'}</button>
+                            <button onclick="deleteSalesPerson('${t._id}')" class="px-2 py-1 text-slate-500 hover:text-red-600">❌</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         async function addSalesPerson() {
-            const data = { name: document.getElementById('nt-name').value, phone: document.getElementById('nt-phone').value, team: document.getElementById('nt-team').value };
+            const data = { 
+                name: document.getElementById('nt-name').value, 
+                phone: document.getElementById('nt-phone').value, 
+                team: document.getElementById('nt-team').value 
+            };
             if(!data.name || !data.phone) return alert("Fill name and phone");
             await fetch('/api/sales/team', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
             fetchTeamSetup(); loadSalesData(); loadAdminData();
@@ -1348,7 +1450,10 @@
 
         function addQuestionField(val = '') {
             const div = document.createElement('div'); div.className = "flex gap-1";
-            div.innerHTML = `<input type="text" value="${val}" class="dyn-q border p-1.5 text-xs rounded w-full outline-blue-500" placeholder="Type question..."><button onclick="this.parentElement.remove()" class="text-red-500 px-2 font-bold">X</button>`;
+            div.innerHTML = `
+                <input type="text" value="${val}" class="dyn-q border p-1.5 text-xs rounded w-full outline-blue-500" placeholder="Type question...">
+                <button onclick="this.parentElement.remove()" class="text-red-500 px-2 font-bold">X</button>
+            `;
             document.getElementById('dynamic-q-container').appendChild(div);
         }
 
@@ -1483,15 +1588,17 @@
 
         async function loadUserData() {
             const logs = await fetch('/api/user/redeemed-today').then(r => r.json());
-            document.getElementById('redeemed-list').innerHTML = logs.map(l => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td>
-                    <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
-                    <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
-                    <td class="p-4 font-bold text-slate-600">${l.patientRegNo || '-'}</td>
-                    <td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
-                </tr>
-            `).join('');
+            document.getElementById('redeemed-list').innerHTML = logs.map(l => {
+                return `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td>
+                        <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
+                        <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
+                        <td class="p-4 font-bold text-slate-600">${l.patientRegNo || '-'}</td>
+                        <td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
+                    </tr>
+                `;
+            }).join('');
         }
     </script>
 </body>
