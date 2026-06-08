@@ -92,40 +92,65 @@
 
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="font-bold text-blue-800 text-sm">🚀 SHOOT CAMPAIGN (1000+ Smart Queue)</h2>
-                        <button onclick="downloadSample()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100">
-                            📥 Download Demo CSV
-                        </button>
+                        <h2 class="font-bold text-blue-800 text-sm">🚀 ADVANCED BULK CAMPAIGN SHOOT (5000+ Support)</h2>
+                        <div class="flex gap-2">
+                            <button onclick="window.location.href='/api/download-demo-csv'" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100">
+                                📥 Demo CSV
+                            </button>
+                            <button onclick="openSetupModal('template-tab')" class="text-xs font-bold text-white bg-blue-600 px-3 py-1.5 rounded-lg border border-blue-700 hover:bg-blue-700">
+                                ⚙️ Setup New Templates
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex flex-wrap gap-4 items-end">
+
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end bg-slate-50 p-4 rounded border border-slate-200">
                         <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">AUDIENCE</label>
-                            <select id="aud-type" class="w-full border p-2 rounded text-sm">
-                                <option value="Doctor">Doctors</option>
-                                <option value="Patient">Patients</option>
-                                <option value="Dental">Dental (CBCT)</option>
-                                <option value="CGHS_Dental">CGHS Dental (CBCT)</option>
+                            <label class="text-xs font-bold text-slate-500 block mb-1">CAMPAIGN TYPE</label>
+                            <select id="aud-type" class="w-full border p-2 rounded text-sm bg-white" onchange="autoFillCampaign()">
+                                <optgroup label="System Defaults (Untouched)">
+                                    <option value="Doctor">Doctors (Default 30%)</option>
+                                    <option value="Patient">Patients (Default 20%)</option>
+                                    <option value="Dental">Dental (CBCT)</option>
+                                    <option value="CGHS_Dental">CGHS Dental (CBCT)</option>
+                                </optgroup>
+                                <optgroup label="Custom Dynamic Templates" id="dynamic-templates-group">
+                                    </optgroup>
                             </select>
                         </div>
+
                         <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">DISCOUNT / SERVICE</label>
-                            <select id="disc" class="w-full border p-2 rounded text-sm">
+                            <label class="text-xs font-bold text-slate-500 block mb-1">DISCOUNT %</label>
+                            <select id="disc" class="w-full border p-2 rounded text-sm font-bold bg-white text-blue-700">
                                 <option value="30">30%</option>
                                 <option value="20">20%</option>
                                 <option value="10">10%</option>
-                                <option value="CBCT">CBCT</option>
+                                <option value="40">40%</option>
+                                <option value="50">50%</option>
+                                <option value="CBCT">CBCT Service</option>
                             </select>
                         </div>
+
                         <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">EXPIRY</label>
-                            <input type="date" id="exp" class="w-full border p-2 rounded text-sm">
+                            <label class="text-xs font-bold text-slate-500 block mb-1">VALID TILL DATE</label>
+                            <input type="date" id="exp" class="w-full border p-2 rounded text-sm font-bold bg-white text-red-600">
                         </div>
+
                         <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">CSV FILE</label>
-                            <input type="file" id="csv" class="w-full border p-1.5 rounded text-sm bg-slate-50">
+                            <label class="text-xs font-bold text-slate-500 block mb-1">SCHEDULE TIME (Optional)</label>
+                            <input type="time" id="schedule-time" class="w-full border p-2 rounded text-sm bg-white text-slate-600" onchange="updateScheduleText()">
                         </div>
-                        <button onclick="shoot()" id="btn-shoot" class="bg-blue-600 text-white font-bold p-2 px-8 rounded hover:bg-blue-700 transition">SEND</button>
+
+                        <div class="flex flex-col gap-2">
+                            <input type="file" id="csv" class="w-full border p-1 rounded text-xs bg-white text-slate-500">
+                            <button onclick="shoot()" id="btn-shoot" class="w-full bg-blue-600 text-white font-bold p-2 rounded shadow hover:bg-blue-700 transition tracking-widest text-sm">SHOOT 🚀</button>
+                        </div>
                     </div>
+                    
+                    <div class="mt-2 text-right">
+                        <span id="schedule-notify" class="text-xs font-bold text-orange-600 hidden animate-pulse">⏳ Campaign will be scheduled for <span id="s-dt"></span></span>
+                    </div>
+
+                    <input type="hidden" id="dynamic-template-id" value="">
                 </div>
 
                 <div class="bg-slate-800 text-white rounded-xl shadow-lg mb-6 overflow-hidden">
@@ -376,7 +401,7 @@
                             
                             <input type="text" id="s-search" placeholder="Search name/team..." class="border p-1.5 text-xs rounded border-amber-300 ml-2" onkeyup="renderSalesTable()">
                             
-                            <button onclick="openSetupModal()" class="bg-indigo-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-indigo-700 transition ml-4">⚙️ SETUP TEAM & BOTS</button>
+                            <button onclick="openSetupModal('bot-tab')" class="bg-indigo-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-indigo-700 transition ml-4">⚙️ SETUP TEAM & BOTS</button>
                             <button onclick="exportSalesExcel()" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2"><span>📊</span> EXPORT DATA</button>
                         </div>
                     </div>
@@ -429,70 +454,115 @@
     </div>
 
     <div id="setup-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-full overflow-y-auto flex flex-col">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-full overflow-y-auto flex flex-col">
+            
             <div class="p-4 border-b flex justify-between items-center bg-slate-800 text-white sticky top-0 z-20">
-                <h2 class="text-lg font-bold">⚙️ SYSTEM SETUP: Sales Team & Bots</h2>
+                <div class="flex gap-4">
+                    <h2 class="text-lg font-bold mr-4">⚙️ SYSTEM SETUP CENTER</h2>
+                    <button onclick="switchSetupTab('template-tab')" id="btn-template-tab" class="px-4 py-1 rounded bg-blue-600 text-white text-xs font-bold transition">Marketing Templates</button>
+                    <button onclick="switchSetupTab('bot-tab')" id="btn-bot-tab" class="px-4 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition">Team & Sales Bot</button>
+                </div>
                 <button onclick="document.getElementById('setup-modal').classList.add('hidden')" class="text-white hover:text-red-400 font-bold text-xl">&times;</button>
             </div>
             
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="p-6">
                 
-                <div class="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
-                    <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-700 border-b flex justify-between items-center">
-                        <span>👥 Manage Sales Team</span>
+                <div id="template-tab" class="block">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <h3 class="font-bold text-blue-800 text-sm mb-3">➕ Add Custom Marketing Template</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500">Template/Offer Name</label>
+                                <input type="text" id="tpl-name" placeholder="e.g. MRI 50% Offer" class="border p-2 rounded text-sm w-full outline-blue-500">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500">Discount % Value</label>
+                                <input type="text" id="tpl-discount" placeholder="e.g. 50" class="border p-2 rounded text-sm w-full outline-blue-500">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500">WATI Template ID</label>
+                                <input type="text" id="tpl-wati-id" placeholder="e.g. mri_50_discount" class="border p-2 rounded text-sm w-full outline-blue-500">
+                            </div>
+                            <button onclick="saveCustomTemplate()" class="bg-blue-600 text-white font-bold p-2 rounded hover:bg-blue-700 shadow text-sm">Save Template</button>
+                        </div>
                     </div>
-                    <div class="p-3 border-b bg-white flex gap-2">
-                        <input type="text" id="nt-name" placeholder="Name" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
-                        <input type="text" id="nt-phone" placeholder="Phone (91...)" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
-                        <select id="nt-team" class="border p-1.5 text-xs rounded outline-blue-500">
-                            <option value="SS">SS (Senior)</option>
-                            <option value="B">B (Buddies)</option>
-                        </select>
-                        <button onclick="addSalesPerson()" class="bg-blue-600 text-white px-3 rounded text-xs font-bold hover:bg-blue-700">+</button>
-                    </div>
-                    <div class="max-h-64 overflow-y-auto p-2">
-                        <table class="w-full text-left text-[10px]">
-                            <tbody id="setup-team-list"></tbody>
-                        </table>
+                    
+                    <div class="bg-white border border-slate-200 rounded-lg shadow-sm">
+                        <div class="bg-slate-100 p-3 font-bold text-xs uppercase text-slate-600 border-b">Saved Templates List</div>
+                        <div class="overflow-x-auto max-h-64 overflow-y-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 border-b">
+                                    <tr>
+                                        <th class="p-3">Offer Name</th>
+                                        <th class="p-3">Discount %</th>
+                                        <th class="p-3">WATI Template ID</th>
+                                        <th class="p-3 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="custom-template-list"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <div class="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
-                    <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-700 border-b flex justify-between items-center">
-                        <span>🤖 Manage Bot Keywords</span>
-                        <select id="sb-select" class="border p-1 rounded text-xs font-normal" onchange="loadBotConfig()">
-                            <option value="">-- Setup New Bot --</option>
-                        </select>
+                <div id="bot-tab" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                        <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-700 border-b flex justify-between items-center">
+                            <span>👥 Manage Sales Team</span>
+                        </div>
+                        <div class="p-3 border-b bg-white flex gap-2">
+                            <input type="text" id="nt-name" placeholder="Name" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
+                            <input type="text" id="nt-phone" placeholder="Phone (91...)" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
+                            <select id="nt-team" class="border p-1.5 text-xs rounded outline-blue-500">
+                                <option value="SS">SS (Senior)</option>
+                                <option value="B">B (Buddies)</option>
+                            </select>
+                            <button onclick="addSalesPerson()" class="bg-blue-600 text-white px-3 rounded text-xs font-bold hover:bg-blue-700">+</button>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto p-2">
+                            <table class="w-full text-left text-[10px]">
+                                <tbody id="setup-team-list"></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="p-4 bg-white">
-                        <div class="flex gap-2 mb-4">
-                            <div class="w-1/3">
-                                <label class="text-[10px] font-bold text-slate-500">Keyword</label>
-                                <input type="text" id="nb-keyword" placeholder="e.g. SB112" class="border p-1.5 text-xs rounded w-full outline-blue-500 uppercase">
-                            </div>
-                            <div class="w-1/3">
-                                <label class="text-[10px] font-bold text-slate-500">Team</label>
-                                <select id="nb-team" class="border p-1.5 text-xs rounded w-full outline-blue-500">
-                                    <option value="SS">SS (Senior)</option>
-                                    <option value="B">B (Buddies)</option>
-                                </select>
-                            </div>
-                            <div class="w-1/3">
-                                <label class="text-[10px] font-bold text-slate-500">Time</label>
-                                <input type="time" id="nb-time" class="border p-1.5 text-xs rounded w-full outline-blue-500">
-                            </div>
-                        </div>
 
-                        <div class="mb-2 flex justify-between items-center">
-                            <label class="text-xs font-bold text-slate-700">Dynamic Questions:</label>
-                            <button onclick="addQuestionField()" class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded hover:bg-indigo-200">+ Add Question</button>
+                    <div class="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                        <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-700 border-b flex justify-between items-center">
+                            <span>🤖 Manage Bot Keywords</span>
+                            <select id="sb-select" class="border p-1 rounded text-xs font-normal" onchange="loadBotConfig()">
+                                <option value="">-- Setup New Bot --</option>
+                            </select>
                         </div>
-                        <div id="dynamic-q-container" class="space-y-2 mb-4 max-h-40 overflow-y-auto p-1 border rounded bg-slate-50">
-                        </div>
+                        <div class="p-4 bg-white">
+                            <div class="flex gap-2 mb-4">
+                                <div class="w-1/3">
+                                    <label class="text-[10px] font-bold text-slate-500">Keyword</label>
+                                    <input type="text" id="nb-keyword" placeholder="e.g. SB112" class="border p-1.5 text-xs rounded w-full outline-blue-500 uppercase">
+                                </div>
+                                <div class="w-1/3">
+                                    <label class="text-[10px] font-bold text-slate-500">Team</label>
+                                    <select id="nb-team" class="border p-1.5 text-xs rounded w-full outline-blue-500">
+                                        <option value="SS">SS (Senior)</option>
+                                        <option value="B">B (Buddies)</option>
+                                    </select>
+                                </div>
+                                <div class="w-1/3">
+                                    <label class="text-[10px] font-bold text-slate-500">Time</label>
+                                    <input type="time" id="nb-time" class="border p-1.5 text-xs rounded w-full outline-blue-500">
+                                </div>
+                            </div>
 
-                        <div class="flex justify-between border-t pt-4">
-                            <button onclick="deleteBot()" class="text-red-500 text-xs font-bold hover:underline">🗑️ Delete Bot</button>
-                            <button onclick="saveBot()" class="bg-green-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-green-700 shadow">Save Bot Config</button>
+                            <div class="mb-2 flex justify-between items-center">
+                                <label class="text-xs font-bold text-slate-700">Dynamic Questions:</label>
+                                <button onclick="addQuestionField()" class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded hover:bg-indigo-200">+ Add Question</button>
+                            </div>
+                            <div id="dynamic-q-container" class="space-y-2 mb-4 max-h-40 overflow-y-auto p-1 border rounded bg-slate-50">
+                            </div>
+
+                            <div class="flex justify-between border-t pt-4">
+                                <button onclick="deleteBot()" class="text-red-500 text-xs font-bold hover:underline">🗑️ Delete Bot</button>
+                                <button onclick="saveBot()" class="bg-green-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-green-700 shadow">Save Bot Config</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -541,6 +611,7 @@
         let allBotsConfig = [];
         let allTeamMembers = [];
         let proList = [];
+        let customTemplates = []; 
 
         function formatDate(dateString) {
             if(!dateString) return '-';
@@ -592,6 +663,7 @@
             if(role === 'admin') { 
                 document.getElementById('admin-dashboard').classList.remove('hidden'); 
                 loadAdminData(); 
+                fetchCustomTemplates();
                 
                 checkSystemHealth();
                 setInterval(checkSystemHealth, 60000); 
@@ -639,6 +711,27 @@
                 document.getElementById('sales-section').classList.remove('hidden');
                 document.getElementById('tab-sales').className = "px-6 py-2 rounded-full font-bold bg-amber-500 text-white shadow-md whitespace-nowrap";
                 loadSalesData();
+            }
+        }
+
+        function switchSetupTab(tabName) {
+            document.getElementById('template-tab').classList.add('hidden');
+            document.getElementById('bot-tab').classList.add('hidden');
+            
+            document.getElementById('btn-template-tab').className = "px-4 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition";
+            document.getElementById('btn-bot-tab').className = "px-4 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition";
+
+            if(tabName === 'template-tab') {
+                document.getElementById('template-tab').classList.remove('hidden');
+                document.getElementById('template-tab').classList.add('block');
+                document.getElementById('btn-template-tab').className = "px-4 py-1 rounded bg-blue-600 text-white text-xs font-bold transition";
+                fetchCustomTemplates();
+            } else if (tabName === 'bot-tab') {
+                document.getElementById('bot-tab').classList.remove('hidden');
+                document.getElementById('bot-tab').classList.add('grid');
+                document.getElementById('btn-bot-tab').className = "px-4 py-1 rounded bg-blue-600 text-white text-xs font-bold transition";
+                fetchTeamSetup();
+                loadBotConfigList();
             }
         }
 
@@ -742,6 +835,7 @@
                 let matchDate = true;
                 if (dateFrom || dateTo) {
                     const itemDate = getStrictDateString(new Date(item.createdAt));
+                    
                     if (dateFrom && itemDate < dateFrom) matchDate = false;
                     if (dateTo && itemDate > dateTo) matchDate = false;
                 }
@@ -773,7 +867,6 @@
             let branchCounts = {}; 
             let proStats = {};
 
-            // 🚨 MASTER DASHBOARD STATS CALCULATION
             document.getElementById('stat-total-dr-shoot').innerText = docLogs.length;
             document.getElementById('stat-total-dr-redeem').innerText = docLogs.filter(l => l.isUsed).length;
 
@@ -786,7 +879,7 @@
                 
                 if(l.buttonClicked) {
                     const bl = l.buttonClicked.toLowerCase();
-                    if(bl.includes('more coupon') || bl.includes('વધુ કૂપન')) moreCoupons++;
+                    if(bl.includes('more coupon') || bl.includes('વધુ કૂપન') || bl.includes('need more 3 coupons')) moreCoupons++;
                     
                     l.buttonClicked.split(',').forEach(b => { 
                         let btn = b.trim(); 
@@ -812,7 +905,6 @@
                 }
             });
 
-            // 🚨 RENDER ACTIVE BRANCHES IN MASTER DASHBOARD
             let activeBranches = Object.keys(branchCounts).join(', ');
             document.getElementById('stat-active-branches').innerText = activeBranches || '- None -';
 
@@ -876,7 +968,6 @@
 
         // 🚨 GP CAMPAIGN REPORT LOGIC 🚨
         function openGPReport() {
-            // Respecting user's date filter for the GP Report
             const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             const reportMap = {};
 
@@ -965,7 +1056,7 @@
             document.getElementById('gp-report-modal').classList.add('hidden');
         }
 
-        // 🚨 NEW FUNCTION: EXPORT GP REPORT DATA TO EXCEL
+        // 🚨 EXPORT GP REPORT DATA TO EXCEL
         function exportGPReportExcel() {
             const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             if(docLogs.length === 0) {
@@ -1157,27 +1248,122 @@
             link.click();
         }
 
-        function downloadSample() {
-            const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217\nDr. Sneha Dental Clinic,918888888888,Ahmedabad,917043001130";
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "uic_sample.csv";
-            link.click();
+        // 🚨 UPDATE: ADVANCED TEMPLATE SAVING & FETCHING 🚨
+        async function fetchCustomTemplates() {
+            try {
+                const res = await fetch('/api/templates');
+                customTemplates = await res.json();
+                
+                // Update Table List
+                document.getElementById('custom-template-list').innerHTML = customTemplates.map(t => `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-3 font-bold text-slate-700">${t.name}</td>
+                        <td class="p-3 text-blue-600 font-bold">${t.discountPercentage}%</td>
+                        <td class="p-3 font-mono text-xs">${t.watiTemplateId}</td>
+                        <td class="p-3 text-right">
+                            <button onclick="deleteCustomTemplate('${t._id}')" class="text-red-500 font-bold hover:underline">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Update Smart Dropdown
+                const group = document.getElementById('dynamic-templates-group');
+                if(group) {
+                    group.innerHTML = customTemplates.map(t => `
+                        <option value="dynamic_${t._id}">${t.name} (${t.discountPercentage}%)</option>
+                    `).join('');
+                }
+            } catch(e) {}
+        }
+
+        async function saveCustomTemplate() {
+            const name = document.getElementById('tpl-name').value;
+            const disc = document.getElementById('tpl-discount').value;
+            const wati = document.getElementById('tpl-wati-id').value;
+
+            if(!name || !disc || !wati) return alert("All fields are required!");
+
+            await fetch('/api/templates', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, discountPercentage: disc, watiTemplateId: wati })
+            });
+
+            document.getElementById('tpl-name').value = '';
+            document.getElementById('tpl-discount').value = '';
+            document.getElementById('tpl-wati-id').value = '';
+            
+            fetchCustomTemplates();
+            alert("Custom Template Saved Successfully!");
+        }
+
+        async function deleteCustomTemplate(id) {
+            if(!confirm("Are you sure you want to delete this template?")) return;
+            await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+            fetchCustomTemplates();
+        }
+
+        // 🚨 UPDATE: SMART 1-CLICK AUTO FILL 🚨
+        function autoFillCampaign() {
+            const type = document.getElementById('aud-type').value;
+            const discEl = document.getElementById('disc');
+            const hiddenId = document.getElementById('dynamic-template-id');
+
+            if(type.startsWith('dynamic_')) {
+                const id = type.split('_')[1];
+                const matched = customTemplates.find(t => t._id === id);
+                if(matched) {
+                    let exists = Array.from(discEl.options).some(o => o.value == matched.discountPercentage);
+                    if(!exists) {
+                        let newOption = new Option(`${matched.discountPercentage}%`, matched.discountPercentage);
+                        discEl.add(newOption);
+                    }
+                    discEl.value = matched.discountPercentage;
+                    discEl.disabled = true; 
+                    hiddenId.value = matched.watiTemplateId;
+                }
+            } else {
+                discEl.disabled = false;
+                hiddenId.value = "";
+                if(type === 'Doctor') discEl.value = "30";
+                if(type === 'Patient') discEl.value = "20";
+                if(type === 'Dental' || type === 'CGHS_Dental') discEl.value = "CBCT";
+            }
+        }
+
+        function updateScheduleText() {
+            const time = document.getElementById('schedule-time').value;
+            const date = document.getElementById('exp').value;
+            const notify = document.getElementById('schedule-notify');
+            const span = document.getElementById('s-dt');
+
+            if(time) {
+                notify.classList.remove('hidden');
+                span.innerText = `${date || 'Today'} at ${time}`;
+            } else {
+                notify.classList.add('hidden');
+            }
         }
 
         function shoot() {
             const f = document.getElementById('csv').files[0];
             const btn = document.getElementById('btn-shoot');
+            const typeVal = document.getElementById('aud-type').value;
+            
             if(!f || !document.getElementById('exp').value) return alert("Upload CSV and select expiry date!");
             
             btn.innerText = "STARTING..."; btn.disabled = true;
+
+            let isDynamic = typeVal.startsWith('dynamic_');
+            let finalType = isDynamic ? 'Doctor' : typeVal; 
+            let dynamicTplId = document.getElementById('dynamic-template-id').value;
+            let scheduleTime = document.getElementById('schedule-time').value; 
             
             Papa.parse(f, { header: true, skipEmptyLines: true, complete: async (res) => {
                 const validTargets = res.data.filter(row => row.phone && row.phone.trim() !== '');
                 if(validTargets.length === 0) { 
                     alert("No valid phone numbers found in CSV!"); 
-                    btn.innerText = "SEND"; btn.disabled = false; return; 
+                    btn.innerText = "SHOOT 🚀"; btn.disabled = false; return; 
                 }
                 
                 try {
@@ -1188,18 +1374,23 @@
                             targetList: validTargets, 
                             discount: document.getElementById('disc').value, 
                             expiryDate: document.getElementById('exp').value, 
-                            audienceType: document.getElementById('aud-type').value 
+                            audienceType: finalType,
+                            isDynamic: isDynamic,
+                            dynamicTemplateId: dynamicTplId,
+                            scheduleTime: scheduleTime 
                         }) 
                     });
                     const resData = await req.json();
                     
                     alert(resData.message || 'Campaign Started Safely in Background!'); 
                     document.getElementById('csv').value = ''; 
+                    document.getElementById('schedule-time').value = '';
+                    document.getElementById('schedule-notify').classList.add('hidden');
                     loadAdminData(); 
                 } catch(e) { 
                     alert('Error starting campaign!'); 
                 } finally { 
-                    btn.innerText = "SEND"; btn.disabled = false; 
+                    btn.innerText = "SHOOT 🚀"; btn.disabled = false; 
                 }
             }});
         }
@@ -1284,7 +1475,6 @@
             document.getElementById('summary-b').innerHTML = bHTML || `<tr><td colspan="10" class="p-4 text-center text-slate-400 italic">No Activity Found</td></tr>`;
         }
 
-        // 🚨 NEW AUTO-FIX SYNC LOGIC TRIGGER 🚨
         async function syncWatiHistory(phone, date, keyword) {
             try {
                 alert("Intelligent Sync Started! Checking WATI Backlog to auto-fix answers...");
@@ -1338,7 +1528,6 @@
                 }
                 qaHTML += '</div>';
 
-                // 🚨 ADDED 🔄 AUTO-FIX SYNC BUTTON HERE
                 let replyHTML = r.adminReply 
                     ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] block font-semibold whitespace-normal shadow-inner border border-blue-200 mb-1">Feedback: ${r.adminReply}</span>`
                     : '';
