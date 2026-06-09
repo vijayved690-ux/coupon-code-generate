@@ -12,6 +12,10 @@ const customTemplateSchema = new mongoose.Schema({
     watiTemplateId: { 
         type: String, 
         required: true 
+    },
+    isActive: { 
+        type: Boolean, 
+        default: true 
     }
 }, { timestamps: true });
 
