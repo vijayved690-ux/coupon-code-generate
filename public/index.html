@@ -297,7 +297,7 @@
                                 <thead>
                                     <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                         <th class="p-4">Details</th>
-                                        <th class="p-4">Coupon</th>
+                                        <th class="p-4">Coupon & Campaign</th>
                                         <th class="p-4">PRO Info</th>
                                         <th class="p-4">Rating</th>
                                         <th class="p-4">Action</th>
@@ -325,7 +325,7 @@
                             <thead>
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                     <th class="p-4">Details</th>
-                                    <th class="p-4">Service</th>
+                                    <th class="p-4">Service & Campaign</th>
                                     <th class="p-4">PRO Info</th>
                                     <th class="p-4">Rating</th>
                                     <th class="p-4">Action</th>
@@ -353,7 +353,7 @@
                                 <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                     <th class="p-4">Name</th>
                                     <th class="p-4">Phone</th>
-                                    <th class="p-4">Coupon</th>
+                                    <th class="p-4">Coupon & Campaign</th>
                                     <th class="p-4">Agent</th>
                                     <th class="p-4">Action</th>
                                     <th class="p-4">Call Status</th>
@@ -819,6 +819,7 @@
             applyFilters();
         }
 
+        // 🚨 SMART DATE FILTER FIX (Both Creation & Redemption LIVE Display)
         function applyFilters() {
             const search = document.getElementById('search-filter').value.toLowerCase();
             const dateFrom = document.getElementById('date-from').value;
@@ -828,16 +829,24 @@
             filteredLogs = globalLogs.filter(item => {
                 let matchSearch = true;
                 if (search) {
-                    const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''} ${item.patientRegNo || ''}`.toLowerCase();
+                    const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''} ${item.patientRegNo || ''} ${item.source || ''}`.toLowerCase();
                     matchSearch = searchStr.includes(search);
                 }
                 
                 let matchDate = true;
                 if (dateFrom || dateTo) {
-                    const itemDate = getStrictDateString(new Date(item.createdAt));
+                    const cDate = getStrictDateString(new Date(item.createdAt));
+                    const uDate = getStrictDateString(new Date(item.updatedAt || item.createdAt));
                     
-                    if (dateFrom && itemDate < dateFrom) matchDate = false;
-                    if (dateTo && itemDate > dateTo) matchDate = false;
+                    let cMatch = true;
+                    if (dateFrom && cDate < dateFrom) cMatch = false;
+                    if (dateTo && cDate > dateTo) cMatch = false;
+                    
+                    let uMatch = true;
+                    if (dateFrom && uDate < dateFrom) uMatch = false;
+                    if (dateTo && uDate > dateTo) uMatch = false;
+                    
+                    if (!cMatch && !uMatch) matchDate = false;
                 }
                 
                 let matchStatus = true;
@@ -879,7 +888,7 @@
                 
                 if(l.buttonClicked) {
                     const bl = l.buttonClicked.toLowerCase();
-                    if(bl.includes('more coupon') || bl.includes('વધુ કૂપન') || bl.includes('need more 3 coupons')) moreCoupons++;
+                    if(bl.includes('more coupon') || bl.includes('વધુ કૂપન') || bl.includes('3 coupon')) moreCoupons++;
                     
                     l.buttonClicked.split(',').forEach(b => { 
                         let btn = b.trim(); 
@@ -966,7 +975,6 @@
             }
         }
 
-        // 🚨 GP CAMPAIGN REPORT LOGIC 🚨
         function openGPReport() {
             const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             const reportMap = {};
@@ -1064,11 +1072,12 @@
                 return;
             }
             
-            let csv = "Date,Doctor Name,Doctor Phone,PRO Name,Discount %,Redeemed Status,Patient Reg No,Branch Name\n";
+            let csv = "Date,Campaign_Name,Doctor Name,Doctor Phone,PRO Name,Discount %,Redeemed Status,Patient Reg No,Branch Name\n";
             
             docLogs.forEach(i => {
                 const dateStr = getStrictDateString(new Date(i.createdAt));
                 const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                const cName = i.source || i.audienceType;
                 
                 let pName = "Unknown PRO"; 
                 if(i.proPhone) { 
@@ -1078,7 +1087,7 @@
                 
                 const redeemedStatus = i.isUsed ? 'Yes' : 'No';
                 
-                csv += `"${dateStr}","${i.targetName || ''}","${i.doctorPhone || ''}","${pName}","${disc}","${redeemedStatus}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+                csv += `"${dateStr}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${pName}","${disc}","${redeemedStatus}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
             });
             
             const link = document.createElement("a");
@@ -1116,6 +1125,7 @@
                 if(!statusBadge) statusBadge = '-';
 
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
+                const cName = i.source || i.audienceType; // 🚨 CAMPAIGN NAME FOR UI
 
                 let actionHTML = '';
                 if (i.buttonClicked && i.buttonClicked.trim() !== '') {
@@ -1145,6 +1155,7 @@
                         <td class="p-4">
                             <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
                             <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
+                            <span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded mt-1 inline-block ml-1">${cName}</span>
                         </td>
                         <td class="p-4 font-bold text-slate-800">${pName}<br><span class="text-[9px] text-slate-500 font-normal">${i.proPhone || '-'}</span></td>
                         <td class="p-4 text-xs">${stars}</td>
@@ -1174,6 +1185,7 @@
                 else callBadge = '-';
 
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
+                const cName = i.source || i.audienceType; // 🚨 CAMPAIGN NAME FOR UI
                 
                 let actionHTML = '';
                 if (i.buttonClicked && i.buttonClicked.trim() !== '') {
@@ -1197,6 +1209,7 @@
                         <td class="p-4">
                             <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
                             <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
+                            <span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded mt-1 inline-block ml-1">${cName}</span>
                         </td>
                         <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
                         <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
@@ -1223,21 +1236,23 @@
             
             let csv = "";
             if (type === 'Doctor' || type === 'Dental') {
-                csv = "Created_Date,Name,Phone,Code,Service/Discount,PRO_Name,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Patient_Reg_No,Branch_Redeemed\n";
+                csv = "Created_Date,Campaign_Name,Name,Phone,Code,Service/Discount,PRO_Name,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Patient_Reg_No,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
                     const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                    const cName = i.source || i.audienceType;
                     let pName = "Unknown PRO"; 
                     if(i.proPhone) { 
                         let matched = proList.find(p => p.phone === i.proPhone); 
                         if(matched) pName = matched.name; 
                     }
-                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${pName}","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${pName}","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             } else {
-                csv = "Created_Date,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Patient_Reg_No,Branch_Redeemed\n";
+                csv = "Created_Date,Campaign_Name,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Patient_Reg_No,Branch_Redeemed\n";
                 dataToExport.forEach(i => {
                     const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
-                    csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+                    const cName = i.source || i.audienceType;
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             }
 
@@ -1248,7 +1263,7 @@
             link.click();
         }
 
-        // 🚨 UPDATE: ADVANCED TEMPLATE SAVING & FETCHING 🚨
+        // 🚨 ADVANCED TEMPLATE SAVING & FETCHING 🚨
         async function fetchCustomTemplates() {
             try {
                 const res = await fetch('/api/templates');
@@ -1303,7 +1318,7 @@
             fetchCustomTemplates();
         }
 
-        // 🚨 UPDATE: SMART 1-CLICK AUTO FILL 🚨
+        // 🚨 SMART 1-CLICK AUTO FILL 🚨
         function autoFillCampaign() {
             const type = document.getElementById('aud-type').value;
             const discEl = document.getElementById('disc');
@@ -1348,7 +1363,9 @@
         function shoot() {
             const f = document.getElementById('csv').files[0];
             const btn = document.getElementById('btn-shoot');
-            const typeVal = document.getElementById('aud-type').value;
+            const audTypeEl = document.getElementById('aud-type');
+            const typeVal = audTypeEl.value;
+            const campaignName = audTypeEl.options[audTypeEl.selectedIndex].text; 
             
             if(!f || !document.getElementById('exp').value) return alert("Upload CSV and select expiry date!");
             
@@ -1377,7 +1394,8 @@
                             audienceType: finalType,
                             isDynamic: isDynamic,
                             dynamicTemplateId: dynamicTplId,
-                            scheduleTime: scheduleTime 
+                            scheduleTime: scheduleTime,
+                            campaignName: isDynamic ? campaignName : finalType 
                         }) 
                     });
                     const resData = await req.json();
@@ -1577,10 +1595,9 @@
         }
 
         // --- Setup Modal Logic ---
-        async function openSetupModal() {
+        async function openSetupModal(tab) {
             document.getElementById('setup-modal').classList.remove('hidden');
-            await fetchTeamSetup();
-            loadBotConfigList();
+            switchSetupTab(tab || 'template-tab');
         }
 
         async function fetchTeamSetup() {
@@ -1669,7 +1686,7 @@
             
             if(!keyword || !time) return alert("Keyword and Time required!");
             await fetch('/api/sales/questions', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({keyword, team, time, questions}) });
-            alert('Bot saved!'); loadSalesData(); openSetupModal();
+            alert('Bot saved!'); loadSalesData(); openSetupModal('bot-tab');
         }
 
         async function deleteBot() {
@@ -1677,7 +1694,7 @@
             const bot = allBotsConfig.find(b=>b.keyword === kw);
             if(!bot || !confirm(`Delete Bot ${kw}?`)) return;
             await fetch(`/api/sales/questions/${bot._id}`, { method: 'DELETE' });
-            alert('Deleted!'); loadSalesData(); openSetupModal();
+            alert('Deleted!'); loadSalesData(); openSetupModal('bot-tab');
         }
 
         function exportSalesExcel() {
@@ -1688,7 +1705,7 @@
                 if(r.questions && r.questions.length > maxQ) maxQ = r.questions.length; 
                 if(r.answers && r.answers.length > maxQ) maxQ = r.answers.length;
             });
-            if (maxQ < 4) maxQ = 4; // At least show Q1 to Q4 columns
+            if (maxQ < 4) maxQ = 4; 
             
             let csv = "Date,Name,Phone,Team,Status,Keyword,Delay,Reply Time,Admin Feedback";
             for(let i=0; i<maxQ; i++) csv += `,Q${i+1},Ans${i+1}`; 
@@ -1731,12 +1748,19 @@
                 let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
                 
                 const displayDiscount = data.discount === 'CBCT' ? 'CBCT Special' : `${data.discount}% OFF`;
+                const testName = data.campaignName ? data.campaignName.toUpperCase() : 'GENERAL CAMPAIGN'; // 🚨 BIG TEXT CAMPAIGN NAME
 
                 resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-500 bg-green-50";
                 resBox.innerHTML = `
-                    <p class="text-green-700 font-black text-xl mb-2">✅ VALID COUPON</p>
-                    <p class="text-slate-800 font-bold mb-1">Name: <span class="font-normal">${data.name}</span></p>
-                    <p class="text-slate-800 font-bold mb-6">Service/Discount: <span class="font-normal text-blue-600">${displayDiscount}</span></p>
+                    <p class="text-green-700 font-black text-2xl mb-2">✅ VALID COUPON</p>
+                    
+                    <div class="bg-yellow-100 border-2 border-yellow-400 p-4 rounded-lg mb-4 shadow-inner text-center">
+                        <p class="text-xs font-bold text-slate-500 tracking-widest uppercase mb-1">TEST / CAMPAIGN DETAILS</p>
+                        <p class="text-blue-800 font-black text-3xl leading-tight uppercase">${testName}</p>
+                        <p class="text-red-600 font-black text-xl mt-1">${displayDiscount}</p>
+                    </div>
+
+                    <p class="text-slate-800 font-bold mb-6 text-center">Doctor / Patient: <span class="font-normal">${data.name}</span></p>
                     
                     <label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label>
                     <select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-4 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select>
