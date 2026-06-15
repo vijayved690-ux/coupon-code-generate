@@ -57,7 +57,7 @@ mongoose.connect(process.env.MONGODB_URI)
             }
         }
 
-        // 🚨 AUTO-SEED INITIAL SALES TEAM
+        // 🚨 AUTO-SEED INITIAL SALES TEAM (Makes it dynamic from now on)
         if ((await SalesPerson.countDocuments()) === 0) {
             const initialSalesTeam = [
                 { name: "ALPESH ROHIT", phone: "919574767971", team: "SS" },
@@ -76,6 +76,7 @@ mongoose.connect(process.env.MONGODB_URI)
                 { name: "YOGESH SOLANKI", phone: "916352950760", team: "B" }
             ];
             await SalesPerson.insertMany(initialSalesTeam);
+            console.log("Seeded Initial Sales Team into DB.");
         }
 
         // 🚨 AUTO-SEED INITIAL BOTS
@@ -89,6 +90,7 @@ mongoose.connect(process.env.MONGODB_URI)
                 { keyword: "B79", team: "B", time: "19:00", questions: [] }
             ];
             await SalesQuestion.insertMany(initialBots);
+            console.log("Seeded Initial Bot Configurations into DB.");
         }
 
     })
@@ -101,10 +103,10 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION
+// 🚨 SMART DELAY FUNCTION (Best for 5000+ shoots)
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// 🚨 STRICT IST DATE FUNCTION
+// 🚨 STRICT IST DATE FUNCTION (Fix for Server UTC vs India Time)
 function getIndianDateStr(dateObj = new Date()) {
     const utc = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
     const ist = new Date(utc + (3600000 * 5.5)); // +5:30 for India
@@ -112,6 +114,14 @@ function getIndianDateStr(dateObj = new Date()) {
     const m = String(ist.getMonth() + 1).padStart(2, '0');
     const d = String(ist.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+}
+
+// 🚨 TIME CALCULATION FOR DELAY TRACKING
+function getScheduledTime(dateStr, timeStr) {
+    if(!timeStr) return Date.now();
+    const [year, month, day] = dateStr.split('-');
+    const [hours, mins] = timeStr.split(':');
+    return new Date(year, month - 1, day, parseInt(hours), parseInt(mins), 0).getTime();
 }
 
 async function generateUniqueCode() {
@@ -210,6 +220,7 @@ app.get('/api/download-demo-csv', (req, res) => {
     return res.send(csvContent);
 });
 
+// 🚨 SYSTEM HEALTH API FOR MEMORY WARNING
 app.get('/api/admin/system-health', async (req, res) => {
     const dbSize = await mongoose.connection.db.stats();
     const isMemoryFull = (dbSize.dataSize > 400 * 1024 * 1024); 
@@ -271,6 +282,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             const diffMs = targetSchedule.getTime() - istNow.getTime();
 
+            // 🚨 SMART BUFFER
             if (diffMs < -(5 * 60 * 1000)) { 
                 targetSchedule.setDate(targetSchedule.getDate() + 1); 
                 delayMs = targetSchedule.getTime() - istNow.getTime();
@@ -320,7 +332,7 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 location: target.location || 'Ahmedabad', 
                 proPhone: cleanProPhone, 
                 audienceType: audienceType,
-                source: campaignName || audienceType, // 🚨 SAVING EXACT CAMPAIGN NAME FOR BIG TEXT UI
+                source: campaignName || audienceType, // 🚨 SAVING EXACT CAMPAIGN NAME
                 expiryDate: new Date(expiryDate)
             });
 
@@ -533,9 +545,9 @@ app.post('/api/sales/sync-history', async (req, res) => {
         if (rawAnswers.length > 0) {
             log.answers = rawAnswers;
             await log.save();
-            return res.json({ success: true, message: `Perfect! History se ${rawAnswers.length} answers recover kar liye gaye.` });
+            return res.json({ success: true, message: `Successfully synchronized ${rawAnswers.length} answers from backlog.` });
         } else {
-            return res.json({ success: false, message: "Koi nayi answers history mein nahi mili." });
+            return res.json({ success: false, message: "No new matching answers found." });
         }
     } catch (error) {
         return res.json({ success: false, message: "Sync Error: WATI API se connection toot gaya." });
@@ -669,7 +681,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                 
                 const discountValue = lastCoupon.discountPercentage === 'CBCT' ? 'CBCT Service' : `${lastCoupon.discountPercentage}%`;
 
-                // Alert the PRO if available
                 if (lastCoupon.proPhone) {
                     if (lastCoupon.audienceType === 'Dental' || lastCoupon.audienceType === 'CGHS_Dental' || lastCoupon.discountPercentage === 'CBCT') {
                         await sendWatiMessage(lastCoupon.proPhone, 'pro_doc_dental_notify', [{ name: "1", value: lastCoupon.targetName || "Doctor" }, { name: "2", value: `+${lastCoupon.doctorPhone}` }, { name: "3", value: discountValue }, { name: "4", value: lastCoupon.code }]);
@@ -677,6 +688,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                         await sendWatiMessage(lastCoupon.proPhone, 'doc_temp_discount_pro_message', [{ name: "1", value: `+${lastCoupon.doctorPhone}` }, { name: "2", value: discountValue }, { name: "3", value: lastCoupon.code }]);
                     }
                 }
+                
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
         }
@@ -693,8 +705,53 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
 
-        // 4. 🚨 SMART COUPON REQUEST LOGIC (HANDLES 3 COUPONS, 50 COUPONS CAP, PLURAL 'COUPONS')
-        else if (btnLower.includes('coupon') || btnLower.includes('કૂપન')) {
+        // 4. 🚨 EXACT MATCH 3 COUPONS LOGIC
+        else if (
+            btnLower === 'need 3 more coupons' || 
+            btnLower === 'need more 3 coupons' || 
+            btnLower.includes('need 3 more') || 
+            btnLower.includes('need more 3') || 
+            (btnLower.includes('3') && (btnLower.includes('more') || btnLower.includes('coupon')))
+        ) {
+            const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
+            if (lastCoupon) { 
+                lastCoupon.buttonClicked = rawBtn; 
+                await lastCoupon.save(); 
+            }
+            const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
+            
+            // 🚨 FIX: INHERIT ORIGINAL CAMPAIGN NAME INSTEAD OF 'REQUESTED 3'
+            let campaignSource = lastCoupon?.source;
+            if (!campaignSource || campaignSource.includes('Requested')) {
+                campaignSource = lastCoupon?.audienceType || 'Doctor';
+            }
+
+            let newCodes = []; 
+            const expiry = new Date(); 
+            expiry.setMonth(expiry.getMonth() + 1);
+            
+            for (let i = 0; i < 3; i++) {
+                const c = await generateUniqueCode();
+                await Coupon.create({ 
+                    code: c, 
+                    discountPercentage: discount, 
+                    targetName: lastCoupon?.targetName || 'Requested', 
+                    doctorPhone: waId, 
+                    audienceType: 'Doctor', 
+                    source: campaignSource, // 👈 Saved correct source
+                    expiryDate: expiry, 
+                    proPhone: lastCoupon?.proPhone, 
+                    location: lastCoupon?.location 
+                });
+                newCodes.push(c);
+            }
+            
+            let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
+            await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
+        }
+
+        // 5. 🚨 GENERAL COUPON FALLBACK (WITH MAX 5 CAP & DYNAMIC NUMBER EXTRACTION)
+        else if (btnLower.includes('more coupon') || btnLower.includes('મને વધુ કૂપન જોઈએ છે') || btnLower.includes('વધુ કૂપન') || btnLower.includes('coupon') || btnLower.includes('કૂપન')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { 
                 lastCoupon.buttonClicked = rawBtn; 
@@ -703,10 +760,9 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
             
-            // Extract number from button text, default to 5
+            // Extract exact number requested (e.g. "Need 50 coupons" -> 50)
             let requestCount = 5; 
             const numberMatch = rawBtn.match(/\d+/);
-            
             if (numberMatch) {
                 requestCount = parseInt(numberMatch[0]);
             } else if (btnLower.includes('three') || btnLower.includes('ત્રણ')) {
@@ -723,23 +779,22 @@ app.post('/api/wati/webhook', async (req, res) => {
             let newCodes = []; 
             const expiry = new Date(); 
             expiry.setMonth(expiry.getMonth() + 1);
-            
+
+            // 🚨 FIX: INHERIT ORIGINAL CAMPAIGN NAME INSTEAD OF 'REQUESTED'
+            let campaignSource = lastCoupon?.source;
+            if (!campaignSource || campaignSource.includes('Requested')) {
+                campaignSource = lastCoupon?.audienceType || 'Doctor';
+            }
+
             for (let i = 0; i < requestCount; i++) {
                 const c = await generateUniqueCode();
-                
-                // Keep the exact campaign name/source for Receptionist Panel
-                let campaignSource = lastCoupon?.source;
-                if (!campaignSource || campaignSource.includes('Requested')) {
-                    campaignSource = lastCoupon?.audienceType || 'Doctor';
-                }
-
                 await Coupon.create({ 
                     code: c, 
                     discountPercentage: discount, 
                     targetName: lastCoupon?.targetName || 'Requested', 
                     doctorPhone: waId, 
                     audienceType: 'Doctor', 
-                    source: campaignSource, 
+                    source: campaignSource, // 👈 Saved correct source
                     expiryDate: expiry, 
                     proPhone: lastCoupon?.proPhone, 
                     location: lastCoupon?.location 
@@ -748,15 +803,10 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
             
             let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
-            
-            await sendWatiMessage(waId, 'dis_more_temp_all', [
-                { name: '1', value: discountText }, 
-                { name: '2', value: newCodes.join(', ') }, 
-                { name: '3', value: expiry.toLocaleDateString('en-GB') }
-            ]);
+            await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
         }
 
-        // 5. 🚨 PATIENT CONNECT ASSISTANCE
+        // 6. 🚨 PATIENT CONNECT ASSISTANCE
         else if (['assistance', 'book my test', 'use the coupon', 'use the cupon'].some(kw => btnLower.includes(kw))) {
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             
@@ -807,7 +857,9 @@ app.post('/api/wati/webhook', async (req, res) => {
                  }
             }
         }
-    } catch (error) {}
+    } catch (error) {
+        console.error("Webhook Internal Logic Error:", error);
+    }
 });
 
 // -----------------------------------------
