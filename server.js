@@ -256,7 +256,7 @@ app.delete('/api/templates/:id', async (req, res) => {
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
-        const { targetList, discount, expiryDate, audienceType, isDynamic, dynamicTemplateId, scheduleTime } = req.body;
+        const { targetList, discount, expiryDate, audienceType, isDynamic, dynamicTemplateId, scheduleTime, campaignName } = req.body;
         const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB');
         
         let delayMs = 0;
@@ -271,12 +271,11 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             const diffMs = targetSchedule.getTime() - istNow.getTime();
 
-            // 🚨 SMART BUFFER: Agar time 5 minute past ho chuka hai tabhi usko kal par push karo.
             if (diffMs < -(5 * 60 * 1000)) { 
                 targetSchedule.setDate(targetSchedule.getDate() + 1); 
                 delayMs = targetSchedule.getTime() - istNow.getTime();
             } else if (diffMs < 0) {
-                delayMs = 0; // Shoot immediately if within 5 mins past
+                delayMs = 0; 
             } else {
                 delayMs = diffMs; 
             }
@@ -285,12 +284,12 @@ app.post('/api/campaign/shoot', async (req, res) => {
         if (delayMs > 0) {
             res.json({ success: true, message: `Campaign successfully scheduled in background!` });
             setTimeout(() => {
-                processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId);
+                processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId, campaignName);
             }, delayMs);
-            await logActivity('Scheduler', 'CAMPAIGN QUEUED', `Scheduled campaign for ${targetList.length} targets to run in ${Math.round(delayMs / 60000)} mins.`);
+            await logActivity('Scheduler', 'CAMPAIGN QUEUED', `Scheduled campaign for ${targetList.length} targets.`);
         } else {
             res.json({ success: true, message: `Campaign for ${targetList.length} contacts started safely in background!` });
-            processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId);
+            processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId, campaignName);
         }
 
     } catch (error) {
@@ -298,7 +297,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
     }
 });
 
-async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId) {
+async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId, campaignName) {
     let validCount = 0; 
     let successCount = 0; 
     let failCount = 0;
@@ -320,7 +319,8 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 doctorPhone: target.phone.toString().trim(),
                 location: target.location || 'Ahmedabad', 
                 proPhone: cleanProPhone, 
-                audienceType: audienceType, 
+                audienceType: audienceType,
+                source: campaignName || audienceType, // 🚨 SAVING EXACT CAMPAIGN NAME FOR BIG TEXT UI
                 expiryDate: new Date(expiryDate)
             });
 
@@ -564,7 +564,6 @@ app.post('/api/wati/webhook', async (req, res) => {
 
         if (!waId) return;
 
-        // 🚨 DYNAMIC SALES TEAM LOGIC
         const [activeTeam, allBots] = await Promise.all([ SalesPerson.find({ isActive: true }), SalesQuestion.find() ]);
         const salesMember = activeTeam.find(s => formatTataNumber(s.phone) === formatTataNumber(waId));
 
@@ -678,7 +677,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                         await sendWatiMessage(lastCoupon.proPhone, 'doc_temp_discount_pro_message', [{ name: "1", value: `+${lastCoupon.doctorPhone}` }, { name: "2", value: discountValue }, { name: "3", value: lastCoupon.code }]);
                     }
                 }
-                
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
         }
@@ -728,13 +726,20 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             for (let i = 0; i < requestCount; i++) {
                 const c = await generateUniqueCode();
+                
+                // Keep the exact campaign name/source for Receptionist Panel
+                let campaignSource = lastCoupon?.source;
+                if (!campaignSource || campaignSource.includes('Requested')) {
+                    campaignSource = lastCoupon?.audienceType || 'Doctor';
+                }
+
                 await Coupon.create({ 
                     code: c, 
                     discountPercentage: discount, 
                     targetName: lastCoupon?.targetName || 'Requested', 
                     doctorPhone: waId, 
                     audienceType: 'Doctor', 
-                    source: `Requested ${requestCount}`, 
+                    source: campaignSource, 
                     expiryDate: expiry, 
                     proPhone: lastCoupon?.proPhone, 
                     location: lastCoupon?.location 
@@ -749,8 +754,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                 { name: '2', value: newCodes.join(', ') }, 
                 { name: '3', value: expiry.toLocaleDateString('en-GB') }
             ]);
-            
-            await logActivity('System Webhook', 'COUPONS REQUESTED', `Capped/Sent EXACTLY ${requestCount} codes to ${waId}`);
         }
 
         // 5. 🚨 PATIENT CONNECT ASSISTANCE
@@ -804,9 +807,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                  }
             }
         }
-    } catch (error) {
-        console.error("Webhook Internal Logic Error:", error);
-    }
+    } catch (error) {}
 });
 
 // -----------------------------------------
@@ -819,7 +820,15 @@ app.post('/api/coupon/validate', async (req, res) => {
         if (!coupon) return res.status(404).json({ valid: false, message: "Invalid Code!" });
         if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Already redeemed!" });
         if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "Expired!" });
-        res.json({ valid: true, discount: coupon.discountPercentage, name: coupon.targetName || 'Unknown', type: coupon.audienceType });
+        
+        // 🚨 RETURN CAMPAIGN NAME FOR BIG TEXT UI
+        res.json({ 
+            valid: true, 
+            discount: coupon.discountPercentage, 
+            name: coupon.targetName || 'Unknown', 
+            type: coupon.audienceType,
+            campaignName: coupon.source || coupon.audienceType 
+        });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
