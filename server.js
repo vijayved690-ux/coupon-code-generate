@@ -103,7 +103,7 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION (Best for 5000+ shoots)
+// 🚨 SMART DELAY FUNCTION (Best for 3000+ shoots)
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // 🚨 STRICT IST DATE FUNCTION (Fix for Server UTC vs India Time)
@@ -223,6 +223,7 @@ app.get('/api/download-demo-csv', (req, res) => {
 // 🚨 SYSTEM HEALTH API FOR MEMORY WARNING
 app.get('/api/admin/system-health', async (req, res) => {
     const dbSize = await mongoose.connection.db.stats();
+    // Setting warning at 400MB
     const isMemoryFull = (dbSize.dataSize > 400 * 1024 * 1024); 
     res.json({ isMemoryFull, sizeMB: (dbSize.dataSize / (1024*1024)).toFixed(2) });
 });
@@ -263,10 +264,11 @@ app.delete('/api/templates/:id', async (req, res) => {
 });
 
 // -----------------------------------------
-// SHOOT CAMPAIGN API (WITH ADVANCED SCHEDULER & SMART BUFFER FIX)
+// SHOOT CAMPAIGN API (SMART BACKGROUND QUEUE)
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
+        // 🚨 ADDED campaignName HERE
         const { targetList, discount, expiryDate, audienceType, isDynamic, dynamicTemplateId, scheduleTime, campaignName } = req.body;
         const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB');
         
@@ -282,7 +284,6 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             const diffMs = targetSchedule.getTime() - istNow.getTime();
 
-            // 🚨 SMART BUFFER
             if (diffMs < -(5 * 60 * 1000)) { 
                 targetSchedule.setDate(targetSchedule.getDate() + 1); 
                 delayMs = targetSchedule.getTime() - istNow.getTime();
@@ -331,8 +332,8 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 doctorPhone: target.phone.toString().trim(),
                 location: target.location || 'Ahmedabad', 
                 proPhone: cleanProPhone, 
-                audienceType: audienceType,
-                source: campaignName || audienceType, // 🚨 SAVING EXACT CAMPAIGN NAME
+                audienceType: audienceType, 
+                source: campaignName || audienceType, // 🚨 SAVING EXACT CAMPAIGN NAME FOR BIG TEXT UI
                 expiryDate: new Date(expiryDate)
             });
 
@@ -545,9 +546,9 @@ app.post('/api/sales/sync-history', async (req, res) => {
         if (rawAnswers.length > 0) {
             log.answers = rawAnswers;
             await log.save();
-            return res.json({ success: true, message: `Successfully synchronized ${rawAnswers.length} answers from backlog.` });
+            return res.json({ success: true, message: `Perfect! History se ${rawAnswers.length} answers recover kar liye gaye.` });
         } else {
-            return res.json({ success: false, message: "No new matching answers found." });
+            return res.json({ success: false, message: "Koi nayi answers history mein nahi mili." });
         }
     } catch (error) {
         return res.json({ success: false, message: "Sync Error: WATI API se connection toot gaya." });
@@ -706,13 +707,7 @@ app.post('/api/wati/webhook', async (req, res) => {
         }
 
         // 4. 🚨 EXACT MATCH 3 COUPONS LOGIC
-        else if (
-            btnLower === 'need 3 more coupons' || 
-            btnLower === 'need more 3 coupons' || 
-            btnLower.includes('need 3 more') || 
-            btnLower.includes('need more 3') || 
-            (btnLower.includes('3') && (btnLower.includes('more') || btnLower.includes('coupon')))
-        ) {
+        else if (btnLower.includes('3') && btnLower.includes('coupon')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { 
                 lastCoupon.buttonClicked = rawBtn; 
@@ -720,12 +715,24 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
             
-            // 🚨 FIX: INHERIT ORIGINAL CAMPAIGN NAME INSTEAD OF 'REQUESTED 3'
-            let campaignSource = lastCoupon?.source;
-            if (!campaignSource || campaignSource.includes('Requested')) {
-                campaignSource = lastCoupon?.audienceType || 'Doctor';
+            // 🚨 SMART CAMPAIGN NAME INHERITANCE
+            let campaignSource = 'Doctor';
+            if (lastCoupon) {
+                if (lastCoupon.source && !lastCoupon.source.toLowerCase().includes('requested')) {
+                    campaignSource = lastCoupon.source;
+                } else {
+                    const originalCoupon = await Coupon.findOne({
+                        doctorPhone: waId,
+                        source: { $exists: true, $not: /requested/i }
+                    }).sort({ createdAt: -1 });
+                    if (originalCoupon && originalCoupon.source) {
+                        campaignSource = originalCoupon.source;
+                    } else {
+                        campaignSource = lastCoupon.audienceType || 'Doctor';
+                    }
+                }
             }
-
+            
             let newCodes = []; 
             const expiry = new Date(); 
             expiry.setMonth(expiry.getMonth() + 1);
@@ -733,132 +740,76 @@ app.post('/api/wati/webhook', async (req, res) => {
             for (let i = 0; i < 3; i++) {
                 const c = await generateUniqueCode();
                 await Coupon.create({ 
-                    code: c, 
-                    discountPercentage: discount, 
-                    targetName: lastCoupon?.targetName || 'Requested', 
-                    doctorPhone: waId, 
-                    audienceType: 'Doctor', 
-                    source: campaignSource, // 👈 Saved correct source
-                    expiryDate: expiry, 
-                    proPhone: lastCoupon?.proPhone, 
-                    location: lastCoupon?.location 
+                    code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Requested', 
+                    doctorPhone: waId, audienceType: 'Doctor', source: campaignSource, expiryDate: expiry, 
+                    proPhone: lastCoupon?.proPhone, location: lastCoupon?.location 
                 });
                 newCodes.push(c);
             }
             
             let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
             await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
+            await logActivity('System Webhook', '3 COUPONS REQUESTED', `Sent EXACTLY 3 codes of ${discountText} to ${waId}`);
         }
 
-        // 5. 🚨 GENERAL COUPON FALLBACK (WITH MAX 5 CAP & DYNAMIC NUMBER EXTRACTION)
-        else if (btnLower.includes('more coupon') || btnLower.includes('મને વધુ કૂપન જોઈએ છે') || btnLower.includes('વધુ કૂપન') || btnLower.includes('coupon') || btnLower.includes('કૂપન')) {
+        // 5. 🚨 GENERAL 5 COUPONS FALLBACK
+        else if (btnLower.includes('more coupon') || btnLower.includes('મને વધુ કૂપન જોઈએ છે') || btnLower.includes('વધુ કૂપન')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
-            if (lastCoupon) { 
-                lastCoupon.buttonClicked = rawBtn; 
-                await lastCoupon.save(); 
-            }
-            
+            if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
             
-            // Extract exact number requested (e.g. "Need 50 coupons" -> 50)
-            let requestCount = 5; 
-            const numberMatch = rawBtn.match(/\d+/);
-            if (numberMatch) {
-                requestCount = parseInt(numberMatch[0]);
-            } else if (btnLower.includes('three') || btnLower.includes('ત્રણ')) {
-                requestCount = 3;
+            // 🚨 SMART CAMPAIGN NAME INHERITANCE
+            let campaignSource = 'Doctor';
+            if (lastCoupon) {
+                if (lastCoupon.source && !lastCoupon.source.toLowerCase().includes('requested')) {
+                    campaignSource = lastCoupon.source;
+                } else {
+                    const originalCoupon = await Coupon.findOne({
+                        doctorPhone: waId,
+                        source: { $exists: true, $not: /requested/i }
+                    }).sort({ createdAt: -1 });
+                    if (originalCoupon && originalCoupon.source) {
+                        campaignSource = originalCoupon.source;
+                    } else {
+                        campaignSource = lastCoupon.audienceType || 'Doctor';
+                    }
+                }
             }
 
-            // 🚨 STRICT ABUSE VALIDATION: Limit to Max 5 coupons!
-            if (requestCount > 5) {
-                requestCount = 5;
-            } else if (requestCount < 1) {
-                requestCount = 1;
-            }
-
-            let newCodes = []; 
-            const expiry = new Date(); 
-            expiry.setMonth(expiry.getMonth() + 1);
-
-            // 🚨 FIX: INHERIT ORIGINAL CAMPAIGN NAME INSTEAD OF 'REQUESTED'
-            let campaignSource = lastCoupon?.source;
-            if (!campaignSource || campaignSource.includes('Requested')) {
-                campaignSource = lastCoupon?.audienceType || 'Doctor';
-            }
-
-            for (let i = 0; i < requestCount; i++) {
+            let newCodes = []; const expiry = new Date(); expiry.setMonth(expiry.getMonth() + 1);
+            for (let i = 0; i < 5; i++) {
                 const c = await generateUniqueCode();
-                await Coupon.create({ 
-                    code: c, 
-                    discountPercentage: discount, 
-                    targetName: lastCoupon?.targetName || 'Requested', 
-                    doctorPhone: waId, 
-                    audienceType: 'Doctor', 
-                    source: campaignSource, // 👈 Saved correct source
-                    expiryDate: expiry, 
-                    proPhone: lastCoupon?.proPhone, 
-                    location: lastCoupon?.location 
-                });
+                await Coupon.create({ code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Requested', doctorPhone: waId, audienceType: 'Doctor', source: campaignSource, expiryDate: expiry, proPhone: lastCoupon?.proPhone, location: lastCoupon?.location });
                 newCodes.push(c);
             }
-            
             let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
             await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
         }
 
         // 6. 🚨 PATIENT CONNECT ASSISTANCE
-        else if (['assistance', 'book my test', 'use the coupon', 'use the cupon'].some(kw => btnLower.includes(kw))) {
+        else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].some(kw => btnLower.includes(kw))) {
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
-            
             if (patientCoupon) {
                 const twoMinsAgo = new Date(Date.now() - 2 * 60000);
                 if (patientCoupon.callStatus === 'Completed' && patientCoupon.updatedAt > twoMinsAgo) return; 
-                patientCoupon.buttonClicked = rawBtn;
-                await patientCoupon.save();
+                patientCoupon.buttonClicked = rawBtn; await patientCoupon.save();
             }
-
             const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
-            
             if (nextAgent) {
-                nextAgent.lastCalledAt = new Date();
-                await nextAgent.save();
-
+                nextAgent.lastCalledAt = new Date(); await nextAgent.save();
                 try {
-                    const tataAgentNumber = formatTataNumber(nextAgent.phone);
-                    const tataDestNumber = formatTataNumber(waId);
-
-                    await axios.post(TATA_URL, {
-                        agent_number: tataAgentNumber, destination_number: tataDestNumber, caller_id: CALLER_ID
-                    }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
-
-                    if (patientCoupon) {
-                        patientCoupon.agentAssigned = nextAgent.name;
-                        patientCoupon.callStatus = 'Completed'; 
-                        await patientCoupon.save();
-                    }
-
-                    if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) {
-                        await sendWatiMessage(waId, 'patient_thankyou', []);
-                    } else {
-                        await sendWatiMessage(waId, 'sales_call_ack_template', []);
-                    }
-
+                    await axios.post(TATA_URL, { agent_number: formatTataNumber(nextAgent.phone), destination_number: formatTataNumber(waId), caller_id: CALLER_ID }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
+                    if (patientCoupon) { patientCoupon.agentAssigned = nextAgent.name; patientCoupon.callStatus = 'Completed'; await patientCoupon.save(); }
+                    if (btnLower.includes('use the coupon') || btnLower.includes('use the cupon')) await sendWatiMessage(waId, 'patient_thankyou', []); else await sendWatiMessage(waId, 'sales_call_ack_template', []);
                 } catch (tataError) {
-                    if (patientCoupon) {
-                        patientCoupon.agentAssigned = nextAgent.name;
-                        patientCoupon.callStatus = 'Failed'; 
-                        await patientCoupon.save();
-                    }
+                    if (patientCoupon) { patientCoupon.agentAssigned = nextAgent.name; patientCoupon.callStatus = 'Failed'; await patientCoupon.save(); }
                 }
             } else {
-                 if (patientCoupon) {
-                     patientCoupon.callStatus = 'Pending'; 
-                     await patientCoupon.save();
-                 }
+                 if (patientCoupon) { patientCoupon.callStatus = 'Pending'; await patientCoupon.save(); }
             }
         }
     } catch (error) {
-        console.error("Webhook Internal Logic Error:", error);
+        console.error("Webhook Error:", error);
     }
 });
 
@@ -872,8 +823,6 @@ app.post('/api/coupon/validate', async (req, res) => {
         if (!coupon) return res.status(404).json({ valid: false, message: "Invalid Code!" });
         if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Already redeemed!" });
         if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "Expired!" });
-        
-        // 🚨 RETURN CAMPAIGN NAME FOR BIG TEXT UI
         res.json({ 
             valid: true, 
             discount: coupon.discountPercentage, 
@@ -890,48 +839,17 @@ app.post('/api/coupon/redeem', async (req, res) => {
         const coupon = await Coupon.findOne({ code });
         if (!coupon || coupon.isUsed) return res.status(400).json({ success: false });
 
-        coupon.isUsed = true;
-        coupon.redeemedAt = new Date();
-        coupon.branchRedeemed = branch;
-        coupon.patientRegNo = patientRegNo; 
+        coupon.isUsed = true; coupon.redeemedAt = new Date(); coupon.branchRedeemed = branch; coupon.patientRegNo = patientRegNo; 
         await coupon.save();
-
-        await logActivity(branch || 'Reception Panel', 'COUPON REDEEMED', `Code ${code} redeemed (Reg No: ${patientRegNo || 'N/A'})`);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
-app.get('/api/agents', async (req, res) => {
-    const agents = await Agent.find().sort({ name: 1 });
-    res.json(agents);
-});
-
-app.post('/api/agents/toggle', async (req, res) => {
-    await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline });
-    res.json({ success: true });
-});
-
-app.get('/api/admin/dashboard-stats', async (req, res) => {
-    const total = await Coupon.countDocuments();
-    const redeemed = await Coupon.countDocuments({ isUsed: true });
-    res.json({ totalSent: total, usedCount: redeemed });
-});
-
-app.get('/api/admin/logs', async (req, res) => {
-    const isExport = req.query.export === 'true';
-    let query = Coupon.find().sort({ createdAt: -1 });
-    if (!isExport) {
-        query = query.limit(10000); 
-    }
-    const logs = await query.exec();
-    res.json(logs);
-});
-
-app.get('/api/user/redeemed-today', async (req, res) => {
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const logs = await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 });
-    res.json(logs);
-});
+app.get('/api/agents', async (req, res) => { res.json(await Agent.find().sort({ name: 1 })); });
+app.post('/api/agents/toggle', async (req, res) => { await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline }); res.json({ success: true }); });
+app.get('/api/admin/dashboard-stats', async (req, res) => { res.json({ totalSent: await Coupon.countDocuments(), usedCount: await Coupon.countDocuments({ isUsed: true }) }); });
+app.get('/api/admin/logs', async (req, res) => { let query = Coupon.find().sort({ createdAt: -1 }); if (req.query.export !== 'true') query = query.limit(10000); res.json(await query.exec()); });
+app.get('/api/user/redeemed-today', async (req, res) => { const start = new Date(); start.setHours(0, 0, 0, 0); res.json(await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 })); });
 
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
