@@ -264,12 +264,11 @@ app.delete('/api/templates/:id', async (req, res) => {
 });
 
 // -----------------------------------------
-// SHOOT CAMPAIGN API (SMART BACKGROUND QUEUE)
+// SHOOT CAMPAIGN API (WITH ADVANCED SCHEDULER & SMART BUFFER FIX)
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
-        // 🚨 ADDED campaignName HERE
-        const { targetList, discount, expiryDate, audienceType, isDynamic, dynamicTemplateId, scheduleTime, campaignName } = req.body;
+        const { targetList, discount, expiryDate, audienceType, isDynamic, dynamicTemplateId, scheduleTime } = req.body;
         const formattedDate = new Date(expiryDate).toLocaleDateString('en-GB');
         
         let delayMs = 0;
@@ -284,11 +283,12 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             const diffMs = targetSchedule.getTime() - istNow.getTime();
 
+            // 🚨 SMART BUFFER: Agar time 5 minute past ho chuka hai tabhi usko kal par push karo.
             if (diffMs < -(5 * 60 * 1000)) { 
                 targetSchedule.setDate(targetSchedule.getDate() + 1); 
                 delayMs = targetSchedule.getTime() - istNow.getTime();
             } else if (diffMs < 0) {
-                delayMs = 0; 
+                delayMs = 0; // Shoot immediately if within 5 mins past
             } else {
                 delayMs = diffMs; 
             }
@@ -297,12 +297,12 @@ app.post('/api/campaign/shoot', async (req, res) => {
         if (delayMs > 0) {
             res.json({ success: true, message: `Campaign successfully scheduled in background!` });
             setTimeout(() => {
-                processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId, campaignName);
+                processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId);
             }, delayMs);
-            await logActivity('Scheduler', 'CAMPAIGN QUEUED', `Scheduled campaign for ${targetList.length} targets.`);
+            await logActivity('Scheduler', 'CAMPAIGN QUEUED', `Scheduled campaign for ${targetList.length} targets to run in ${Math.round(delayMs / 60000)} mins.`);
         } else {
             res.json({ success: true, message: `Campaign for ${targetList.length} contacts started safely in background!` });
-            processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId, campaignName);
+            processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId);
         }
 
     } catch (error) {
@@ -310,7 +310,7 @@ app.post('/api/campaign/shoot', async (req, res) => {
     }
 });
 
-async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId, campaignName) {
+async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId) {
     let validCount = 0; 
     let successCount = 0; 
     let failCount = 0;
@@ -333,7 +333,6 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                 location: target.location || 'Ahmedabad', 
                 proPhone: cleanProPhone, 
                 audienceType: audienceType, 
-                source: campaignName || audienceType, // 🚨 SAVING EXACT CAMPAIGN NAME FOR BIG TEXT UI
                 expiryDate: new Date(expiryDate)
             });
 
@@ -341,6 +340,7 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
             let params = [];
             const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
 
+            // 🚨 IF IT'S A NEW DYNAMIC CAMPAIGN
             if (isDynamic && dynamicTemplateId) {
                 templateName = dynamicTemplateId;
                 params = [ 
@@ -348,7 +348,9 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                     { name: '2', value: code.toString() }, 
                     { name: '3', value: formattedDate.toString() } 
                 ];
-            } else {
+            } 
+            // 🚨 IF IT'S THE OLD SYSTEM (Safe & Untouched)
+            else {
                 const templateMap = {
                     'Doctor_10': 'temp_10_doctor_coupon', 
                     'Doctor_20': 'temp_20_doctor_coupon', 
@@ -460,13 +462,20 @@ app.get('/api/sales/questions', async (req, res) => { res.json(await SalesQuesti
 app.post('/api/sales/questions', async (req, res) => { const { keyword, team, time, questions } = req.body; await SalesQuestion.findOneAndUpdate({ keyword }, { keyword, team, time, questions }, { upsert: true, new: true }); res.json({ success: true });});
 app.delete('/api/sales/questions/:id', async (req, res) => { await SalesQuestion.findByIdAndDelete(req.params.id); res.json({ success: true }); });
 
+// --- Tracker API ---
 app.get('/api/sales/tracker', async (req, res) => {
     const { from, to } = req.query;
     let targetDates = [];
     if (from && to) {
-        let curr = new Date(from); const end = new Date(to);
-        while (curr <= end) { targetDates.push(getIndianDateStr(curr)); curr.setDate(curr.getDate() + 1); }
-    } else { targetDates = [getIndianDateStr()]; }
+        let curr = new Date(from); 
+        const end = new Date(to);
+        while (curr <= end) { 
+            targetDates.push(getIndianDateStr(curr)); 
+            curr.setDate(curr.getDate() + 1); 
+        }
+    } else { 
+        targetDates = [getIndianDateStr()]; 
+    }
 
     const logs = await SalesLog.find({ dateStr: { $in: targetDates } });
     const allBots = await SalesQuestion.find();
@@ -546,7 +555,7 @@ app.post('/api/sales/sync-history', async (req, res) => {
         if (rawAnswers.length > 0) {
             log.answers = rawAnswers;
             await log.save();
-            return res.json({ success: true, message: `Perfect! History se ${rawAnswers.length} answers recover kar liye gaye.` });
+            return res.json({ success: true, message: `Successfully synchronized ${rawAnswers.length} answers from backlog.` });
         } else {
             return res.json({ success: false, message: "Koi nayi answers history mein nahi mili." });
         }
@@ -647,7 +656,6 @@ app.post('/api/wati/webhook', async (req, res) => {
         const phone10 = waId.replace(/\D/g, '').slice(-10);
         const couponRegex = new RegExp(phone10 + '$');
 
-        // 1. 🚨 RATING LOGIC
         if (btnLower.includes('rate this initiative') || btnLower.includes('આ પહેલને રેટ કરો')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
@@ -661,8 +669,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                 if (lastCoupon) { lastCoupon.rating = ratingValue; lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); await sendWatiTextMessage(waId, "Thank you! 🙏"); }
             }
         }
-        
-        // 2. 🚨 SMART SALES TEAM CALL CATCHER
         else if (
             (btnLower.includes('sales team') && btnLower.includes('call')) ||
             btnLower.includes('connect with doctor') || 
@@ -671,67 +677,51 @@ app.post('/api/wati/webhook', async (req, res) => {
             btnLower.includes('details about cbct')
         ) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
-            if (lastCoupon) {
+            if (lastCoupon && lastCoupon.proPhone) {
                 const twoMinsAgo = new Date(Date.now() - 2 * 60000);
                 if (lastCoupon.callStatus === 'Pending' && lastCoupon.updatedAt > twoMinsAgo) return; 
 
-                lastCoupon.requestCallAt = new Date(); 
-                lastCoupon.callStatus = 'Pending'; 
-                lastCoupon.buttonClicked = rawBtn; 
-                await lastCoupon.save();
-                
+                lastCoupon.requestCallAt = new Date(); lastCoupon.callStatus = 'Pending'; lastCoupon.buttonClicked = rawBtn; await lastCoupon.save();
                 const discountValue = lastCoupon.discountPercentage === 'CBCT' ? 'CBCT Service' : `${lastCoupon.discountPercentage}%`;
 
-                if (lastCoupon.proPhone) {
-                    if (lastCoupon.audienceType === 'Dental' || lastCoupon.audienceType === 'CGHS_Dental' || lastCoupon.discountPercentage === 'CBCT') {
-                        await sendWatiMessage(lastCoupon.proPhone, 'pro_doc_dental_notify', [{ name: "1", value: lastCoupon.targetName || "Doctor" }, { name: "2", value: `+${lastCoupon.doctorPhone}` }, { name: "3", value: discountValue }, { name: "4", value: lastCoupon.code }]);
-                    } else {
-                        await sendWatiMessage(lastCoupon.proPhone, 'doc_temp_discount_pro_message', [{ name: "1", value: `+${lastCoupon.doctorPhone}` }, { name: "2", value: discountValue }, { name: "3", value: lastCoupon.code }]);
+                if (lastCoupon.audienceType === 'Dental' || lastCoupon.audienceType === 'CGHS_Dental' || lastCoupon.discountPercentage === 'CBCT') {
+                    await sendWatiMessage(lastCoupon.proPhone, 'pro_doc_dental_notify', [{ name: "1", value: lastCoupon.targetName || "Doctor" }, { name: "2", value: `+${lastCoupon.doctorPhone}` }, { name: "3", value: discountValue }, { name: "4", value: lastCoupon.code }]);
+                } else {
+                    await sendWatiMessage(lastCoupon.proPhone, 'doc_temp_discount_pro_message', [{ name: "1", value: `+${lastCoupon.doctorPhone}` }, { name: "2", value: discountValue }, { name: "3", value: lastCoupon.code }]);
+                }
+
+                // 🚨 VIP PRO AUTO-CALL ROUTING (STRICT CHECK FROM CSV DATA)
+                const formattedProPhone = formatTataNumber(lastCoupon.proPhone);
+                if (formattedProPhone === '918980776879' || formattedProPhone === '919737900092') {
+                    try {
+                        const tataDestNumber = formatTataNumber(waId);
+                        await axios.post(TATA_URL, {
+                            agent_number: formattedProPhone,
+                            destination_number: tataDestNumber,
+                            caller_id: CALLER_ID
+                        }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
+                        await logActivity('System Webhook', 'VIP PRO CALL TRIGGERED', `Connecting PRO ${formattedProPhone} directly to Doctor ${tataDestNumber}`);
+                    } catch (tataError) {
+                        const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
+                        await logActivity('System Webhook', 'VIP PRO CALL FAILED', `Tata API Error: ${errMsg}`);
                     }
                 }
                 
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
         }
-
-        // 3. 🚨 REFERRAL BOOKS
         else if (btnLower.includes('referral') || btnLower.includes('book')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon && lastCoupon.proPhone) {
-                lastCoupon.buttonClicked = rawBtn; 
-                await lastCoupon.save();
-                
+                lastCoupon.buttonClicked = rawBtn; await lastCoupon.save();
                 await sendWatiMessage(lastCoupon.proPhone, 'pro_referral_alert', [{ name: "1", value: lastCoupon.targetName || "Doctor" }, { name: "2", value: `+${lastCoupon.doctorPhone}` }]);
                 await sendWatiTextMessage(waId, "Thank you! 🙏 Our PRO will deliver the UIC Referral Books to your clinic very soon.");
             }
         }
-
-        // 4. 🚨 EXACT MATCH 3 COUPONS LOGIC
-        else if (btnLower.includes('3') && btnLower.includes('coupon')) {
+        else if (btnLower.includes('need 3 more coupon') || btnLower.includes('need more 3 coupon') || btnLower.includes('3 coupon')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
-            if (lastCoupon) { 
-                lastCoupon.buttonClicked = rawBtn; 
-                await lastCoupon.save(); 
-            }
+            if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
-            
-            // 🚨 SMART CAMPAIGN NAME INHERITANCE
-            let campaignSource = 'Doctor';
-            if (lastCoupon) {
-                if (lastCoupon.source && !lastCoupon.source.toLowerCase().includes('requested')) {
-                    campaignSource = lastCoupon.source;
-                } else {
-                    const originalCoupon = await Coupon.findOne({
-                        doctorPhone: waId,
-                        source: { $exists: true, $not: /requested/i }
-                    }).sort({ createdAt: -1 });
-                    if (originalCoupon && originalCoupon.source) {
-                        campaignSource = originalCoupon.source;
-                    } else {
-                        campaignSource = lastCoupon.audienceType || 'Doctor';
-                    }
-                }
-            }
             
             let newCodes = []; 
             const expiry = new Date(); 
@@ -741,7 +731,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 const c = await generateUniqueCode();
                 await Coupon.create({ 
                     code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Requested', 
-                    doctorPhone: waId, audienceType: 'Doctor', source: campaignSource, expiryDate: expiry, 
+                    doctorPhone: waId, audienceType: 'Doctor', source: 'Requested 3', expiryDate: expiry, 
                     proPhone: lastCoupon?.proPhone, location: lastCoupon?.location 
                 });
                 newCodes.push(c);
@@ -749,44 +739,20 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
             await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
-            await logActivity('System Webhook', '3 COUPONS REQUESTED', `Sent EXACTLY 3 codes of ${discountText} to ${waId}`);
         }
-
-        // 5. 🚨 GENERAL 5 COUPONS FALLBACK
         else if (btnLower.includes('more coupon') || btnLower.includes('મને વધુ કૂપન જોઈએ છે') || btnLower.includes('વધુ કૂપન')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
-            
-            // 🚨 SMART CAMPAIGN NAME INHERITANCE
-            let campaignSource = 'Doctor';
-            if (lastCoupon) {
-                if (lastCoupon.source && !lastCoupon.source.toLowerCase().includes('requested')) {
-                    campaignSource = lastCoupon.source;
-                } else {
-                    const originalCoupon = await Coupon.findOne({
-                        doctorPhone: waId,
-                        source: { $exists: true, $not: /requested/i }
-                    }).sort({ createdAt: -1 });
-                    if (originalCoupon && originalCoupon.source) {
-                        campaignSource = originalCoupon.source;
-                    } else {
-                        campaignSource = lastCoupon.audienceType || 'Doctor';
-                    }
-                }
-            }
-
             let newCodes = []; const expiry = new Date(); expiry.setMonth(expiry.getMonth() + 1);
             for (let i = 0; i < 5; i++) {
                 const c = await generateUniqueCode();
-                await Coupon.create({ code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Requested', doctorPhone: waId, audienceType: 'Doctor', source: campaignSource, expiryDate: expiry, proPhone: lastCoupon?.proPhone, location: lastCoupon?.location });
+                await Coupon.create({ code: c, discountPercentage: discount, targetName: lastCoupon?.targetName || 'Requested', doctorPhone: waId, audienceType: 'Doctor', source: 'Requested', expiryDate: expiry, proPhone: lastCoupon?.proPhone, location: lastCoupon?.location });
                 newCodes.push(c);
             }
             let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
             await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
         }
-
-        // 6. 🚨 PATIENT CONNECT ASSISTANCE
         else if (['need more assistance', 'looking for more assistance', 'book my test', 'i will use the coupon', 'i will use the cupon'].some(kw => btnLower.includes(kw))) {
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (patientCoupon) {
@@ -808,9 +774,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                  if (patientCoupon) { patientCoupon.callStatus = 'Pending'; await patientCoupon.save(); }
             }
         }
-    } catch (error) {
-        console.error("Webhook Error:", error);
-    }
+    } catch (error) {}
 });
 
 // -----------------------------------------
@@ -823,13 +787,7 @@ app.post('/api/coupon/validate', async (req, res) => {
         if (!coupon) return res.status(404).json({ valid: false, message: "Invalid Code!" });
         if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Already redeemed!" });
         if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "Expired!" });
-        res.json({ 
-            valid: true, 
-            discount: coupon.discountPercentage, 
-            name: coupon.targetName || 'Unknown', 
-            type: coupon.audienceType,
-            campaignName: coupon.source || coupon.audienceType 
-        });
+        res.json({ valid: true, discount: coupon.discountPercentage, name: coupon.targetName || 'Unknown', type: coupon.audienceType });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
