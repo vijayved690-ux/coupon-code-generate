@@ -57,7 +57,7 @@ mongoose.connect(process.env.MONGODB_URI)
             }
         }
 
-        // 🚨 AUTO-SEED INITIAL SALES TEAM (Makes it dynamic from now on)
+        // 🚨 AUTO-SEED INITIAL SALES TEAM
         if ((await SalesPerson.countDocuments()) === 0) {
             const initialSalesTeam = [
                 { name: "ALPESH ROHIT", phone: "919574767971", team: "SS" },
@@ -76,7 +76,6 @@ mongoose.connect(process.env.MONGODB_URI)
                 { name: "YOGESH SOLANKI", phone: "916352950760", team: "B" }
             ];
             await SalesPerson.insertMany(initialSalesTeam);
-            console.log("Seeded Initial Sales Team into DB.");
         }
 
         // 🚨 AUTO-SEED INITIAL BOTS
@@ -90,7 +89,6 @@ mongoose.connect(process.env.MONGODB_URI)
                 { keyword: "B79", team: "B", time: "19:00", questions: [] }
             ];
             await SalesQuestion.insertMany(initialBots);
-            console.log("Seeded Initial Bot Configurations into DB.");
         }
 
     })
@@ -103,20 +101,27 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 SMART DELAY FUNCTION (Best for 3000+ shoots)
+// 🚨 MANUAL PRO MAPPING (Hardcoded as requested)
+const MANUAL_PRO_MAP = {
+    '917490029085': 'Khyati',
+    '919558591212': 'Mital',
+    '918488931212': 'Aditi',
+    '919274682553': 'Jay',
+    '918980776879': 'Sandip Upadhyay',
+    '919737900092': 'Hardik Parikh'
+};
+
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// 🚨 STRICT IST DATE FUNCTION (Fix for Server UTC vs India Time)
 function getIndianDateStr(dateObj = new Date()) {
     const utc = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
-    const ist = new Date(utc + (3600000 * 5.5)); // +5:30 for India
+    const ist = new Date(utc + (3600000 * 5.5)); 
     const y = ist.getFullYear();
     const m = String(ist.getMonth() + 1).padStart(2, '0');
     const d = String(ist.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
 }
 
-// 🚨 TIME CALCULATION FOR DELAY TRACKING
 function getScheduledTime(dateStr, timeStr) {
     if(!timeStr) return Date.now();
     const [year, month, day] = dateStr.split('-');
@@ -163,17 +168,13 @@ async function sendWatiTextMessage(phone, text) {
         await axios.post(`${process.env.WATI_API_ENDPOINT}/api/v1/sendSessionMessage/${phone}?messageText=${encodeURIComponent(text)}`, {}, {
             headers: { 'Authorization': `Bearer ${process.env.WATI_BEARER_TOKEN}` }
         });
-    } catch (err) {
-        console.error(`WATI Text Error for ${phone}:`, err.message);
-    }
+    } catch (err) {}
 }
 
 async function logActivity(user, action, details) {
     try {
         await Activity.create({ user, action, details });
-    } catch (e) {
-        console.error('Logging Error:', e);
-    }
+    } catch (e) {}
 }
 
 // -----------------------------------------
@@ -211,7 +212,6 @@ app.get('/api/admin/activity-logs', async (req, res) => {
     res.json(logs);
 });
 
-// 🚨 DEMO CSV API ROUTE 🚨
 app.get('/api/download-demo-csv', (req, res) => {
     const csvContent = "name,phone,location,proNumber\nDr. Amit Shah,919876543210,Usmanpura,917600082217\nDr. Sneha Dental Clinic,918888888888,Ahmedabad,917043001130";
     res.header('Content-Type', 'text/csv');
@@ -219,10 +219,8 @@ app.get('/api/download-demo-csv', (req, res) => {
     return res.send(csvContent);
 });
 
-// 🚨 SYSTEM HEALTH API FOR MEMORY WARNING
 app.get('/api/admin/system-health', async (req, res) => {
     const dbSize = await mongoose.connection.db.stats();
-    // Setting warning at 400MB
     const isMemoryFull = (dbSize.dataSize > 400 * 1024 * 1024); 
     res.json({ isMemoryFull, sizeMB: (dbSize.dataSize / (1024*1024)).toFixed(2) });
 });
@@ -263,7 +261,7 @@ app.delete('/api/templates/:id', async (req, res) => {
 });
 
 // -----------------------------------------
-// SHOOT CAMPAIGN API (WITH ADVANCED SCHEDULER & SMART BUFFER FIX)
+// SHOOT CAMPAIGN API
 // -----------------------------------------
 app.post('/api/campaign/shoot', async (req, res) => {
     try {
@@ -282,12 +280,11 @@ app.post('/api/campaign/shoot', async (req, res) => {
 
             const diffMs = targetSchedule.getTime() - istNow.getTime();
 
-            // 🚨 SMART BUFFER: Agar time 5 minute past ho chuka hai tabhi usko kal par push karo.
             if (diffMs < -(5 * 60 * 1000)) { 
                 targetSchedule.setDate(targetSchedule.getDate() + 1); 
                 delayMs = targetSchedule.getTime() - istNow.getTime();
             } else if (diffMs < 0) {
-                delayMs = 0; // Shoot immediately if within 5 mins past
+                delayMs = 0; 
             } else {
                 delayMs = diffMs; 
             }
@@ -298,15 +295,13 @@ app.post('/api/campaign/shoot', async (req, res) => {
             setTimeout(() => {
                 processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId, campaignName);
             }, delayMs);
-            await logActivity('Scheduler', 'CAMPAIGN QUEUED', `Scheduled campaign for ${targetList.length} targets to run in ${Math.round(delayMs / 60000)} mins.`);
+            await logActivity('Scheduler', 'CAMPAIGN QUEUED', `Scheduled campaign for ${targetList.length} targets.`);
         } else {
             res.json({ success: true, message: `Campaign for ${targetList.length} contacts started safely in background!` });
             processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId, campaignName);
         }
 
-    } catch (error) {
-        console.error("Shoot API Error:", error);
-    }
+    } catch (error) {}
 });
 
 async function processCampaignInBackground(targetList, discount, expiryDate, audienceType, formattedDate, isDynamic, dynamicTemplateId, campaignName) {
@@ -340,7 +335,6 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
             let params = [];
             const safeName = (target.name && target.name.toString().trim() !== '') ? target.name.toString().trim() : 'Doctor';
 
-            // 🚨 IF IT'S A NEW DYNAMIC CAMPAIGN
             if (isDynamic && dynamicTemplateId) {
                 templateName = dynamicTemplateId;
                 params = [ 
@@ -348,9 +342,7 @@ async function processCampaignInBackground(targetList, discount, expiryDate, aud
                     { name: '2', value: code.toString() }, 
                     { name: '3', value: formattedDate.toString() } 
                 ];
-            } 
-            // 🚨 IF IT'S THE OLD SYSTEM (Safe & Untouched)
-            else {
+            } else {
                 const templateMap = {
                     'Doctor_10': 'temp_10_doctor_coupon', 
                     'Doctor_20': 'temp_20_doctor_coupon', 
@@ -409,7 +401,6 @@ app.get('/api/trigger-call/:code', async (req, res) => {
             return res.send(`
                 <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
                     <h2 style="color: red;">❌ Invalid Link!</h2>
-                    <p>Request not found in database.</p>
                 </div>
             `);
         }
@@ -422,34 +413,13 @@ app.get('/api/trigger-call/:code', async (req, res) => {
         await logActivity('Link Trigger', 'PRO DIALER OPENED', `PRO clicked to call Doctor +${doctorNumber}`);
 
         res.send(`
-            <html lang="en">
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>Opening Dialer...</title>
-            </head>
-            <body style="font-family: sans-serif; text-align: center; margin-top: 50px; background: #f0fdf4;">
-                <h1 style="color: #16a34a;">📞 Opening Dialer...</h1>
-                <p>Redirecting to call <b>+${doctorNumber}</b></p>
-                <p style="font-size: 14px; color: #555; margin-top: 20px;">
-                    If the dialer doesn't open automatically, <br><br>
-                    <a href="tel:+${doctorNumber}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Click Here to Call</a>
-                </p>
-                <script>
-                    window.location.href = "tel:+${doctorNumber}"; 
-                    setTimeout(() => { window.close(); }, 3000);
-                </script>
-            </body>
-            </html>
+            <script>
+                window.location.href = "tel:+${doctorNumber}"; 
+                setTimeout(() => { window.close(); }, 3000);
+            </script>
         `);
-    } catch (error) {
-        res.send(`
-            <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
-                <h2 style="color: red;">❌ Error Connecting Call</h2>
-            </div>
-        `);
-    }
+    } catch (error) {}
 });
-
 
 // -----------------------------------------
 // 🚨 DYNAMIC SALES BOT APIs
@@ -462,14 +432,19 @@ app.get('/api/sales/questions', async (req, res) => { res.json(await SalesQuesti
 app.post('/api/sales/questions', async (req, res) => { const { keyword, team, time, questions } = req.body; await SalesQuestion.findOneAndUpdate({ keyword }, { keyword, team, time, questions }, { upsert: true, new: true }); res.json({ success: true });});
 app.delete('/api/sales/questions/:id', async (req, res) => { await SalesQuestion.findByIdAndDelete(req.params.id); res.json({ success: true }); });
 
-// --- Tracker API ---
 app.get('/api/sales/tracker', async (req, res) => {
     const { from, to } = req.query;
     let targetDates = [];
     if (from && to) {
-        let curr = new Date(from); const end = new Date(to);
-        while (curr <= end) { targetDates.push(getIndianDateStr(curr)); curr.setDate(curr.getDate() + 1); }
-    } else { targetDates = [getIndianDateStr()]; }
+        let curr = new Date(from + "T00:00:00"); 
+        const end = new Date(to + "T23:59:59");
+        while (curr <= end) { 
+            targetDates.push(getIndianDateStr(curr)); 
+            curr.setDate(curr.getDate() + 1); 
+        }
+    } else { 
+        targetDates = [getIndianDateStr()]; 
+    }
 
     const logs = await SalesLog.find({ dateStr: { $in: targetDates } });
     const allBots = await SalesQuestion.find();
@@ -650,6 +625,7 @@ app.post('/api/wati/webhook', async (req, res) => {
         const phone10 = waId.replace(/\D/g, '').slice(-10);
         const couponRegex = new RegExp(phone10 + '$');
 
+        // 1. 🚨 RATING LOGIC
         if (btnLower.includes('rate this initiative') || btnLower.includes('આ પહેલને રેટ કરો')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
@@ -664,7 +640,7 @@ app.post('/api/wati/webhook', async (req, res) => {
             }
         }
         
-        // 🚨 1. SMART PRO CALL ROUTING FIX (No hardcoded VIPs) 🚨
+        // 2. 🚨 SMART SALES TEAM CALL CATCHER (WITH AUTO-CALL ROUTING)
         else if (
             (btnLower.includes('sales team') && btnLower.includes('call')) ||
             btnLower.includes('connect with doctor') || 
@@ -685,14 +661,13 @@ app.post('/api/wati/webhook', async (req, res) => {
                 const discountValue = lastCoupon.discountPercentage === 'CBCT' ? 'CBCT Service' : `${lastCoupon.discountPercentage}%`;
 
                 if (lastCoupon.proPhone) {
-                    // Send WhatsApp alert to the assigned PRO
                     if (lastCoupon.audienceType === 'Dental' || lastCoupon.audienceType === 'CGHS_Dental' || lastCoupon.discountPercentage === 'CBCT') {
                         await sendWatiMessage(lastCoupon.proPhone, 'pro_doc_dental_notify', [{ name: "1", value: lastCoupon.targetName || "Doctor" }, { name: "2", value: `+${lastCoupon.doctorPhone}` }, { name: "3", value: discountValue }, { name: "4", value: lastCoupon.code }]);
                     } else {
                         await sendWatiMessage(lastCoupon.proPhone, 'doc_temp_discount_pro_message', [{ name: "1", value: `+${lastCoupon.doctorPhone}` }, { name: "2", value: discountValue }, { name: "3", value: lastCoupon.code }]);
                     }
                     
-                    // 🚨 DYNAMIC TATA SMARTFLO AUTO-CALL TRIGGER (For whoever is assigned in CSV)
+                    // 🚨 DYNAMIC TATA SMARTFLO AUTO-CALL TRIGGER (For ANY PRO)
                     try {
                         const tataAgentNumber = formatTataNumber(lastCoupon.proPhone);
                         const tataDestNumber = formatTataNumber(waId);
@@ -705,10 +680,11 @@ app.post('/api/wati/webhook', async (req, res) => {
                             }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
                             
                             // Let the system know call has been initiated correctly via Tata
-                            lastCoupon.callStatus = 'Call Done';
+                            lastCoupon.callStatus = 'Completed'; // Maps to "Call Done" in UI
                             await lastCoupon.save();
                             
-                            await logActivity('System Webhook', 'DYNAMIC PRO CALL TRIGGERED', `Connecting PRO ${tataAgentNumber} directly to Doctor/Chemist ${tataDestNumber}`);
+                            const proName = MANUAL_PRO_MAP[tataAgentNumber] || tataAgentNumber;
+                            await logActivity('System Webhook', 'DYNAMIC PRO CALL TRIGGERED', `Connecting PRO ${proName} directly to Doctor/Chemist ${tataDestNumber}`);
                         }
                     } catch (tataError) {
                         const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
@@ -717,7 +693,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                         lastCoupon.callStatus = 'Failed (No Answer)';
                         await lastCoupon.save();
                         
-                        await logActivity('System Webhook', 'DYNAMIC PRO CALL FAILED', `Tata API Error / No Answer: ${errMsg}`);
+                        const proName = MANUAL_PRO_MAP[formatTataNumber(lastCoupon.proPhone)] || lastCoupon.proPhone;
+                        await logActivity('System Webhook', 'DYNAMIC PRO CALL FAILED', `Tata API Error / No Answer for ${proName}: ${errMsg}`);
                     }
                 } else {
                     lastCoupon.callStatus = 'Failed (No Answer)';
@@ -728,6 +705,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
         }
+
+        // 3. 🚨 REFERRAL BOOKS
         else if (btnLower.includes('referral') || btnLower.includes('book')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon && lastCoupon.proPhone) {
@@ -736,9 +715,20 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await sendWatiTextMessage(waId, "Thank you! 🙏 Our PRO will deliver the UIC Referral Books to your clinic very soon.");
             }
         }
-        else if (btnLower.includes('need 3 more coupon') || btnLower.includes('need more 3 coupon') || btnLower.includes('3 coupon')) {
+
+        // 4. 🚨 EXACT MATCH 3 COUPONS LOGIC
+        else if (
+            btnLower === 'need 3 more coupons' || 
+            btnLower === 'need more 3 coupons' || 
+            btnLower.includes('need 3 more') || 
+            btnLower.includes('need more 3') || 
+            (btnLower.includes('3') && (btnLower.includes('more') || btnLower.includes('coupon')))
+        ) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
-            if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
+            if (lastCoupon) { 
+                lastCoupon.buttonClicked = rawBtn; 
+                await lastCoupon.save(); 
+            }
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
             
             let campaignSource = 'Doctor';
@@ -769,9 +759,15 @@ app.post('/api/wati/webhook', async (req, res) => {
             let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
             await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
         }
-        else if (btnLower.includes('more coupon') || btnLower.includes('મને વધુ કૂપન જોઈએ છે') || btnLower.includes('વધુ કૂપન')) {
+
+        // 5. 🚨 GENERAL COUPON FALLBACK (WITH MAX 5 CAP & DYNAMIC NUMBER EXTRACTION)
+        else if (btnLower.includes('more coupon') || btnLower.includes('મને વધુ કૂપન જોઈએ છે') || btnLower.includes('વધુ કૂપન') || btnLower.includes('coupon') || btnLower.includes('કૂપન')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
-            if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
+            if (lastCoupon) { 
+                lastCoupon.buttonClicked = rawBtn; 
+                await lastCoupon.save(); 
+            }
+            
             const discount = lastCoupon ? lastCoupon.discountPercentage : 30;
             
             let requestCount = 5; 
@@ -802,6 +798,8 @@ app.post('/api/wati/webhook', async (req, res) => {
             let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
             await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
         }
+
+        // 6. 🚨 PATIENT CONNECT ASSISTANCE
         else if (['assistance', 'book my test', 'use the coupon', 'use the cupon'].some(kw => btnLower.includes(kw))) {
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (patientCoupon) {
@@ -826,6 +824,9 @@ app.post('/api/wati/webhook', async (req, res) => {
     } catch (error) {}
 });
 
+// -----------------------------------------
+// Dashboard & Validation APIs
+// -----------------------------------------
 app.post('/api/coupon/validate', async (req, res) => {
     try {
         const { code } = req.body;
@@ -853,7 +854,6 @@ app.get('/api/agents', async (req, res) => { res.json(await Agent.find().sort({ 
 app.post('/api/agents/toggle', async (req, res) => { await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline }); res.json({ success: true }); });
 app.get('/api/admin/dashboard-stats', async (req, res) => { res.json({ totalSent: await Coupon.countDocuments(), usedCount: await Coupon.countDocuments({ isUsed: true }) }); });
 
-// 🚨 ADMIN BROWSER HANG FIX (Limit fetch to latest 1500 to keep UI extremely fast)
 app.get('/api/admin/logs', async (req, res) => { 
     const isExport = req.query.export === 'true';
     let query = Coupon.find().sort({ createdAt: -1 }); 
