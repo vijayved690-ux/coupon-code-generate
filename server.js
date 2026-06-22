@@ -101,7 +101,7 @@ mongoose.connect(process.env.MONGODB_URI)
 const TATA_URL = "https://api-smartflo.tatateleservices.com/v1/click_to_call";
 const CALLER_ID = "07969690921"; 
 
-// 🚨 MANUAL PRO MAPPING (Hardcoded as requested)
+// 🚨 MANUAL PRO MAPPING
 const MANUAL_PRO_MAP = {
     '917490029085': 'Khyati',
     '919558591212': 'Mital',
@@ -401,6 +401,7 @@ app.get('/api/trigger-call/:code', async (req, res) => {
             return res.send(`
                 <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
                     <h2 style="color: red;">❌ Invalid Link!</h2>
+                    <p>Request not found in database.</p>
                 </div>
             `);
         }
@@ -413,13 +414,34 @@ app.get('/api/trigger-call/:code', async (req, res) => {
         await logActivity('Link Trigger', 'PRO DIALER OPENED', `PRO clicked to call Doctor +${doctorNumber}`);
 
         res.send(`
-            <script>
-                window.location.href = "tel:+${doctorNumber}"; 
-                setTimeout(() => { window.close(); }, 3000);
-            </script>
+            <html lang="en">
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Opening Dialer...</title>
+            </head>
+            <body style="font-family: sans-serif; text-align: center; margin-top: 50px; background: #f0fdf4;">
+                <h1 style="color: #16a34a;">📞 Opening Dialer...</h1>
+                <p>Redirecting to call <b>+${doctorNumber}</b></p>
+                <p style="font-size: 14px; color: #555; margin-top: 20px;">
+                    If the dialer doesn't open automatically, <br><br>
+                    <a href="tel:+${doctorNumber}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Click Here to Call</a>
+                </p>
+                <script>
+                    window.location.href = "tel:+${doctorNumber}"; 
+                    setTimeout(() => { window.close(); }, 3000);
+                </script>
+            </body>
+            </html>
         `);
-    } catch (error) {}
+    } catch (error) {
+        res.send(`
+            <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+                <h2 style="color: red;">❌ Error Connecting Call</h2>
+            </div>
+        `);
+    }
 });
+
 
 // -----------------------------------------
 // 🚨 DYNAMIC SALES BOT APIs
@@ -432,6 +454,7 @@ app.get('/api/sales/questions', async (req, res) => { res.json(await SalesQuesti
 app.post('/api/sales/questions', async (req, res) => { const { keyword, team, time, questions } = req.body; await SalesQuestion.findOneAndUpdate({ keyword }, { keyword, team, time, questions }, { upsert: true, new: true }); res.json({ success: true });});
 app.delete('/api/sales/questions/:id', async (req, res) => { await SalesQuestion.findByIdAndDelete(req.params.id); res.json({ success: true }); });
 
+// --- Tracker API ---
 app.get('/api/sales/tracker', async (req, res) => {
     const { from, to } = req.query;
     let targetDates = [];
@@ -625,7 +648,6 @@ app.post('/api/wati/webhook', async (req, res) => {
         const phone10 = waId.replace(/\D/g, '').slice(-10);
         const couponRegex = new RegExp(phone10 + '$');
 
-        // 1. 🚨 RATING LOGIC
         if (btnLower.includes('rate this initiative') || btnLower.includes('આ પહેલને રેટ કરો')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); }
@@ -639,8 +661,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 if (lastCoupon) { lastCoupon.rating = ratingValue; lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); await sendWatiTextMessage(waId, "Thank you! 🙏"); }
             }
         }
-        
-        // 2. 🚨 SMART SALES TEAM CALL CATCHER (WITH AUTO-CALL ROUTING)
+        // 🚨 DYNAMIC PRO AUTO-CALL ROUTING
         else if (
             (btnLower.includes('sales team') && btnLower.includes('call')) ||
             btnLower.includes('connect with doctor') || 
@@ -667,7 +688,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                         await sendWatiMessage(lastCoupon.proPhone, 'doc_temp_discount_pro_message', [{ name: "1", value: `+${lastCoupon.doctorPhone}` }, { name: "2", value: discountValue }, { name: "3", value: lastCoupon.code }]);
                     }
                     
-                    // 🚨 DYNAMIC TATA SMARTFLO AUTO-CALL TRIGGER (For ANY PRO)
                     try {
                         const tataAgentNumber = formatTataNumber(lastCoupon.proPhone);
                         const tataDestNumber = formatTataNumber(waId);
@@ -679,8 +699,8 @@ app.post('/api/wati/webhook', async (req, res) => {
                                 caller_id: CALLER_ID
                             }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
                             
-                            // Let the system know call has been initiated correctly via Tata
-                            lastCoupon.callStatus = 'Completed'; // Maps to "Call Done" in UI
+                            // 🚨 UPDATED TO "Call Done" TO MATCH NEW UI BADGES
+                            lastCoupon.callStatus = 'Call Done';
                             await lastCoupon.save();
                             
                             const proName = MANUAL_PRO_MAP[tataAgentNumber] || tataAgentNumber;
@@ -689,7 +709,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                     } catch (tataError) {
                         const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
                         
-                        // Let the system know call was missed or API failed
+                        // 🚨 IF PRO DOES NOT PICK UP OR API FAILS
                         lastCoupon.callStatus = 'Failed (No Answer)';
                         await lastCoupon.save();
                         
@@ -705,8 +725,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await sendWatiMessage(waId, 'sales_call_ack_template', []);
             }
         }
-
-        // 3. 🚨 REFERRAL BOOKS
         else if (btnLower.includes('referral') || btnLower.includes('book')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon && lastCoupon.proPhone) {
@@ -715,8 +733,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                 await sendWatiTextMessage(waId, "Thank you! 🙏 Our PRO will deliver the UIC Referral Books to your clinic very soon.");
             }
         }
-
-        // 4. 🚨 EXACT MATCH 3 COUPONS LOGIC
         else if (
             btnLower === 'need 3 more coupons' || 
             btnLower === 'need more 3 coupons' || 
@@ -733,8 +749,9 @@ app.post('/api/wati/webhook', async (req, res) => {
             
             let campaignSource = 'Doctor';
             if (lastCoupon) {
-                if (lastCoupon.source && !lastCoupon.source.toLowerCase().includes('requested')) {
-                    campaignSource = lastCoupon.source;
+                let checkSource = lastCoupon.source || "";
+                if (checkSource && !checkSource.toLowerCase().includes('requested')) {
+                    campaignSource = checkSource;
                 } else {
                     const originalCoupon = await Coupon.findOne({ doctorPhone: waId, source: { $exists: true, $not: /requested/i } }).sort({ createdAt: -1 });
                     if (originalCoupon && originalCoupon.source) campaignSource = originalCoupon.source;
@@ -759,8 +776,6 @@ app.post('/api/wati/webhook', async (req, res) => {
             let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
             await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
         }
-
-        // 5. 🚨 GENERAL COUPON FALLBACK (WITH MAX 5 CAP & DYNAMIC NUMBER EXTRACTION)
         else if (btnLower.includes('more coupon') || btnLower.includes('મને વધુ કૂપન જોઈએ છે') || btnLower.includes('વધુ કૂપન') || btnLower.includes('coupon') || btnLower.includes('કૂપન')) {
             const lastCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (lastCoupon) { 
@@ -780,8 +795,9 @@ app.post('/api/wati/webhook', async (req, res) => {
 
             let campaignSource = 'Doctor';
             if (lastCoupon) {
-                if (lastCoupon.source && !lastCoupon.source.toLowerCase().includes('requested')) {
-                    campaignSource = lastCoupon.source;
+                let checkSource = lastCoupon.source || "";
+                if (checkSource && !checkSource.toLowerCase().includes('requested')) {
+                    campaignSource = checkSource;
                 } else {
                     const originalCoupon = await Coupon.findOne({ doctorPhone: waId, source: { $exists: true, $not: /requested/i } }).sort({ createdAt: -1 });
                     if (originalCoupon && originalCoupon.source) campaignSource = originalCoupon.source;
@@ -798,8 +814,6 @@ app.post('/api/wati/webhook', async (req, res) => {
             let discountText = discount === 'CBCT' ? 'CBCT Service' : `${discount}% Discount`;
             await sendWatiMessage(waId, 'dis_more_temp_all', [{ name: '1', value: discountText }, { name: '2', value: newCodes.join(', ') }, { name: '3', value: expiry.toLocaleDateString('en-GB') }]);
         }
-
-        // 6. 🚨 PATIENT CONNECT ASSISTANCE
         else if (['assistance', 'book my test', 'use the coupon', 'use the cupon'].some(kw => btnLower.includes(kw))) {
             const patientCoupon = await Coupon.findOne({ doctorPhone: { $regex: couponRegex } }).sort({ createdAt: -1 });
             if (patientCoupon) {
@@ -824,9 +838,6 @@ app.post('/api/wati/webhook', async (req, res) => {
     } catch (error) {}
 });
 
-// -----------------------------------------
-// Dashboard & Validation APIs
-// -----------------------------------------
 app.post('/api/coupon/validate', async (req, res) => {
     try {
         const { code } = req.body;
@@ -834,7 +845,13 @@ app.post('/api/coupon/validate', async (req, res) => {
         if (!coupon) return res.status(404).json({ valid: false, message: "Invalid Code!" });
         if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Already redeemed!" });
         if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "Expired!" });
-        res.json({ valid: true, discount: coupon.discountPercentage, name: coupon.targetName || 'Unknown', type: coupon.audienceType, campaignName: coupon.source || coupon.audienceType });
+        
+        let cName = coupon.source || coupon.audienceType;
+        if (cName && cName.toLowerCase().includes('requested')) {
+            cName = coupon.audienceType || 'Doctor';
+        }
+
+        res.json({ valid: true, discount: coupon.discountPercentage, name: coupon.targetName || 'Unknown', type: coupon.audienceType, campaignName: cName });
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
@@ -852,13 +869,15 @@ app.post('/api/coupon/redeem', async (req, res) => {
 
 app.get('/api/agents', async (req, res) => { res.json(await Agent.find().sort({ name: 1 })); });
 app.post('/api/agents/toggle', async (req, res) => { await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline }); res.json({ success: true }); });
+
+// 🚨 ADMIN BROWSER HANG FIX & 100% DATA FETCH FIX 🚨
 app.get('/api/admin/dashboard-stats', async (req, res) => { res.json({ totalSent: await Coupon.countDocuments(), usedCount: await Coupon.countDocuments({ isUsed: true }) }); });
 
 app.get('/api/admin/logs', async (req, res) => { 
     const isExport = req.query.export === 'true';
     let query = Coupon.find().sort({ createdAt: -1 }); 
     if (!isExport) {
-        query = query.limit(1500); 
+        query = query.limit(20000); // 👈 Fix: Increased limit to 20,000 so ALL data is available for accurate stats without freezing Node!
     }
     res.json(await query.exec()); 
 });
