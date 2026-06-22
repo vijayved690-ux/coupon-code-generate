@@ -605,6 +605,16 @@
     <script>
         const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
         
+        // 🚨 MANUAL PRO MAPPING (Hardcoded display check)
+        const MANUAL_PRO_MAP = {
+            '917490029085': 'Khyati',
+            '919558591212': 'Mital',
+            '918488931212': 'Aditi',
+            '919274682553': 'Jay',
+            '918980776879': 'Sandip Upadhyay',
+            '919737900092': 'Hardik Parikh'
+        };
+
         let globalLogs = [];
         let filteredLogs = [];
         let salesReportData = [];
@@ -757,9 +767,13 @@
             const logs = await res.json();
             
             document.getElementById('activity-logs').innerHTML = logs.map(l => {
+                const exactTime = new Date(l.timestamp).toLocaleString('en-IN', { 
+                    day: '2-digit', month: 'short', 
+                    hour: '2-digit', minute:'2-digit', second:'2-digit' 
+                });
                 return `
                     <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
-                        <td class="p-2 text-blue-400 font-bold whitespace-nowrap w-24">${new Date(l.timestamp).toLocaleTimeString()}</td>
+                        <td class="p-2 text-blue-400 font-bold whitespace-nowrap w-32">${exactTime}</td>
                         <td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td>
                         <td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td>
                         <td class="p-2 text-slate-400">${l.details}</td>
@@ -819,7 +833,6 @@
             applyFilters();
         }
 
-        // 🚨 SMART DATE FILTER FIX (Both Creation & Redemption LIVE Display)
         function applyFilters() {
             const search = document.getElementById('search-filter').value.toLowerCase();
             const dateFrom = document.getElementById('date-from').value;
@@ -853,8 +866,10 @@
                 if (status) {
                     if (status === 'Redeemed' && !item.isUsed) matchStatus = false;
                     if (status === 'Active' && item.isUsed) matchStatus = false;
+                    
+                    // Call Statuses Mapping Match
                     if (status === 'PendingCall' && item.callStatus !== 'Pending') matchStatus = false;
-                    if (status === 'CallCompleted' && item.callStatus !== 'Completed') matchStatus = false;
+                    if (status === 'CallCompleted' && item.callStatus !== 'Completed' && item.callStatus !== 'Call Done') matchStatus = false;
                 }
                 
                 return matchSearch && matchDate && matchStatus;
@@ -876,8 +891,9 @@
             let branchCounts = {}; 
             let proStats = {};
 
-            document.getElementById('stat-total-dr-shoot').innerText = docLogs.length;
-            document.getElementById('stat-total-dr-redeem').innerText = docLogs.filter(l => l.isUsed).length;
+            const fullDocLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
+            document.getElementById('stat-total-dr-shoot').innerText = fullDocLogs.length;
+            document.getElementById('stat-total-dr-redeem').innerText = fullDocLogs.filter(l => l.isUsed).length;
 
             docLogs.forEach(l => {
                 if(l.rating === 5) r5++; 
@@ -902,7 +918,8 @@
                 
                 if(l.requestCallAt && l.proPhone) {
                     if(!proStats[l.proPhone]) {
-                        let pName = "Unknown PRO";
+                        // 🚨 MANUAL MAP CHECK FOR PRO NAME
+                        let pName = MANUAL_PRO_MAP[l.proPhone] || "Unknown PRO";
                         let matched = proList.find(p => p.phone === l.proPhone);
                         if(matched) pName = matched.name;
                         
@@ -910,7 +927,7 @@
                     }
                     proStats[l.proPhone].total++;
                     if(l.callStatus === 'Pending') proStats[l.proPhone].pending++;
-                    if(l.callStatus === 'Completed') proStats[l.proPhone].completed++;
+                    if(l.callStatus === 'Completed' || l.callStatus === 'Call Done') proStats[l.proPhone].completed++; 
                 }
             });
 
@@ -1012,7 +1029,8 @@
                 if (l.requestCallAt) rep.callReqs++;
                 
                 if (l.proPhone) {
-                    let pName = "Unknown PRO";
+                    // 🚨 MANUAL MAP CHECK FOR GP REPORT
+                    let pName = MANUAL_PRO_MAP[l.proPhone] || "Unknown PRO";
                     let matched = proList.find(p => p.phone === l.proPhone);
                     if (matched) pName = matched.name;
                     rep.pros.add(pName);
@@ -1064,7 +1082,6 @@
             document.getElementById('gp-report-modal').classList.add('hidden');
         }
 
-        // 🚨 EXPORT GP REPORT DATA TO EXCEL
         function exportGPReportExcel() {
             const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             if(docLogs.length === 0) {
@@ -1079,7 +1096,8 @@
                 const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
                 const cName = i.source || i.audienceType;
                 
-                let pName = "Unknown PRO"; 
+                // 🚨 EXCEL MANUAL MAP CHECK
+                let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO"; 
                 if(i.proPhone) { 
                     let matched = proList.find(p => p.phone === i.proPhone); 
                     if(matched) pName = matched.name; 
@@ -1120,12 +1138,18 @@
                 
                 let statusBadge = '';
                 if(i.isUsed) statusBadge += '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-0.5 rounded block mb-1">✅ REDEEMED</span>';
-                if(i.callStatus === 'Pending') statusBadge += '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] block">⏳ PENDING CALL</span>';
-                else if(i.callStatus === 'Completed') statusBadge += '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] block">📞 CALL DONE</span>';
+                
+                // 🚨 ADVANCED CALL BADGES
+                if(i.callStatus === 'Pending') statusBadge += '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] block border border-orange-200 shadow-sm">⏳ PENDING CALL</span>';
+                else if(i.callStatus === 'Call Done') statusBadge += '<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold text-[10px] block border border-indigo-200 shadow-sm">📞 PRO CALL DONE</span>';
+                else if(i.callStatus === 'Failed (No Answer)') statusBadge += '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] block border border-red-200 shadow-sm">📵 FAILED (NO ANSWER)</span>';
+                else if(i.callStatus === 'Completed') statusBadge += '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] block border border-blue-200 shadow-sm">📞 CALL COMPLETED</span>';
+                else if(i.callStatus === 'Failed') statusBadge += '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] block border border-red-200 shadow-sm">❌ SYSTEM FAILED</span>';
+                
                 if(!statusBadge) statusBadge = '-';
 
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
-                const cName = i.source || i.audienceType; // 🚨 CAMPAIGN NAME FOR UI
+                const cName = i.source || i.audienceType;
 
                 let actionHTML = '';
                 if (i.buttonClicked && i.buttonClicked.trim() !== '') {
@@ -1143,7 +1167,8 @@
                     `;
                 }
 
-                let pName = "Unknown PRO";
+                // 🚨 TABLE MANUAL MAP CHECK
+                let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO";
                 if(i.proPhone) { 
                     let matched = proList.find(p => p.phone === i.proPhone); 
                     if(matched) pName = matched.name; 
@@ -1173,19 +1198,24 @@
         }
 
         function renderTables() {
-            document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Doctor'));
+            // HANG FIX: Slice limits nodes creation, exports intact
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
+            document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(docLogs.slice(0, 200));
             
-            document.getElementById('dental-logs').innerHTML = getTableRowsHTML(filteredLogs.filter(l => l.audienceType === 'Dental' || l.audienceType === 'CGHS_Dental'));
+            const denLogs = filteredLogs.filter(l => l.audienceType === 'Dental' || l.audienceType === 'CGHS_Dental');
+            document.getElementById('dental-logs').innerHTML = getTableRowsHTML(denLogs.slice(0, 200));
             
-            document.getElementById('patient-logs').innerHTML = filteredLogs.filter(l => l.audienceType === 'Patient').map(i => {
+            const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
+            document.getElementById('patient-logs').innerHTML = patLogs.slice(0, 200).map(i => {
                 let callBadge = '';
-                if(i.callStatus === 'Pending') callBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px]">⏳ PENDING</span>';
-                else if(i.callStatus === 'Completed') callBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px]">📞 CALL DONE</span>';
-                else if(i.callStatus === 'Failed') callBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold text-[10px]">❌ FAILED</span>';
+                
+                if(i.callStatus === 'Pending') callBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] border border-orange-200 shadow-sm">⏳ PENDING</span>';
+                else if(i.callStatus === 'Completed' || i.callStatus === 'Call Done') callBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] shadow border border-blue-200">📞 CALL DONE</span>';
+                else if(i.callStatus === 'Failed' || i.callStatus === 'Failed (No Answer)') callBadge = '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] border border-red-200 shadow-sm">📵 NO ANSWER</span>';
                 else callBadge = '-';
 
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
-                const cName = i.source || i.audienceType; // 🚨 CAMPAIGN NAME FOR UI
+                const cName = i.source || i.audienceType; 
                 
                 let actionHTML = '';
                 if (i.buttonClicked && i.buttonClicked.trim() !== '') {
@@ -1211,10 +1241,10 @@
                             <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
                             <span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded mt-1 inline-block ml-1">${cName}</span>
                         </td>
-                        <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px]">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
+                        <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px] shadow-sm">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
                         <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
                         <td class="p-4">${callBadge}</td>
-                        <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
+                        <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded shadow-sm">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
                         <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
                         <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
                     </tr>
@@ -1240,11 +1270,13 @@
                 dataToExport.forEach(i => {
                     const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
                     const cName = i.source || i.audienceType;
-                    let pName = "Unknown PRO"; 
+                    
+                    let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO"; 
                     if(i.proPhone) { 
                         let matched = proList.find(p => p.phone === i.proPhone); 
                         if(matched) pName = matched.name; 
                     }
+
                     csv += `"${new Date(i.createdAt).toLocaleString()}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${pName}","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
                 });
             } else {
@@ -1263,13 +1295,11 @@
             link.click();
         }
 
-        // 🚨 ADVANCED TEMPLATE SAVING & FETCHING 🚨
         async function fetchCustomTemplates() {
             try {
                 const res = await fetch('/api/templates');
                 customTemplates = await res.json();
                 
-                // Update Table List
                 document.getElementById('custom-template-list').innerHTML = customTemplates.map(t => `
                     <tr class="border-b hover:bg-slate-50">
                         <td class="p-3 font-bold text-slate-700">${t.name}</td>
@@ -1281,7 +1311,6 @@
                     </tr>
                 `).join('');
 
-                // Update Smart Dropdown
                 const group = document.getElementById('dynamic-templates-group');
                 if(group) {
                     group.innerHTML = customTemplates.map(t => `
@@ -1318,7 +1347,6 @@
             fetchCustomTemplates();
         }
 
-        // 🚨 SMART 1-CLICK AUTO FILL 🚨
         function autoFillCampaign() {
             const type = document.getElementById('aud-type').value;
             const discEl = document.getElementById('disc');
@@ -1413,7 +1441,6 @@
             }});
         }
 
-        // 🚨 DYNAMIC SALES BOT LOGIC 🚨
         async function loadSalesData() {
             try {
                 let from = document.getElementById('s-from').value;
@@ -1524,7 +1551,7 @@
 
             renderSalesSummary(filtered);
 
-            document.getElementById('sales-logs').innerHTML = filtered.map(r => {
+            document.getElementById('sales-logs').innerHTML = filtered.slice(0, 200).map(r => {
                 let statusBadge = r.status === 'Replied' 
                     ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 shadow-sm">✅ Replied</span><br><span class="text-[10px] text-slate-500 ml-1 font-bold mt-1 inline-block">⏱️ ${new Date(r.time).toLocaleTimeString()}</span>` 
                     : `<span class="bg-red-50 text-red-600 font-bold px-2 py-1 rounded border border-red-200 shadow-sm">❌ Not Reply</span>`;
@@ -1594,7 +1621,6 @@
             }
         }
 
-        // --- Setup Modal Logic ---
         async function openSetupModal(tab) {
             document.getElementById('setup-modal').classList.remove('hidden');
             switchSetupTab(tab || 'template-tab');
@@ -1748,7 +1774,7 @@
                 let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
                 
                 const displayDiscount = data.discount === 'CBCT' ? 'CBCT Special' : `${data.discount}% OFF`;
-                const testName = data.campaignName ? data.campaignName.toUpperCase() : 'GENERAL CAMPAIGN'; // 🚨 BIG TEXT CAMPAIGN NAME
+                const testName = data.campaignName ? data.campaignName.toUpperCase() : 'GENERAL CAMPAIGN';
 
                 resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-500 bg-green-50";
                 resBox.innerHTML = `
