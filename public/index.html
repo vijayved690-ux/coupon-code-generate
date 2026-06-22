@@ -181,6 +181,7 @@
                         <option value="Active">⏳ Active</option>
                         <option value="PendingCall">📞 Pending Call</option>
                         <option value="CallCompleted">📞 Call Completed</option>
+                        <option value="Failed (No Answer)">📵 No Answer</option>
                     </select>
 
                     <button onclick="applyFilters()" class="bg-blue-600 text-white px-6 py-2 rounded shadow-md text-xs font-bold tracking-wider hover:bg-blue-700 transition">APPLY FILTER</button>
@@ -282,13 +283,13 @@
 
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
                         <div class="p-4 border-b flex justify-between items-center bg-blue-50">
-                            <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Latest Activity First)</h3>
+                            <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Showing Latest 200)</h3>
                             <div class="flex gap-2">
                                 <button onclick="openGPReport()" class="bg-purple-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-purple-700 transition flex items-center gap-2">
                                     <span>📸</span> GP CAMPAIGN REPORT
                                 </button>
                                 <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
-                                    <span>📊</span> EXPORT DOCTORS
+                                    <span>📊</span> EXPORT ALL DOCTORS
                                 </button>
                             </div>
                         </div>
@@ -315,9 +316,9 @@
 
                 <div id="dental-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-indigo-50">
-                        <h3 class="font-bold text-indigo-800 text-sm">Dental & CGHS CBCT Database (Latest Activity First)</h3>
+                        <h3 class="font-bold text-indigo-800 text-sm">Dental Database (Showing Latest 200)</h3>
                         <button onclick="exportFilteredExcel('Dental')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
-                            <span>📊</span> EXPORT DENTISTS
+                            <span>📊</span> EXPORT ALL DENTISTS
                         </button>
                     </div>
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
@@ -342,9 +343,9 @@
 
                 <div id="patient-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                        <h3 class="font-bold text-slate-800 text-sm">Patient Database (Latest Activity First)</h3>
+                        <h3 class="font-bold text-slate-800 text-sm">Patient Database (Showing Latest 200)</h3>
                         <button onclick="exportFilteredExcel('Patient')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
-                            <span>📊</span> EXPORT PATIENTS
+                            <span>📊</span> EXPORT ALL PATIENTS
                         </button>
                     </div>
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
@@ -605,7 +606,7 @@
     <script>
         const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
         
-        // 🚨 MANUAL PRO MAPPING (Hardcoded display check)
+        // 🚨 MANUAL PRO MAPPING
         const MANUAL_PRO_MAP = {
             '917490029085': 'Khyati',
             '919558591212': 'Mital',
@@ -867,9 +868,9 @@
                     if (status === 'Redeemed' && !item.isUsed) matchStatus = false;
                     if (status === 'Active' && item.isUsed) matchStatus = false;
                     
-                    // Call Statuses Mapping Match
                     if (status === 'PendingCall' && item.callStatus !== 'Pending') matchStatus = false;
                     if (status === 'CallCompleted' && item.callStatus !== 'Completed' && item.callStatus !== 'Call Done') matchStatus = false;
+                    if (status === 'Failed (No Answer)' && item.callStatus !== 'Failed (No Answer)') matchStatus = false;
                 }
                 
                 return matchSearch && matchDate && matchStatus;
@@ -1139,12 +1140,11 @@
                 let statusBadge = '';
                 if(i.isUsed) statusBadge += '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-0.5 rounded block mb-1">✅ REDEEMED</span>';
                 
-                // 🚨 ADVANCED CALL BADGES
+                // 🚨 UPDATE: Advanced Call Badges setup
                 if(i.callStatus === 'Pending') statusBadge += '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] block border border-orange-200 shadow-sm">⏳ PENDING CALL</span>';
                 else if(i.callStatus === 'Call Done') statusBadge += '<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold text-[10px] block border border-indigo-200 shadow-sm">📞 PRO CALL DONE</span>';
-                else if(i.callStatus === 'Failed (No Answer)') statusBadge += '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] block border border-red-200 shadow-sm">📵 FAILED (NO ANSWER)</span>';
+                else if(i.callStatus === 'Failed (No Answer)') statusBadge += '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] block border border-red-300">📵 NOT RECEIVED (PRO)</span>';
                 else if(i.callStatus === 'Completed') statusBadge += '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] block border border-blue-200 shadow-sm">📞 CALL COMPLETED</span>';
-                else if(i.callStatus === 'Failed') statusBadge += '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] block border border-red-200 shadow-sm">❌ SYSTEM FAILED</span>';
                 
                 if(!statusBadge) statusBadge = '-';
 
@@ -1197,8 +1197,8 @@
             }).join('');
         }
 
+        // 🚨 DOM SLICE FIX APLIED HERE
         function renderTables() {
-            // HANG FIX: Slice limits nodes creation, exports intact
             const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
             document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(docLogs.slice(0, 200));
             
@@ -1211,7 +1211,7 @@
                 
                 if(i.callStatus === 'Pending') callBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] border border-orange-200 shadow-sm">⏳ PENDING</span>';
                 else if(i.callStatus === 'Completed' || i.callStatus === 'Call Done') callBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] shadow border border-blue-200">📞 CALL DONE</span>';
-                else if(i.callStatus === 'Failed' || i.callStatus === 'Failed (No Answer)') callBadge = '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] border border-red-200 shadow-sm">📵 NO ANSWER</span>';
+                else if(i.callStatus === 'Failed' || i.callStatus === 'Failed (No Answer)') callBadge = '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] border border-red-300">📵 NO ANSWER</span>';
                 else callBadge = '-';
 
                 const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
@@ -1551,6 +1551,7 @@
 
             renderSalesSummary(filtered);
 
+            // 🚨 DOM SLICE FIX APLIED HERE
             document.getElementById('sales-logs').innerHTML = filtered.slice(0, 200).map(r => {
                 let statusBadge = r.status === 'Replied' 
                     ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 shadow-sm">✅ Replied</span><br><span class="text-[10px] text-slate-500 ml-1 font-bold mt-1 inline-block">⏱️ ${new Date(r.time).toLocaleTimeString()}</span>` 
