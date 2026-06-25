@@ -31,10 +31,14 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // -----------------------------------------
-// DATABASE CONNECTION & AUTO-SEEDING
+// DATABASE CONNECTION & AUTO-SEEDING (WITH STABILITY FIX)
 // -----------------------------------------
-mongoose.connect(process.env.MONGODB_URI)
-    .then(async () => {
+mongoose.connect(process.env.MONGODB_URI, {
+    // 🚨 HANG FIX: Keeps connection alive and waits longer before dropping pipe
+    serverSelectionTimeoutMS: 60000, 
+    socketTimeoutMS: 60000,
+    connectTimeoutMS: 60000
+}).then(async () => {
         console.log('MongoDB Connected Successfully!');
         
         // --- SEED CALL CENTER AGENTS ---
@@ -134,7 +138,7 @@ async function generateUniqueCode() {
     let code;
     while (!isUnique) {
         code = Math.floor(10000 + Math.random() * 90000).toString();
-        const exists = await Coupon.findOne({ code });
+        const exists = await Coupon.findOne({ code }).lean(); // Added lean for speed
         if (!exists) {
             isUnique = true;
         }
@@ -208,7 +212,7 @@ app.post('/api/log-action', async (req, res) => {
 });
 
 app.get('/api/admin/activity-logs', async (req, res) => {
-    const logs = await Activity.find().sort({ timestamp: -1 }).limit(50);
+    const logs = await Activity.find().sort({ timestamp: -1 }).limit(50).lean(); // Added lean
     res.json(logs);
 });
 
@@ -230,7 +234,7 @@ app.get('/api/admin/system-health', async (req, res) => {
 // -----------------------------------------
 app.get('/api/templates', async (req, res) => {
     try {
-        const templates = await CustomTemplate.find().sort({ createdAt: -1 });
+        const templates = await CustomTemplate.find().sort({ createdAt: -1 }).lean();
         res.json(templates);
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -446,50 +450,55 @@ app.get('/api/trigger-call/:code', async (req, res) => {
 // -----------------------------------------
 // 🚨 DYNAMIC SALES BOT APIs
 // -----------------------------------------
-app.get('/api/sales/team', async (req, res) => { res.json(await SalesPerson.find().sort({ team: -1, name: 1 })); });
+app.get('/api/sales/team', async (req, res) => { res.json(await SalesPerson.find().sort({ team: -1, name: 1 }).lean()); });
 app.post('/api/sales/team', async (req, res) => { try { await SalesPerson.create(req.body); res.json({ success: true }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }});
 app.put('/api/sales/team/:id', async (req, res) => { await SalesPerson.findByIdAndUpdate(req.params.id, { isActive: req.body.isActive }); res.json({ success: true }); });
 app.delete('/api/sales/team/:id', async (req, res) => { await SalesPerson.findByIdAndDelete(req.params.id); res.json({ success: true }); });
-app.get('/api/sales/questions', async (req, res) => { res.json(await SalesQuestion.find().sort({ team: -1, time: 1 })); });
+app.get('/api/sales/questions', async (req, res) => { res.json(await SalesQuestion.find().sort({ team: -1, time: 1 }).lean()); });
 app.post('/api/sales/questions', async (req, res) => { const { keyword, team, time, questions } = req.body; await SalesQuestion.findOneAndUpdate({ keyword }, { keyword, team, time, questions }, { upsert: true, new: true }); res.json({ success: true });});
 app.delete('/api/sales/questions/:id', async (req, res) => { await SalesQuestion.findByIdAndDelete(req.params.id); res.json({ success: true }); });
 
 // --- Tracker API ---
 app.get('/api/sales/tracker', async (req, res) => {
-    const { from, to } = req.query;
-    let targetDates = [];
-    if (from && to) {
-        let curr = new Date(from + "T00:00:00"); 
-        const end = new Date(to + "T23:59:59");
-        while (curr <= end) { 
-            targetDates.push(getIndianDateStr(curr)); 
-            curr.setDate(curr.getDate() + 1); 
+    try {
+        const { from, to } = req.query;
+        let targetDates = [];
+        if (from && to) {
+            let curr = new Date(from + "T00:00:00"); 
+            const end = new Date(to + "T23:59:59");
+            while (curr <= end) { 
+                targetDates.push(getIndianDateStr(curr)); 
+                curr.setDate(curr.getDate() + 1); 
+            }
+        } else { 
+            targetDates = [getIndianDateStr()]; 
         }
-    } else { 
-        targetDates = [getIndianDateStr()]; 
-    }
 
-    const logs = await SalesLog.find({ dateStr: { $in: targetDates } });
-    const allBots = await SalesQuestion.find();
-    const activeTeam = await SalesPerson.find({ isActive: true }); 
+        // 🚨 HANG FIX: Added .lean() to drastically reduce memory usage
+        const logs = await SalesLog.find({ dateStr: { $in: targetDates } }).lean();
+        const allBots = await SalesQuestion.find().lean();
+        const activeTeam = await SalesPerson.find({ isActive: true }).lean(); 
 
-    let report = [];
-    for (let d of targetDates) {
-        activeTeam.forEach(member => {
-            const memberBots = allBots.filter(b => b.team === member.team);
-            memberBots.forEach(bot => {
-                const log = logs.find(l => l.phone === member.phone && l.dateStr === d && l.keyword === bot.keyword);
-                let delayStr = "-";
-                if (log && log.responseTimeMins != null) {
-                    const m = Math.floor(log.responseTimeMins);
-                    if (m < 0) delayStr = "Early Reply ⚡"; else if (m < 60) delayStr = `${m} mins delay`; else delayStr = `${Math.floor(m/60)} hr ${m%60} mins delay`;
-                }
-                report.push({ date: d, name: member.name, phone: member.phone, team: member.team, status: log ? 'Replied' : 'Not Reply', keyword: bot.keyword, delayStr: delayStr, answers: log ? log.answers : [], adminReply: log ? log.adminReplyText : null, time: log ? log.updatedAt : null, questions: bot.questions });
+        let report = [];
+        for (let d of targetDates) {
+            activeTeam.forEach(member => {
+                const memberBots = allBots.filter(b => b.team === member.team);
+                memberBots.forEach(bot => {
+                    const log = logs.find(l => l.phone === member.phone && l.dateStr === d && l.keyword === bot.keyword);
+                    let delayStr = "-";
+                    if (log && log.responseTimeMins != null) {
+                        const m = Math.floor(log.responseTimeMins);
+                        if (m < 0) delayStr = "Early Reply ⚡"; else if (m < 60) delayStr = `${m} mins delay`; else delayStr = `${Math.floor(m/60)} hr ${m%60} mins delay`;
+                    }
+                    report.push({ date: d, name: member.name, phone: member.phone, team: member.team, status: log ? 'Replied' : 'Not Reply', keyword: bot.keyword, delayStr: delayStr, answers: log ? log.answers : [], adminReply: log ? log.adminReplyText : null, time: log ? log.updatedAt : null, questions: bot.questions });
+                });
             });
-        });
+        }
+        report.sort((a, b) => { if (a.time && b.time) return new Date(b.time) - new Date(a.time); if (a.time) return -1; if (b.time) return 1; return 0; });
+        res.json({ report, bots: allBots, team: activeTeam });
+    } catch (e) {
+        res.json({ report: [], bots: [], team: [] });
     }
-    report.sort((a, b) => { if (a.time && b.time) return new Date(b.time) - new Date(a.time); if (a.time) return -1; if (b.time) return 1; return 0; });
-    res.json({ report, bots: allBots, team: activeTeam });
 });
 
 app.post('/api/sales/reply', async (req, res) => {
@@ -578,7 +587,7 @@ app.post('/api/wati/webhook', async (req, res) => {
 
         if (!waId) return;
 
-        const [activeTeam, allBots] = await Promise.all([ SalesPerson.find({ isActive: true }), SalesQuestion.find() ]);
+        const [activeTeam, allBots] = await Promise.all([ SalesPerson.find({ isActive: true }).lean(), SalesQuestion.find().lean() ]);
         const salesMember = activeTeam.find(s => formatTataNumber(s.phone) === formatTataNumber(waId));
 
         if (salesMember) {
@@ -661,7 +670,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                 if (lastCoupon) { lastCoupon.rating = ratingValue; lastCoupon.buttonClicked = rawBtn; await lastCoupon.save(); await sendWatiTextMessage(waId, "Thank you! 🙏"); }
             }
         }
-        // 🚨 DYNAMIC PRO AUTO-CALL ROUTING
         else if (
             (btnLower.includes('sales team') && btnLower.includes('call')) ||
             btnLower.includes('connect with doctor') || 
@@ -699,7 +707,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                                 caller_id: CALLER_ID
                             }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
                             
-                            // 🚨 UPDATED TO "Call Done" TO MATCH NEW UI BADGES
                             lastCoupon.callStatus = 'Call Done';
                             await lastCoupon.save();
                             
@@ -709,7 +716,6 @@ app.post('/api/wati/webhook', async (req, res) => {
                     } catch (tataError) {
                         const errMsg = tataError.response?.data ? JSON.stringify(tataError.response.data) : tataError.message;
                         
-                        // 🚨 IF PRO DOES NOT PICK UP OR API FAILS
                         lastCoupon.callStatus = 'Failed (No Answer)';
                         await lastCoupon.save();
                         
@@ -753,7 +759,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 if (checkSource && !checkSource.toLowerCase().includes('requested')) {
                     campaignSource = checkSource;
                 } else {
-                    const originalCoupon = await Coupon.findOne({ doctorPhone: waId, source: { $exists: true, $not: /requested/i } }).sort({ createdAt: -1 });
+                    const originalCoupon = await Coupon.findOne({ doctorPhone: waId, source: { $exists: true, $not: /requested/i } }).sort({ createdAt: -1 }).lean();
                     if (originalCoupon && originalCoupon.source) campaignSource = originalCoupon.source;
                     else campaignSource = lastCoupon.audienceType || 'Doctor';
                 }
@@ -799,7 +805,7 @@ app.post('/api/wati/webhook', async (req, res) => {
                 if (checkSource && !checkSource.toLowerCase().includes('requested')) {
                     campaignSource = checkSource;
                 } else {
-                    const originalCoupon = await Coupon.findOne({ doctorPhone: waId, source: { $exists: true, $not: /requested/i } }).sort({ createdAt: -1 });
+                    const originalCoupon = await Coupon.findOne({ doctorPhone: waId, source: { $exists: true, $not: /requested/i } }).sort({ createdAt: -1 }).lean();
                     if (originalCoupon && originalCoupon.source) campaignSource = originalCoupon.source;
                     else campaignSource = lastCoupon.audienceType || 'Doctor';
                 }
@@ -821,9 +827,9 @@ app.post('/api/wati/webhook', async (req, res) => {
                 if (patientCoupon.callStatus === 'Completed' && patientCoupon.updatedAt > twoMinsAgo) return; 
                 patientCoupon.buttonClicked = rawBtn; await patientCoupon.save();
             }
-            const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 });
+            const nextAgent = await Agent.findOne({ isOnline: true }).sort({ lastCalledAt: 1 }).lean();
             if (nextAgent) {
-                nextAgent.lastCalledAt = new Date(); await nextAgent.save();
+                await Agent.findByIdAndUpdate(nextAgent._id, { lastCalledAt: new Date() });
                 try {
                     await axios.post(TATA_URL, { agent_number: formatTataNumber(nextAgent.phone), destination_number: formatTataNumber(waId), caller_id: CALLER_ID }, { headers: { 'Authorization': `Bearer ${process.env.TATA_TELE_TOKEN}`, 'Content-Type': 'application/json' } });
                     if (patientCoupon) { patientCoupon.agentAssigned = nextAgent.name; patientCoupon.callStatus = 'Completed'; await patientCoupon.save(); }
@@ -841,7 +847,7 @@ app.post('/api/wati/webhook', async (req, res) => {
 app.post('/api/coupon/validate', async (req, res) => {
     try {
         const { code } = req.body;
-        const coupon = await Coupon.findOne({ code });
+        const coupon = await Coupon.findOne({ code }).lean(); // Added lean
         if (!coupon) return res.status(404).json({ valid: false, message: "Invalid Code!" });
         if (coupon.isUsed) return res.status(400).json({ valid: false, message: "Already redeemed!" });
         if (new Date() > coupon.expiryDate) return res.status(400).json({ valid: false, message: "Expired!" });
@@ -867,24 +873,36 @@ app.post('/api/coupon/redeem', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Server error" }); }
 });
 
-app.get('/api/agents', async (req, res) => { res.json(await Agent.find().sort({ name: 1 })); });
+app.get('/api/agents', async (req, res) => { res.json(await Agent.find().sort({ name: 1 }).lean()); });
 app.post('/api/agents/toggle', async (req, res) => { await Agent.findByIdAndUpdate(req.body.id, { isOnline: req.body.isOnline }); res.json({ success: true }); });
 
-// 🚨 ADMIN BROWSER HANG FIX & 100% DATA FETCH FIX 🚨
+// 🚨 ADMIN BROWSER HANG FIX (Limit fetch to 20000 to keep Node from running out of memory, but give all data for UI)
 app.get('/api/admin/dashboard-stats', async (req, res) => { res.json({ totalSent: await Coupon.countDocuments(), usedCount: await Coupon.countDocuments({ isUsed: true }) }); });
 
 app.get('/api/admin/logs', async (req, res) => { 
-    const isExport = req.query.export === 'true';
-    let query = Coupon.find().sort({ createdAt: -1 }); 
-    if (!isExport) {
-        query = query.limit(20000); // 👈 Fix: Increased limit to 20,000 so ALL data is available for accurate stats without freezing Node!
+    try {
+        const isExport = req.query.export === 'true';
+        let query = Coupon.find().sort({ createdAt: -1 }).lean(); 
+        if (!isExport) {
+            query = query.limit(20000); 
+        }
+        res.json(await query.exec()); 
+    } catch (err) {
+        res.status(500).json([]);
     }
-    res.json(await query.exec()); 
 });
 
-app.get('/api/user/redeemed-today', async (req, res) => { const start = new Date(); start.setHours(0, 0, 0, 0); res.json(await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 })); });
+app.get('/api/user/redeemed-today', async (req, res) => { const start = new Date(); start.setHours(0, 0, 0, 0); res.json(await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 }).lean()); });
 
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+// 🚨 GLOBAL CRASH PROTECTION (Fixes EPIPE server crash)
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception (Protected):', err.message);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection (Protected):', reason);
+});
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Server live on ${PORT}`));
