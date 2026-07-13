@@ -7,109 +7,120 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-100 font-sans h-screen flex flex-col">
-    <div id="memory-warning" class="hidden bg-red-600 text-white text-center p-2 text-xs font-bold w-full">
-        ⚠️ ALERT: System Database Memory is almost full. Please contact developer immediately!
+
+    <div id="memory-warning" class="hidden bg-red-600 text-white text-center p-2 font-bold text-sm tracking-wider animate-pulse shadow-md z-50">
+        ⚠️ ALERT: System Database Memory is almost full. Please contact developer! ⚠️
     </div>
 
     <div id="login-view" class="flex-grow flex items-center justify-center">
         <div class="bg-white p-8 rounded-xl shadow-lg w-96 text-center">
             <h1 class="text-2xl font-bold text-blue-700 mb-1">UIC Connect</h1>
-            <p class="text-xs text-slate-500 mb-6 font-semibold">UIC | Discount & Analytics</p>
-            <input type="text" id="username" placeholder="Username" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-4 font-bold text-center focus:border-blue-500 outline-none">
-            <input type="password" id="password" placeholder="Password" class="w-full border-2 border-slate-200 p-3 rounded-lg mb-6 font-bold text-center focus:border-blue-500 outline-none">
-            <button onclick="login()" class="w-full bg-blue-600 text-white font-black py-3 rounded-lg hover:bg-blue-700 transition tracking-widest">ACCESS SYSTEM</button>
-            <p id="login-error" class="text-red-500 text-sm mt-3 hidden">Invalid Credentials!</p>
+            <p class="text-xs text-slate-500 mb-6 font-semibold">UIC | Discounts Coupons<br>Generate System</p>
+            <input type="text" id="username" placeholder="Username" class="w-full border p-3 rounded mb-4 outline-none focus:border-blue-500">
+            <input type="password" id="password" placeholder="Password" class="w-full border p-3 rounded mb-6 outline-none focus:border-blue-500">
+            <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition">LOGIN</button>
+            <p id="login-error" class="text-red-500 text-sm mt-3 hidden">Invalid Credentials</p>
         </div>
     </div>
 
     <div id="app-view" class="hidden flex-grow flex flex-col">
-        <header class="bg-white shadow-sm p-4 flex justify-between items-center border-b">
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center px-8">
             <div>
                 <h1 class="text-xl font-bold text-slate-800">Usmanpura Imaging Centre</h1>
-                <p id="role-badge" class="text-[10px] font-bold text-white bg-blue-600 inline-block px-2 py-0.5 rounded tracking-widest mt-1 uppercase"></p>
+                <p id="role-badge" class="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded inline-block mt-1 tracking-widest">ADMIN</p>
             </div>
-            <button onclick="logout()" class="text-sm font-bold text-red-500 hover:text-red-700">🔒 LOGOUT</button>
+            <button onclick="logout()" class="text-sm font-bold text-red-500 hover:underline">Logout</button>
         </header>
 
         <div class="p-8 max-w-7xl mx-auto w-full">
-            <!-- ADMIN DASHBOARD -->
+            
             <div id="admin-dashboard" class="hidden">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div class="flex gap-4">
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">ALL TIME SENT</p>
-                            <h2 id="stat-total-sent" class="text-2xl font-bold text-slate-800">0</h2>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">TOTAL SENT</p>
+                            <h2 id="stat-total-sent" class="text-2xl font-bold text-blue-800">0</h2>
                         </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">ALL TIME REDEEMED</p>
-                            <h2 id="stat-total-redeemed" class="text-2xl font-bold text-green-600">0</h2>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">TOTAL REDEEMED</p>
+                            <h2 id="stat-total-redeemed" class="text-2xl font-bold text-green-700">0</h2>
                         </div>
                     </div>
                     <div class="flex gap-4">
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">ALL TIME DOC SENT</p>
-                            <h2 id="stat-doc-sent" class="text-2xl font-bold text-slate-800">0</h2>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">DOCTOR SENT</p>
+                            <h2 id="stat-doc-sent" class="text-2xl font-bold text-purple-800">0</h2>
                         </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-emerald-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">ALL TIME DOC REDEEMED</p>
-                            <h2 id="stat-doc-redeemed" class="text-2xl font-bold text-emerald-600">0</h2>
-                        </div>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">ALL TIME DEN SENT</p>
-                            <h2 id="stat-den-sent" class="text-2xl font-bold text-slate-800">0</h2>
-                        </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-fuchsia-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">ALL TIME DEN REDEEMED</p>
-                            <h2 id="stat-den-redeemed" class="text-2xl font-bold text-fuchsia-600">0</h2>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-teal-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">DOC REDEEMED</p>
+                            <h2 id="stat-doc-redeemed" class="text-2xl font-bold text-teal-700">0</h2>
                         </div>
                     </div>
                     <div class="flex gap-4">
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-amber-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">ALL TIME PAT SENT</p>
-                            <h2 id="stat-pat-sent" class="text-2xl font-bold text-slate-800">0</h2>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">DENTAL SENT</p>
+                            <h2 id="stat-den-sent" class="text-2xl font-bold text-indigo-800">0</h2>
                         </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">ALL TIME PAT REDEEMED</p>
-                            <h2 id="stat-pat-redeemed" class="text-2xl font-bold text-orange-600">0</h2>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-cyan-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">DENTAL REDEEMED</p>
+                            <h2 id="stat-den-redeemed" class="text-2xl font-bold text-cyan-700">0</h2>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">PATIENT SENT</p>
+                            <h2 id="stat-pat-sent" class="text-2xl font-bold text-orange-800">0</h2>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-500 w-full">
+                            <p class="text-[10px] font-bold text-slate-400">PAT REDEEMED</p>
+                            <h2 id="stat-pat-redeemed" class="text-2xl font-bold text-rose-700">0</h2>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex justify-end mb-6">
-                    <button onclick="resetSystemData()" class="bg-red-600 text-white font-bold text-xs px-4 py-2 rounded shadow hover:bg-red-700">⚠️ RESET ALL DATA</button>
+                    <button onclick="resetSystemData()" class="bg-red-600 text-white text-xs font-bold px-6 py-3 rounded-lg shadow-md hover:bg-red-700 transition">
+                        ⚠️ RESET ALL DATA
+                    </button>
                 </div>
 
                 <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
-                    <h2 class="font-bold text-slate-800 mb-4 text-sm uppercase">🎧 CALL CENTER AGENT STATUS</h2>
+                    <h2 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wider">🎧 Call Center Agents (Online Status)</h2>
                     <div id="agents-list" class="grid grid-cols-2 md:grid-cols-6 gap-4"></div>
                 </div>
 
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-blue-100">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="font-bold text-blue-800 text-sm">🚀 ADVANCE CAMPAIGN SHOOTER</h2>
+                        <h2 class="font-bold text-blue-800 text-sm">🚀 ADVANCED BULK CAMPAIGN SHOOT (5000+ Support)</h2>
                         <div class="flex gap-2">
-                            <button onclick="window.location.href='/api/download-demo-csv'" class="bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded hover:bg-slate-300 transition">📥 Demo CSV</button>
-                            <button onclick="openSetupModal('template-tab')" class="bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded shadow hover:bg-slate-900 transition">⚙️ Setup New Templates</button>
+                            <button onclick="window.location.href='/api/download-demo-csv'" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100">
+                                📥 Demo CSV
+                            </button>
+                            <button onclick="openSetupModal('template-tab')" class="text-xs font-bold text-white bg-blue-600 px-3 py-1.5 rounded-lg border border-blue-700 hover:bg-blue-700">
+                                ⚙️ Setup New Templates
+                            </button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end bg-slate-50 p-4 rounded-lg border border-slate-200">
+
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end bg-slate-50 p-4 rounded border border-slate-200">
                         <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">Target Audience</label>
-                            <select id="aud-type" class="w-full border p-2 rounded bg-white text-sm font-bold" onchange="autoFillCampaign()">
+                            <label class="text-xs font-bold text-slate-500 block mb-1">CAMPAIGN TYPE</label>
+                            <select id="aud-type" class="w-full border p-2 rounded text-sm bg-white" onchange="autoFillCampaign()">
                                 <optgroup label="System Defaults (Untouched)">
                                     <option value="Doctor">Doctors (Default 30%)</option>
                                     <option value="Patient">Patients (Default 20%)</option>
                                     <option value="Dental">Dental (CBCT)</option>
                                     <option value="CGHS_Dental">CGHS Dental (CBCT)</option>
                                 </optgroup>
-                                <optgroup label="Custom Dynamic Templates" id="dynamic-templates-group"></optgroup>
+                                <optgroup label="Custom Dynamic Templates" id="dynamic-templates-group">
+                                    </optgroup>
                             </select>
                         </div>
+
                         <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">Discount Config</label>
-                            <select id="disc" class="w-full border p-2 rounded bg-white text-sm font-bold text-blue-700">
+                            <label class="text-xs font-bold text-slate-500 block mb-1">DISCOUNT %</label>
+                            <select id="disc" class="w-full border p-2 rounded text-sm font-bold bg-white text-blue-700">
                                 <option value="30">30%</option>
                                 <option value="20">20%</option>
                                 <option value="10">10%</option>
@@ -118,29 +129,34 @@
                                 <option value="CBCT">CBCT Service</option>
                             </select>
                         </div>
+
                         <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">Coupon Expiry Date</label>
-                            <input type="date" id="exp" class="w-full border p-2 rounded bg-white text-sm font-bold" onchange="updateScheduleText()">
+                            <label class="text-xs font-bold text-slate-500 block mb-1">VALID TILL DATE</label>
+                            <input type="date" id="exp" class="w-full border p-2 rounded text-sm font-bold bg-white text-red-600">
                         </div>
+
                         <div>
-                            <label class="text-xs font-bold text-slate-500 block mb-1">Schedule Shoot (Optional)</label>
-                            <input type="time" id="schedule-time" class="w-full border p-2 rounded bg-white text-sm font-bold" onchange="updateScheduleText()">
+                            <label class="text-xs font-bold text-slate-500 block mb-1">SCHEDULE TIME (Optional)</label>
+                            <input type="time" id="schedule-time" class="w-full border p-2 rounded text-sm bg-white text-slate-600" onchange="updateScheduleText()">
                         </div>
+
                         <div class="flex flex-col gap-2">
-                            <input type="file" id="csv" class="w-full border p-1 rounded bg-white text-xs" accept=".csv">
-                            <button onclick="shoot()" id="btn-shoot" class="w-full bg-green-600 text-white font-bold p-2 rounded shadow hover:bg-green-700 transition">SHOOT 🚀</button>
+                            <input type="file" id="csv" class="w-full border p-1 rounded text-xs bg-white text-slate-500">
+                            <button onclick="shoot()" id="btn-shoot" class="w-full bg-blue-600 text-white font-bold p-2 rounded shadow hover:bg-blue-700 transition tracking-widest text-sm">SHOOT 🚀</button>
                         </div>
                     </div>
+                    
                     <div class="mt-2 text-right">
-                        <span id="schedule-notify" class="text-xs font-bold text-orange-600 hidden">⏰ Campaign will automatically fire on <span id="s-dt"></span></span>
+                        <span id="schedule-notify" class="text-xs font-bold text-orange-600 hidden animate-pulse">⏳ Campaign will be scheduled for <span id="s-dt"></span></span>
                     </div>
+
                     <input type="hidden" id="dynamic-template-id" value="">
                 </div>
 
                 <div class="bg-slate-800 text-white rounded-xl shadow-lg mb-6 overflow-hidden">
                     <div class="p-3 bg-slate-900 flex justify-between items-center">
-                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">⚡ Live System Activity (Auto-Sync)</h3>
-                        <button onclick="loadActivityLogs()" class="text-[10px] bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">Refresh</button>
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-300">🔴 LIVE ACTIVITY LOGS</h3>
+                        <button onclick="loadActivityLogs()" class="text-[10px] bg-slate-700 px-3 py-1.5 rounded hover:bg-slate-600">Refresh Logs</button>
                     </div>
                     <div class="max-h-40 overflow-y-auto">
                         <table class="w-full text-[11px] text-left">
@@ -149,15 +165,17 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-wrap justify-between items-center gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-wrap gap-4 items-center border border-slate-200">
                     <h3 class="font-bold text-sm text-slate-800 w-full mb-1">🔍 Filter Database</h3>
-                    <input type="text" id="search-filter" placeholder="Search Name, Phone, Code, Reg No..." class="border p-2 rounded w-full md:w-64 text-sm bg-slate-50">
+                    <input type="text" id="search-filter" placeholder="Search Name, Phone, Code, Reg No..." class="border p-2 rounded text-sm w-64 outline-none focus:border-blue-500 shadow-inner">
+                    
                     <div class="flex items-center gap-2">
-                        <input type="date" id="date-from" class="border p-2 rounded text-sm bg-slate-50">
+                        <input type="date" id="date-from" class="border p-2 rounded text-sm outline-none focus:border-blue-500 text-slate-600">
                         <span class="text-slate-400 text-xs font-bold">TO</span>
-                        <input type="date" id="date-to" class="border p-2 rounded text-sm bg-slate-50">
+                        <input type="date" id="date-to" class="border p-2 rounded text-sm outline-none focus:border-blue-500 text-slate-600">
                     </div>
-                    <select id="status-filter" class="border p-2 rounded text-sm bg-slate-50 font-bold text-slate-700">
+
+                    <select id="status-filter" class="border p-2 rounded text-sm outline-none focus:border-blue-500 text-slate-600">
                         <option value="">All Statuses</option>
                         <option value="Redeemed">✅ Redeemed</option>
                         <option value="Active">⏳ Active</option>
@@ -165,87 +183,95 @@
                         <option value="CallCompleted">📞 Call Completed</option>
                         <option value="Failed (No Answer)">📵 No Answer</option>
                     </select>
-                    <button onclick="applyFilters()" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-blue-700">APPLY FILTER</button>
-                    <button onclick="clearFilters()" class="bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2 rounded hover:bg-slate-300">CLEAR</button>
+
+                    <button onclick="applyFilters()" class="bg-blue-600 text-white px-6 py-2 rounded shadow-md text-xs font-bold tracking-wider hover:bg-blue-700 transition">APPLY FILTER</button>
+                    <button onclick="clearFilters()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded shadow-sm text-xs font-bold tracking-wider hover:bg-slate-300 transition">CLEAR</button>
                 </div>
 
                 <div class="flex gap-4 mb-4 border-b pb-4 mt-4 overflow-x-auto">
-                    <button onclick="switchTab('doctor')" id="tab-doc" class="px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md">Doctor DB</button>
-                    <button onclick="switchTab('patient')" id="tab-pat" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300">Patient DB</button>
-                    <button onclick="switchTab('dental')" id="tab-den" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300">Dental DB</button>
-                    <button onclick="switchTab('sales')" id="tab-sales" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300">BOT Tracker</button>
+                    <button onclick="switchTab('doctor')" id="tab-doc" class="px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap">🩺 DOCTOR</button>
+                    <button onclick="switchTab('patient')" id="tab-pat" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">👥 PATIENT</button>
+                    <button onclick="switchTab('dental')" id="tab-den" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">🦷 DENTAL (CBCT)</button>
+                    <button onclick="switchTab('sales')" id="tab-sales" class="px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap">📊 SALES BOT TRACKER</button>
                 </div>
 
                 <div id="doctor-section" class="bg-transparent mb-6">
+                    
                     <div id="doctor-analytics" class="mb-6">
                         
-                        <!-- 🚨 ALL TIME VS FILTERED UI UPDATE -->
-                        <div class="bg-indigo-900 text-white p-5 rounded-xl shadow-lg flex flex-wrap justify-between items-center mb-4 gap-4">
-                            <div class="border-r border-indigo-700 pr-4">
-                                <p class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-1">ALL TIME GENERATED</p>
-                                <h2 id="stat-total-dr-shoot-all" class="text-2xl font-black">0</h2>
+                        <div class="bg-indigo-900 text-white p-5 rounded-xl shadow-lg mb-6 flex flex-wrap justify-between items-center border border-indigo-700">
+                            <div>
+                                <p class="text-[10px] font-bold text-indigo-300 tracking-widest uppercase mb-1">Total Campaign Shoots (Doctors)</p>
+                                <h2 id="stat-total-dr-shoot" class="text-3xl font-black">0</h2>
                             </div>
-                            <div class="border-r border-indigo-700 pr-4">
-                                <p class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-1">ALL TIME REDEEMED</p>
-                                <h2 id="stat-total-dr-redeem-all" class="text-2xl font-black text-green-400">0</h2>
+                            <div>
+                                <p class="text-[10px] font-bold text-indigo-300 tracking-widest uppercase mb-1">Total Patients Redeemed</p>
+                                <h2 id="stat-total-dr-redeem" class="text-3xl font-black text-green-400">0</h2>
                             </div>
-                            <div class="border-r border-indigo-700 pr-4 pl-2">
-                                <p class="text-[10px] font-bold text-yellow-300 uppercase tracking-widest mb-1">FILTERED GENERATED</p>
-                                <h2 id="stat-total-dr-shoot-filtered" class="text-3xl font-black text-yellow-400">0</h2>
-                            </div>
-                            <div class="pl-2">
-                                <p class="text-[10px] font-bold text-yellow-300 uppercase tracking-widest mb-1">FILTERED REDEEMED</p>
-                                <h2 id="stat-total-dr-redeem-filtered" class="text-3xl font-black text-yellow-400">0</h2>
-                            </div>
-                            <div class="max-w-md text-right ml-auto">
-                                <p class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-1">ACTIVE REDEEMING BRANCHES</p>
-                                <h2 id="stat-active-branches" class="text-sm font-bold text-indigo-200">-</h2>
+                            <div class="max-w-md text-right">
+                                <p class="text-[10px] font-bold text-indigo-300 tracking-widest uppercase mb-1">Active Branches (Redeemed Here)</p>
+                                <h2 id="stat-active-branches" class="text-sm font-bold text-indigo-100 leading-relaxed">-</h2>
                             </div>
                         </div>
 
                         <div class="flex justify-between items-center mb-2">
-                            <h2 class="text-lg font-black text-slate-800">📈 Campaign Deep Analytics (Filtered)</h2>
-                            <div class="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full">Last Generated: <span id="last-campaign-date" class="text-blue-700"></span></div>
+                            <h2 class="text-lg font-black text-slate-800">📈 Campaign & PRO Intelligence (Doctors)</h2>
+                            <div class="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full">Last Campaign Shoot: <span id="last-campaign-date" class="text-blue-600">Loading...</span></div>
                         </div>
 
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
                             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b pb-2">⭐ Doctor Ratings Tracker</h3>
-                                <div class="flex justify-between text-sm font-bold mb-1"><span>5 Star:</span> <span id="stat-r5" class="text-green-600">0</span></div>
-                                <div class="flex justify-between text-sm font-bold mb-1"><span>4 Star:</span> <span id="stat-r4" class="text-blue-600">0</span></div>
-                                <div class="flex justify-between text-sm font-bold mb-1"><span>3 Star:</span> <span id="stat-r3" class="text-yellow-600">0</span></div>
-                                <div class="flex justify-between text-sm font-bold mb-1"><span>2 Star:</span> <span id="stat-r2" class="text-orange-600">0</span></div>
-                                <div class="flex justify-between text-sm font-bold"><span>1 Star:</span> <span id="stat-r1" class="text-red-600">0</span></div>
-                            </div>
-                            
-                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b pb-2">🖱️ Quick Action Insights</h3>
-                                <div class="bg-purple-50 p-3 rounded-lg border border-purple-100 flex justify-between items-center mb-3">
-                                    <span class="font-bold text-purple-800 text-xs">Total "More Coupons" Requests</span>
-                                    <span id="stat-more-coupons" class="font-black text-purple-600 text-lg">0</span>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">⭐ Ratings Summary</h3>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>5 Star:</span>
+                                    <span id="stat-r5" class="text-green-600">0</span>
                                 </div>
-                                <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Top Custom Clicks:</h4>
-                                <div id="top-buttons" class="overflow-y-auto max-h-24 flex flex-wrap gap-1"></div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>4 Star:</span>
+                                    <span id="stat-r4" class="text-blue-600">0</span>
+                                </div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>3 Star:</span>
+                                    <span id="stat-r3" class="text-yellow-600">0</span>
+                                </div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>2 Star:</span>
+                                    <span id="stat-r2" class="text-orange-600">0</span>
+                                </div>
+                                <div class="flex justify-between text-sm font-bold text-slate-700">
+                                    <span>1 Star:</span>
+                                    <span id="stat-r1" class="text-red-600">0</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🔥 Engagement</h3>
+                                <div class="bg-purple-50 p-3 rounded-lg border border-purple-100 flex justify-between items-center mb-3">
+                                    <span class="font-bold text-purple-800 text-xs">Requested 'More Coupons'</span>
+                                    <span id="stat-more-coupons" class="font-black text-lg text-purple-600">0</span>
+                                </div>
+                                <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-1">Top Buttons Clicked:</h4>
+                                <div id="top-buttons" class="overflow-y-auto max-h-20"></div>
                             </div>
 
                             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b pb-2">🏥 Branch Redemption Leaderboard</h3>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🏥 Branch Redemptions</h3>
                                 <div id="branch-leaderboard" class="overflow-y-auto max-h-32 space-y-1"></div>
                             </div>
                         </div>
 
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <div class="bg-red-50 p-3 border-b border-red-100 flex justify-between items-center">
-                                <h3 class="text-sm font-bold text-red-800">📞 PRO CALL TRACKER (Doctors)</h3>
+                                <h3 class="text-sm font-bold text-red-800">📞 PRO Call Requests (Pending vs Done)</h3>
                             </div>
                             <div class="overflow-x-auto max-h-48 overflow-y-auto">
                                 <table class="w-full text-xs text-left whitespace-nowrap">
-                                    <thead class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm">
+                                    <thead class="bg-slate-100 text-slate-500 uppercase sticky top-0">
                                         <tr>
                                             <th class="p-2 pl-4">PRO Name & Phone</th>
                                             <th class="p-2 text-center">Total Requests</th>
                                             <th class="p-2 text-center">Pending Calls</th>
-                                            <th class="p-2 text-center">Completed/Failed</th>
+                                            <th class="p-2 text-center">Completed Calls</th>
                                             <th class="p-2 text-center">Action</th>
                                         </tr>
                                     </thead>
@@ -256,17 +282,21 @@
                     </div>
 
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-                        <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                            <h3 class="font-bold text-blue-800 text-sm">Doctor Campaign Database</h3>
+                        <div class="p-4 border-b flex justify-between items-center bg-blue-50">
+                            <h3 class="font-bold text-blue-800 text-sm">Doctor Database (Latest Activity First)</h3>
                             <div class="flex gap-2">
-                                <button onclick="openGPReport()" class="bg-purple-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-purple-700"><span>📸</span> GP CAMPAIGN REPORT</button>
-                                <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-green-700"><span>📊</span> EXPORT ALL DOCTORS</button>
+                                <button onclick="openGPReport()" class="bg-purple-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-purple-700 transition flex items-center gap-2">
+                                    <span>📸</span> GP CAMPAIGN REPORT
+                                </button>
+                                <button onclick="exportFilteredExcel('Doctor')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
+                                    <span>📊</span> EXPORT DOCTORS
+                                </button>
                             </div>
                         </div>
                         <div class="overflow-x-auto max-h-96 overflow-y-auto">
                             <table class="w-full text-left text-xs whitespace-nowrap">
-                                <thead class="sticky top-0 bg-slate-100 shadow-sm z-10">
-                                    <tr class="bg-slate-100 text-slate-500 uppercase">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                         <th class="p-4">Details</th>
                                         <th class="p-4">Coupon & Campaign</th>
                                         <th class="p-4">PRO Info</th>
@@ -284,15 +314,17 @@
                     </div>
                 </div>
 
-                <div id="dental-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-                    <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                        <h3 class="font-bold text-indigo-800 text-sm">Dental Database</h3>
-                        <button onclick="exportFilteredExcel('Dental')" class="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-green-700"><span>📊</span> EXPORT ALL DENTISTS</button>
+                <div id="dental-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
+                    <div class="p-4 border-b flex justify-between items-center bg-indigo-50">
+                        <h3 class="font-bold text-indigo-800 text-sm">Dental & CGHS CBCT Database (Latest Activity First)</h3>
+                        <button onclick="exportFilteredExcel('Dental')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
+                            <span>📊</span> EXPORT DENTISTS
+                        </button>
                     </div>
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
-                            <thead class="sticky top-0 bg-slate-100 shadow-sm z-10">
-                                <tr class="bg-slate-100 text-slate-500 uppercase">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                     <th class="p-4">Details</th>
                                     <th class="p-4">Service & Campaign</th>
                                     <th class="p-4">PRO Info</th>
@@ -309,15 +341,17 @@
                     </div>
                 </div>
 
-                <div id="patient-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                <div id="patient-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
                     <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                        <h3 class="font-bold text-slate-800 text-sm">Patient Database</h3>
-                        <button onclick="exportFilteredExcel('Patient')" class="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-green-700"><span>📊</span> EXPORT ALL PATIENTS</button>
+                        <h3 class="font-bold text-slate-800 text-sm">Patient Database (Latest Activity First)</h3>
+                        <button onclick="exportFilteredExcel('Patient')" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2">
+                            <span>📊</span> EXPORT PATIENTS
+                        </button>
                     </div>
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
-                            <thead class="sticky top-0 bg-slate-100 shadow-sm z-10">
-                                <tr class="bg-slate-100 text-slate-500 uppercase">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                     <th class="p-4">Name</th>
                                     <th class="p-4">Phone</th>
                                     <th class="p-4">Coupon & Campaign</th>
@@ -334,44 +368,49 @@
                     </div>
                 </div>
 
-                <div id="sales-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200 mb-6">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 border-b">
-                        <div class="border border-slate-300 rounded-lg shadow-sm overflow-hidden">
-                            <div class="bg-slate-200 p-2 font-bold text-[11px] text-slate-800 flex justify-between"><span>🛡️ SENIOR BOT SUMMARY (SS)</span></div>
+                <div id="sales-section" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-slate-200">
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 border-b border-slate-200 bg-slate-50" id="sales-summary-container">
+                        <div class="border border-slate-300 rounded-lg shadow-sm overflow-hidden bg-white">
+                            <div class="bg-slate-200 p-2 font-bold text-[11px] text-slate-700 text-center border-b uppercase tracking-wider">Senior Sales (SS) - Quick Status</div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-[10px] text-left whitespace-nowrap">
-                                    <thead class="bg-slate-50 text-slate-500 uppercase" id="th-ss-summary"></thead>
+                                    <thead class="bg-slate-50 text-slate-500 uppercase border-b" id="th-ss-summary"></thead>
                                     <tbody id="summary-ss"></tbody>
                                 </table>
                             </div>
                         </div>
-                        <div class="border border-slate-300 rounded-lg shadow-sm overflow-hidden">
-                            <div class="bg-slate-200 p-2 font-bold text-[11px] text-slate-800 flex justify-between"><span>🤝 BUDDIES BOT SUMMARY (B)</span></div>
+                        <div class="border border-slate-300 rounded-lg shadow-sm overflow-hidden bg-white">
+                            <div class="bg-slate-200 p-2 font-bold text-[11px] text-slate-700 text-center border-b uppercase tracking-wider">Buddies (B) - Quick Status</div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-[10px] text-left whitespace-nowrap">
-                                    <thead class="bg-slate-50 text-slate-500 uppercase" id="th-b-summary"></thead>
+                                    <thead class="bg-slate-50 text-slate-500 uppercase border-b" id="th-b-summary"></thead>
                                     <tbody id="summary-b"></tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
 
-                    <div class="p-4 border-b bg-amber-50 flex flex-wrap justify-between items-center gap-2">
-                        <h3 class="font-bold text-amber-800 text-sm">Detailed Bot Activity Logs</h3>
+                    <div class="p-4 border-b bg-amber-50 flex flex-wrap justify-between items-center gap-4">
+                        <h3 class="font-bold text-amber-800 text-sm">Detailed Bot Responses</h3>
+                        
                         <div class="flex gap-2 items-center flex-wrap">
-                            <input type="date" id="s-from" class="border p-1.5 text-xs rounded bg-white font-bold">
+                            <input type="date" id="s-from" class="border p-1.5 text-xs rounded border-amber-300">
                             <span class="text-xs font-bold text-amber-800">TO</span>
-                            <input type="date" id="s-to" class="border p-1.5 text-xs rounded bg-white font-bold">
-                            <button onclick="loadSalesData()" class="bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-amber-700">FILTER</button>
-                            <input type="text" id="s-search" placeholder="Search logs..." class="border p-1.5 text-xs rounded w-32" onkeyup="renderSalesTable()">
-                            <button onclick="openSetupModal('bot-tab')" class="bg-slate-800 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-900 shadow">⚙️ SETUP BOTS</button>
-                            <button onclick="exportSalesExcel()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-green-700 shadow">📊 EXPORT</button>
+                            <input type="date" id="s-to" class="border p-1.5 text-xs rounded border-amber-300">
+                            <button onclick="loadSalesData()" class="bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-amber-700 shadow-sm">SEARCH</button>
+                            
+                            <input type="text" id="s-search" placeholder="Search name/team..." class="border p-1.5 text-xs rounded border-amber-300 ml-2" onkeyup="renderSalesTable()">
+                            
+                            <button onclick="openSetupModal('bot-tab')" class="bg-indigo-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-indigo-700 transition ml-4">⚙️ SETUP TEAM & BOTS</button>
+                            <button onclick="exportSalesExcel()" class="bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2"><span>📊</span> EXPORT DATA</button>
                         </div>
                     </div>
+                    
                     <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
-                            <thead class="sticky top-0 bg-slate-100 shadow-sm z-10">
-                                <tr class="bg-slate-100 text-slate-500 uppercase">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-500 uppercase font-bold sticky top-0 shadow-sm z-10">
                                     <th class="p-4">Date</th>
                                     <th class="p-4">Sales Person</th>
                                     <th class="p-4">Bot Session & Delay</th>
@@ -384,19 +423,19 @@
                         </table>
                     </div>
                 </div>
+
             </div>
 
-            <!-- USER DASHBOARD (RECEPTIONIST) -->
             <div id="user-dashboard" class="hidden">
-                <div class="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center max-w-md mx-auto border-t-8 border-blue-600 mb-8">
+                <div class="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center max-w-lg mx-auto mb-8">
                     <h2 class="text-2xl font-black text-slate-800 mb-6">REDEEM COUPON</h2>
-                    <input type="text" id="verify-code" placeholder="ENTER 5-DIGIT CODE" class="w-full border-4 border-slate-100 p-4 rounded-xl mb-4 font-black text-center text-3xl tracking-widest text-slate-700 uppercase focus:border-blue-500 outline-none">
-                    <button onclick="verifyCode()" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl shadow-lg hover:bg-slate-900 transition tracking-widest">VERIFY CODE</button>
+                    <input type="text" id="verify-code" placeholder="ENTER 5-DIGIT CODE" maxlength="5" class="w-full border-4 border-slate-200 p-4 rounded-xl text-center text-3xl font-black tracking-[10px] outline-none focus:border-blue-500 transition-all mb-4">
+                    <button onclick="verifyCode()" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-xl hover:bg-slate-900 transition shadow-md">CHECK CODE</button>
                     <div id="verify-result" class="mt-8 w-full hidden"></div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden max-w-4xl mx-auto border border-slate-200">
-                    <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold text-slate-800 text-sm">✅ REDEEMED TODAY</h3></div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden max-w-4xl mx-auto">
+                    <div class="bg-slate-50 p-4 border-b"><h3 class="font-bold">Recently Redeemed (Today)</h3></div>
                     <table class="w-full text-left text-sm">
                         <thead>
                             <tr class="bg-white border-b text-slate-500">
@@ -411,46 +450,49 @@
                     </table>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <!-- MODALS -->
-    <div id="setup-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-full overflow-hidden flex flex-col m-4">
-            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+    <div id="setup-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-full overflow-y-auto flex flex-col">
+            
+            <div class="p-4 border-b flex justify-between items-center bg-slate-800 text-white sticky top-0 z-20">
                 <div class="flex gap-4">
                     <h2 class="text-lg font-bold mr-4">⚙️ SYSTEM SETUP CENTER</h2>
-                    <button onclick="switchSetupTab('template-tab')" id="btn-template-tab" class="px-4 py-1 rounded-full font-bold bg-blue-600 text-white text-xs">DYNAMIC TEMPLATES</button>
-                    <button onclick="switchSetupTab('bot-tab')" id="btn-bot-tab" class="px-4 py-1 rounded-full font-bold bg-slate-200 text-slate-700 text-xs">SALES BOT ENGINE</button>
+                    <button onclick="switchSetupTab('template-tab')" id="btn-template-tab" class="px-4 py-1 rounded bg-blue-600 text-white text-xs font-bold transition">Marketing Templates</button>
+                    <button onclick="switchSetupTab('bot-tab')" id="btn-bot-tab" class="px-4 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition">Team & Sales Bot</button>
                 </div>
-                <button onclick="document.getElementById('setup-modal').classList.add('hidden')" class="text-slate-400 hover:text-red-500 font-bold text-xl px-2">&times;</button>
+                <button onclick="document.getElementById('setup-modal').classList.add('hidden')" class="text-white hover:text-red-400 font-bold text-xl">&times;</button>
             </div>
+            
             <div class="p-6">
-                <!-- TEMPLATE TAB -->
+                
                 <div id="template-tab" class="block">
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <h3 class="font-bold text-blue-800 text-sm mb-3">➕ Add New Dynamic Template</h3>
+                        <h3 class="font-bold text-blue-800 text-sm mb-3">➕ Add Custom Marketing Template</h3>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                             <div>
-                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Offer Name</label>
-                                <input type="text" id="tpl-name" placeholder="e.g. Doctor 30% English" class="w-full border p-2 rounded text-xs">
+                                <label class="text-[10px] font-bold text-slate-500">Template/Offer Name</label>
+                                <input type="text" id="tpl-name" placeholder="e.g. MRI 50% Offer" class="border p-2 rounded text-sm w-full outline-blue-500">
                             </div>
                             <div>
-                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Discount %</label>
-                                <input type="text" id="tpl-discount" placeholder="e.g. 30" class="w-full border p-2 rounded text-xs">
+                                <label class="text-[10px] font-bold text-slate-500">Discount % Value</label>
+                                <input type="text" id="tpl-discount" placeholder="e.g. 50" class="border p-2 rounded text-sm w-full outline-blue-500">
                             </div>
                             <div>
-                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">WATI Template ID</label>
-                                <input type="text" id="tpl-wati-id" placeholder="e.g. doc_dis_30_temp_eng" class="w-full border p-2 rounded text-xs">
+                                <label class="text-[10px] font-bold text-slate-500">WATI Template ID</label>
+                                <input type="text" id="tpl-wati-id" placeholder="e.g. mri_50_discount" class="border p-2 rounded text-sm w-full outline-blue-500">
                             </div>
-                            <button onclick="saveCustomTemplate()" class="bg-blue-600 text-white font-bold p-2 rounded text-xs hover:bg-blue-700">SAVE TEMPLATE</button>
+                            <button onclick="saveCustomTemplate()" class="bg-blue-600 text-white font-bold p-2 rounded hover:bg-blue-700 shadow text-sm">Save Template</button>
                         </div>
                     </div>
+                    
                     <div class="bg-white border border-slate-200 rounded-lg shadow-sm">
-                        <div class="bg-slate-100 p-3 font-bold text-xs uppercase text-slate-600 border-b">Saved Custom Templates</div>
+                        <div class="bg-slate-100 p-3 font-bold text-xs uppercase text-slate-600 border-b">Saved Templates List</div>
                         <div class="overflow-x-auto max-h-64 overflow-y-auto">
                             <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 border-b sticky top-0">
+                                <thead class="bg-slate-50 border-b">
                                     <tr>
                                         <th class="p-3">Offer Name</th>
                                         <th class="p-3">Discount %</th>
@@ -464,20 +506,19 @@
                     </div>
                 </div>
 
-                <!-- BOT TAB -->
-                <div id="bot-tab" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="border border-slate-200 rounded-lg bg-slate-50 shadow-sm overflow-hidden">
-                        <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-800 flex justify-between items-center">
+                <div id="bot-tab" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                        <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-700 border-b flex justify-between items-center">
                             <span>👥 Manage Sales Team</span>
                         </div>
                         <div class="p-3 border-b bg-white flex gap-2">
-                            <input type="text" id="nt-name" placeholder="Name" class="border p-1.5 text-xs rounded w-1/3">
-                            <input type="text" id="nt-phone" placeholder="Phone (91...)" class="border p-1.5 text-xs rounded w-1/3">
-                            <select id="nt-team" class="border p-1.5 text-xs rounded w-1/4">
+                            <input type="text" id="nt-name" placeholder="Name" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
+                            <input type="text" id="nt-phone" placeholder="Phone (91...)" class="border p-1.5 text-xs rounded w-1/3 outline-blue-500">
+                            <select id="nt-team" class="border p-1.5 text-xs rounded outline-blue-500">
                                 <option value="SS">SS (Senior)</option>
                                 <option value="B">B (Buddies)</option>
                             </select>
-                            <button onclick="addSalesPerson()" class="bg-blue-600 text-white px-2 rounded text-xs font-bold hover:bg-blue-700">ADD</button>
+                            <button onclick="addSalesPerson()" class="bg-blue-600 text-white px-3 rounded text-xs font-bold hover:bg-blue-700">+</button>
                         </div>
                         <div class="max-h-64 overflow-y-auto p-2">
                             <table class="w-full text-left text-[10px]">
@@ -486,67 +527,71 @@
                         </div>
                     </div>
 
-                    <div class="border border-slate-200 rounded-lg bg-slate-50 shadow-sm overflow-hidden">
-                        <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-800 flex justify-between items-center">
+                    <div class="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                        <div class="bg-slate-200 p-3 font-bold text-xs uppercase text-slate-700 border-b flex justify-between items-center">
                             <span>🤖 Manage Bot Keywords</span>
-                            <select id="sb-select" class="border p-1 rounded text-xs bg-white font-bold" onchange="loadBotConfig()">
+                            <select id="sb-select" class="border p-1 rounded text-xs font-normal" onchange="loadBotConfig()">
                                 <option value="">-- Setup New Bot --</option>
                             </select>
                         </div>
                         <div class="p-4 bg-white">
                             <div class="flex gap-2 mb-4">
                                 <div class="w-1/3">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Keyword</label>
-                                    <input type="text" id="nb-keyword" placeholder="e.g. SS12" class="border p-1.5 text-xs rounded w-full font-bold uppercase">
+                                    <label class="text-[10px] font-bold text-slate-500">Keyword</label>
+                                    <input type="text" id="nb-keyword" placeholder="e.g. SB112" class="border p-1.5 text-xs rounded w-full outline-blue-500 uppercase">
                                 </div>
                                 <div class="w-1/3">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Target Team</label>
-                                    <select id="nb-team" class="border p-1.5 text-xs rounded w-full">
+                                    <label class="text-[10px] font-bold text-slate-500">Team</label>
+                                    <select id="nb-team" class="border p-1.5 text-xs rounded w-full outline-blue-500">
                                         <option value="SS">SS (Senior)</option>
                                         <option value="B">B (Buddies)</option>
                                     </select>
                                 </div>
                                 <div class="w-1/3">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Schedule Time</label>
-                                    <input type="time" id="nb-time" class="border p-1.5 text-xs rounded w-full font-bold">
+                                    <label class="text-[10px] font-bold text-slate-500">Time</label>
+                                    <input type="time" id="nb-time" class="border p-1.5 text-xs rounded w-full outline-blue-500">
                                 </div>
                             </div>
+
                             <div class="mb-2 flex justify-between items-center">
-                                <label class="text-xs font-bold text-slate-700">Bot Questions (In Order)</label>
-                                <button onclick="addQuestionField()" class="text-blue-600 text-xs font-bold hover:underline">+ Add Question</button>
+                                <label class="text-xs font-bold text-slate-700">Dynamic Questions:</label>
+                                <button onclick="addQuestionField()" class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded hover:bg-indigo-200">+ Add Question</button>
                             </div>
-                            <div id="dynamic-q-container" class="space-y-2 mb-4"></div>
+                            <div id="dynamic-q-container" class="space-y-2 mb-4 max-h-40 overflow-y-auto p-1 border rounded bg-slate-50">
+                            </div>
+
                             <div class="flex justify-between border-t pt-4">
-                                <button onclick="deleteBot()" class="text-red-500 text-xs font-bold hover:underline">Delete Bot</button>
-                                <button onclick="saveBot()" class="bg-green-600 text-white px-4 py-2 rounded text-xs font-bold shadow hover:bg-green-700">SAVE BOT CONFIG</button>
+                                <button onclick="deleteBot()" class="text-red-500 text-xs font-bold hover:underline">🗑️ Delete Bot</button>
+                                <button onclick="saveBot()" class="bg-green-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-green-700 shadow">Save Bot Config</button>
                             </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 
-    <div id="gp-report-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-full overflow-hidden flex flex-col">
-            <div class="p-4 border-b flex justify-between items-center bg-purple-600 text-white">
+    <div id="gp-report-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-full overflow-y-auto flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center bg-purple-800 text-white sticky top-0 z-20">
                 <h2 class="text-lg font-bold">📸 GP CAMPAIGN REPORT (Screenshot Friendly)</h2>
                 <div class="flex gap-4 items-center">
-                    <button onclick="exportGPReportExcel()" class="bg-green-500 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-green-400">
+                    <button onclick="exportGPReportExcel()" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-4 py-2 rounded shadow transition flex items-center gap-2">
                         <span>📊</span> EXPORT REPORT DATA
                     </button>
-                    <button onclick="closeGPReport()" class="text-white hover:text-red-300 font-bold text-2xl">&times;</button>
+                    <button onclick="closeGPReport()" class="text-white hover:text-red-400 font-bold text-2xl leading-none">&times;</button>
                 </div>
             </div>
-            <div class="p-4 overflow-y-auto max-h-[80vh]">
+            <div class="p-4">
                 <table class="w-full text-xs text-left border-collapse border border-slate-300">
-                    <thead class="sticky top-0 bg-white">
+                    <thead>
                         <tr class="bg-purple-100 text-purple-900 border-b border-slate-300">
                             <th class="border border-slate-300 p-2">Date</th>
                             <th class="border border-slate-300 p-2">Discount %</th>
-                            <th class="border border-slate-300 p-2 text-center">Total Pushed</th>
-                            <th class="border border-slate-300 p-2 text-center">Redeemed</th>
-                            <th class="border border-slate-300 p-2 text-center">Call Req.</th>
+                            <th class="border border-slate-300 p-2 text-center">Shoots (Total Bheja)</th>
+                            <th class="border border-slate-300 p-2 text-center">Patients Aaye (Redeemed)</th>
+                            <th class="border border-slate-300 p-2 text-center">Call Requests</th>
                             <th class="border border-slate-300 p-2">PROs Involved</th>
                             <th class="border border-slate-300 p-2">Branches</th>
                             <th class="border border-slate-300 p-2">Top Clicks</th>
@@ -558,1319 +603,1246 @@
         </div>
     </div>
 
-<script>
-const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC NIKOL', 'UIC CHANDKHEDA', 'UIC NEW RANIP', 'UIC BOPAL'];
-
-// 🚨 MANUAL PRO MAPPING
-const MANUAL_PRO_MAP = {
-    '917490029085': 'Khyati',
-    '919558591212': 'Mital',
-    '918488931212': 'Aditi',
-    '919274682553': 'Jay',
-    '918980776879': 'Sandip Upadhyay',
-    '919737900092': 'Hardik Parikh'
-};
-
-let globalLogs = [];
-let filteredLogs = [];
-let salesReportData = [];
-let allBotsConfig = [];
-let allTeamMembers = [];
-let proList = [];
-let customTemplates = [];
-
-function formatDate(dateString) {
-    if(!dateString) return '-';
-    const d = new Date(dateString);
-    return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
-}
-
-function getStrictDateString(dObj) {
-    const utc = dObj.getTime() + (dObj.getTimezoneOffset() * 60000);
-    const ist = new Date(utc + (3600000 * 5.5));
-    const y = ist.getFullYear();
-    const m = String(ist.getMonth() + 1).padStart(2, '0');
-    const d = String(ist.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-}
-
-window.onload = () => {
-    const role = localStorage.getItem('role');
-    if (role) showApp(role);
-};
-
-async function login() {
-    const u = document.getElementById('username').value;
-    const p = document.getElementById('password').value;
-    const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username: u, password: p})
-    });
-    const data = await res.json();
-    if(data.success) {
-        localStorage.setItem('role', data.role);
-        showApp(data.role);
-    } else {
-        document.getElementById('login-error').classList.remove('hidden');
-    }
-}
-
-function logout() {
-    localStorage.removeItem('role');
-    location.reload();
-}
-
-function showApp(role) {
-    document.getElementById('login-view').classList.add('hidden');
-    document.getElementById('app-view').classList.remove('hidden');
-    document.getElementById('role-badge').innerText = role.toUpperCase();
-    
-    if(role === 'admin') {
-        document.getElementById('admin-dashboard').classList.remove('hidden');
-        loadAdminData();
-        fetchCustomTemplates();
-        checkSystemHealth();
-        setInterval(checkSystemHealth, 60000);
-        setInterval(loadActivityLogs, 5000);
-        setInterval(loadAdminData, 10000);
-    } else {
-        document.getElementById('user-dashboard').classList.remove('hidden');
-        loadUserData();
-    }
-}
-
-async function checkSystemHealth() {
-    try {
-        const res = await fetch('/api/admin/system-health').then(r => r.json());
-        if(res.isMemoryFull) {
-            document.getElementById('memory-warning').classList.remove('hidden');
-        } else {
-            document.getElementById('memory-warning').classList.add('hidden');
-        }
-    } catch(e){}
-}
-
-function switchTab(type) {
-    document.getElementById('doctor-section').classList.add('hidden');
-    document.getElementById('patient-section').classList.add('hidden');
-    document.getElementById('dental-section').classList.add('hidden');
-    document.getElementById('sales-section').classList.add('hidden');
-    
-    const defaultClass = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300";
-    document.getElementById('tab-doc').className = defaultClass;
-    document.getElementById('tab-pat').className = defaultClass;
-    document.getElementById('tab-den').className = defaultClass;
-    document.getElementById('tab-sales').className = defaultClass;
-
-    if(type === 'doctor') {
-        document.getElementById('doctor-section').classList.remove('hidden');
-        document.getElementById('tab-doc').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md";
-    } else if (type === 'dental') {
-        document.getElementById('dental-section').classList.remove('hidden');
-        document.getElementById('tab-den').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md";
-    } else if (type === 'patient') {
-        document.getElementById('patient-section').classList.remove('hidden');
-        document.getElementById('tab-pat').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md";
-    } else if (type === 'sales') {
-        document.getElementById('sales-section').classList.remove('hidden');
-        document.getElementById('tab-sales').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md";
-        loadSalesData();
-    }
-}
-
-function switchSetupTab(tabName) {
-    document.getElementById('template-tab').classList.add('hidden');
-    document.getElementById('bot-tab').classList.add('hidden');
-    document.getElementById('btn-template-tab').className = "px-4 py-1 rounded-full font-bold bg-slate-200 text-slate-700 text-xs";
-    document.getElementById('btn-bot-tab').className = "px-4 py-1 rounded-full font-bold bg-slate-200 text-slate-700 text-xs";
-
-    if(tabName === 'template-tab') {
-        document.getElementById('template-tab').classList.remove('hidden');
-        document.getElementById('template-tab').classList.add('block');
-        document.getElementById('btn-template-tab').className = "px-4 py-1 rounded-full font-bold bg-blue-600 text-white text-xs";
-        fetchCustomTemplates();
-    } else if (tabName === 'bot-tab') {
-        document.getElementById('bot-tab').classList.remove('hidden');
-        document.getElementById('bot-tab').classList.add('grid');
-        document.getElementById('btn-bot-tab').className = "px-4 py-1 rounded-full font-bold bg-blue-600 text-white text-xs";
-        fetchTeamSetup();
-        loadBotConfigList();
-    }
-}
-
-async function resetSystemData() {
-    const pass = prompt("Enter RESET PASSWORD to delete ALL coupons:");
-    if(!pass) return;
-    const res = await fetch('/api/admin/reset-data', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({password: pass})
-    });
-    const data = await res.json();
-    if(data.success) {
-        alert("DATABASE CLEARED SUCCESSFULLY!");
-        loadAdminData();
-    } else {
-        alert(data.message);
-    }
-}
-
-async function loadActivityLogs() {
-    const res = await fetch('/api/admin/activity-logs');
-    const logs = await res.json();
-    document.getElementById('activity-logs').innerHTML = logs.map(l => {
-        const exactTime = new Date(l.timestamp).toLocaleString('en-IN', {
-            day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit', second:'2-digit'
-        });
-        return `
-        <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
-            <td class="p-2 text-blue-400 font-bold whitespace-nowrap text-[9px]">${exactTime}</td>
-            <td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td>
-            <td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td>
-            <td class="p-2 text-slate-400">${l.details}</td>
-        </tr>
-        `;
-    }).join('');
-}
-
-async function loadAdminData() {
-    const agents = await fetch('/api/agents').then(r => r.json());
-    document.getElementById('agents-list').innerHTML = agents.map(a => {
-        return `
-        <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}">
-            <span class="text-xs font-bold">${a.name}</span>
-            <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)">
-        </div>
-        `;
-    }).join('');
-
-    proList = await fetch('/api/sales/team').then(r => r.json());
-    globalLogs = await fetch('/api/admin/logs').then(r => r.json());
-
-    const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
-    const patLogs = globalLogs.filter(l => l.audienceType === 'Patient');
-    const denLogs = globalLogs.filter(l => l.audienceType === 'Dental' || l.audienceType === 'CGHS_Dental');
-
-    document.getElementById('stat-total-sent').innerText = globalLogs.length;
-    document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
-    document.getElementById('stat-doc-sent').innerText = docLogs.length;
-    document.getElementById('stat-doc-redeemed').innerText = docLogs.filter(l => l.isUsed).length;
-    document.getElementById('stat-pat-sent').innerText = patLogs.length;
-    document.getElementById('stat-pat-redeemed').innerText = patLogs.filter(l => l.isUsed).length;
-    document.getElementById('stat-den-sent').innerText = denLogs.length;
-    document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
-
-    if(!document.getElementById('date-from').value) {
-        const todayStr = getStrictDateString(new Date());
-        document.getElementById('date-from').value = todayStr;
-        document.getElementById('date-to').value = todayStr;
-    }
-    applyFilters();
-
-    if(!document.getElementById('sales-section').classList.contains('hidden')){
-        loadSalesData();
-    }
-}
-
-function clearFilters() {
-    document.getElementById('search-filter').value = '';
-    document.getElementById('date-from').value = '';
-    document.getElementById('date-to').value = '';
-    document.getElementById('status-filter').value = '';
-    applyFilters();
-}
-
-// 🚨 DATE FILTER LOGIC FIX: NOW CHECKS REDEEMED DATE AS WELL
-function applyFilters() {
-    const search = document.getElementById('search-filter').value.toLowerCase();
-    const dateFrom = document.getElementById('date-from').value;
-    const dateTo = document.getElementById('date-to').value;
-    const status = document.getElementById('status-filter').value;
-
-    filteredLogs = globalLogs.filter(item => {
-        let matchSearch = true;
-        if (search) {
-            const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''}`.toLowerCase();
-            matchSearch = searchStr.includes(search);
-        }
+    <script>
+        const BRANCHES = ['UIC USMANPURA', 'UIC NARODA', 'UIC BAPUNAGAR', 'UIC MANINAGAR', 'UIC VADAJ', 'UIC GANDHINAGAR', 'UIC BAREJA', 'UIC SATELLITE', 'UIC SABARMATI', 'UIC JUHAPURA', 'UIC ISANPUR', 'UIC MORBI'];
         
-        let matchDate = true;
-        if (dateFrom || dateTo) {
-            const cDate = getStrictDateString(new Date(item.createdAt));
-            const uDate = item.updatedAt ? getStrictDateString(new Date(item.updatedAt)) : cDate;
-            const rDate = item.redeemedAt ? getStrictDateString(new Date(item.redeemedAt)) : null;
-            
-            let cMatch = true;
-            if (dateFrom && cDate < dateFrom) cMatch = false;
-            if (dateTo && cDate > dateTo) cMatch = false;
+        // 🚨 MANUAL PRO MAPPING (UI me NAAM dikhane ke liye)
+        const MANUAL_PRO_MAP = {
+            '917490029085': 'Khyati',
+            '919558591212': 'Mital',
+            '918488931212': 'Aditi',
+            '919274682553': 'Jay',
+            '918980776879': 'Sandip Upadhyay',
+            '919737900092': 'Hardik Parikh'
+        };
 
-            let uMatch = true;
-            if (dateFrom && uDate < dateFrom) uMatch = false;
-            if (dateTo && uDate > dateTo) uMatch = false;
+        let globalLogs = [];
+        let filteredLogs = [];
+        let salesReportData = [];
+        let allBotsConfig = [];
+        let allTeamMembers = [];
+        let proList = [];
+        let customTemplates = []; 
 
-            let rMatch = false;
-            if (rDate) {
-                rMatch = true;
-                if (dateFrom && rDate < dateFrom) rMatch = false;
-                if (dateTo && rDate > dateTo) rMatch = false;
-            }
-
-            if (!cMatch && !uMatch && !rMatch) matchDate = false;
+        function formatDate(dateString) {
+            if(!dateString) return '-';
+            const d = new Date(dateString);
+            return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
         }
 
-        let matchStatus = true;
-        if (status) {
-            if (status === 'Redeemed' && !item.isUsed) matchStatus = false;
-            if (status === 'Active' && item.isUsed) matchStatus = false;
-            if (status === 'PendingCall' && item.callStatus !== 'Pending') matchStatus = false;
-            if (status === 'CallCompleted' && item.callStatus !== 'Completed' && item.callStatus !== 'Call Done') matchStatus = false;
-            if (status === 'Failed (No Answer)' && item.callStatus !== 'Failed (No Answer)') matchStatus = false;
+        function getStrictDateString(dObj) {
+            const utc = dObj.getTime() + (dObj.getTimezoneOffset() * 60000);
+            const ist = new Date(utc + (3600000 * 5.5));
+            const y = ist.getFullYear();
+            const m = String(ist.getMonth() + 1).padStart(2, '0');
+            const d = String(ist.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
         }
 
-        return matchSearch && matchDate && matchStatus;
-    });
+        window.onload = () => { 
+            const role = localStorage.getItem('role'); 
+            if (role) showApp(role); 
+        };
 
-    filteredLogs.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
-
-    renderTables();
-    renderAnalytics();
-    loadBranchLeaderboard(); // 🚨 accurate all-audience redemption leaderboard
-}
-
-// 🚨 =====================================================================
-// BRANCH REDEMPTION LEADERBOARD (accurate — all audiences, redeemedAt-based)
-// Range mode -> current date filters use karta hai
-// All-Time mode -> koi date nahi -> backend last 1 year total deta hai
-// =====================================================================
-let leaderboardMode = 'range'; // 'range' | 'alltime'
-
-async function loadBranchLeaderboard() {
-    const board = document.getElementById('branch-leaderboard');
-    if (!board) return;
-
-    let url = '/api/admin/redemption-leaderboard';
-    if (leaderboardMode === 'range') {
-        const from = document.getElementById('date-from')?.value;
-        const to   = document.getElementById('date-to')?.value;
-        const qs = [];
-        if (from) qs.push('from=' + from);
-        if (to)   qs.push('to=' + to);
-        if (qs.length) url += '?' + qs.join('&');
-    }
-
-    board.innerHTML = '<div class="text-xs text-slate-400 p-1">Loading…</div>';
-
-    try {
-        const data = await fetch(url).then(r => r.json());
-        const branches = data.branches || [];
-
-        const header = `
-            <div class="flex items-center justify-between mb-2 sticky top-0 bg-white pb-1">
-                <span class="text-[10px] font-bold text-slate-500">
-                    ${leaderboardMode === 'alltime' ? 'ALL-TIME (1 Yr)' : 'SELECTED RANGE'}
-                    &nbsp;•&nbsp; Total: <span class="text-blue-600 font-black">${data.total || 0}</span>
-                </span>
-                <div class="flex gap-1">
-                    <button onclick="setLeaderboardMode('range')"
-                        class="text-[9px] px-2 py-0.5 rounded-full font-bold ${leaderboardMode === 'range' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}">Range</button>
-                    <button onclick="setLeaderboardMode('alltime')"
-                        class="text-[9px] px-2 py-0.5 rounded-full font-bold ${leaderboardMode === 'alltime' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}">All-Time</button>
-                </div>
-            </div>`;
-
-        if (branches.length === 0) {
-            board.innerHTML = header + '<span class="text-xs text-slate-400">No redemptions yet</span>';
-            return;
-        }
-
-        board.innerHTML = header + branches.map(b => `
-            <div class="flex justify-between items-center text-xs border-b py-1">
-                <div class="flex flex-col">
-                    <span class="font-bold text-slate-700">${b.branch}</span>
-                    <span class="text-[9px] text-slate-400">Dr ${b.doctors} • Pt ${b.patients} • Dental ${b.dental}</span>
-                </div>
-                <span class="font-black text-green-600 text-sm">${b.count}</span>
-            </div>`).join('');
-    } catch (e) {
-        console.error(e);
-        board.innerHTML = '<span class="text-xs text-red-500">Leaderboard load failed</span>';
-    }
-}
-
-function setLeaderboardMode(mode) {
-    leaderboardMode = mode;
-    loadBranchLeaderboard();
-}
-
-function renderAnalytics() {
-    const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
-    if (!docLogs) return;
-
-    let r5=0, r4=0, r3=0, r2=0, r1=0;
-    let moreCoupons = 0;
-    let btnCounts = {};
-    let branchCounts = {};
-    let proStats = {};
-
-    // 🚨 ALL TIME VS FILTERED UI UPDATE
-    const fullDocLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
-    document.getElementById('stat-total-dr-shoot-all').innerText = fullDocLogs.length;
-    document.getElementById('stat-total-dr-redeem-all').innerText = fullDocLogs.filter(l=>l.isUsed).length;
-
-    document.getElementById('stat-total-dr-shoot-filtered').innerText = docLogs.length;
-    document.getElementById('stat-total-dr-redeem-filtered').innerText = docLogs.filter(l=>l.isUsed).length;
-
-    docLogs.forEach(l => {
-        if(l.rating === 5) r5++;
-        else if(l.rating === 4) r4++;
-        else if(l.rating === 3) r3++;
-        else if(l.rating === 2) r2++;
-        else if(l.rating === 1) r1++;
-
-        if(l.buttonClicked) {
-            const bl = l.buttonClicked.toLowerCase();
-            if(bl.includes('more coupon') || bl.includes('વધુ કૂપન') || bl.includes('more 3')) moreCoupons++;
-            
-            l.buttonClicked.split(',').forEach(b => {
-                let btn = b.trim();
-                if(btn) btnCounts[btn] = (btnCounts[btn] || 0) + 1;
+        async function login() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const res = await fetch('/api/login', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({username: u, password: p}) 
             });
-        }
-
-        if(l.isUsed && l.branchRedeemed) {
-            branchCounts[l.branchRedeemed] = (branchCounts[l.branchRedeemed] || 0) + 1;
-        }
-
-        if(l.requestCallAt && l.proPhone) {
-            if(!proStats[l.proPhone]) {
-                let pName = MANUAL_PRO_MAP[l.proPhone] || "Unknown PRO";
-                let matched = proList.find(p => p.phone === l.proPhone);
-                if(matched) pName = matched.name;
-                
-                proStats[l.proPhone] = { phone: l.proPhone, name: pName, total: 0, pending: 0, completed: 0 };
+            const data = await res.json();
+            if(data.success) { 
+                localStorage.setItem('role', data.role); 
+                showApp(data.role);
+            } else { 
+                document.getElementById('login-error').classList.remove('hidden'); 
             }
-            proStats[l.proPhone].total++;
-            if(l.callStatus === 'Pending') proStats[l.proPhone].pending++;
-            if(l.callStatus === 'Completed' || l.callStatus === 'Call Done') proStats[l.proPhone].completed++;
-        }
-    });
-
-    let activeBranches = Object.keys(branchCounts).join(', ');
-    document.getElementById('stat-active-branches').innerText = activeBranches || '-';
-
-    document.getElementById('stat-r5').innerText = r5;
-    document.getElementById('stat-r4').innerText = r4;
-    document.getElementById('stat-r3').innerText = r3;
-    document.getElementById('stat-r2').innerText = r2;
-    document.getElementById('stat-r1').innerText = r1;
-    document.getElementById('stat-more-coupons').innerText = moreCoupons;
-
-    // 🚨 Branch Redemption Leaderboard ab accurate backend endpoint se aata hai
-    // (ALL audiences + redeemedAt-based). Dekho loadBranchLeaderboard().
-    // Purana Doctor-only client-side count yahan se hata diya gaya hai.
-
-    let sortedBtns = Object.entries(btnCounts).sort((a,b)=>b[1]-a[1]).slice(0, 15);
-    document.getElementById('top-buttons').innerHTML = sortedBtns.length > 0
-        ? sortedBtns.map(b => {
-            return `
-            <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                ${b[0]} <span class="text-blue-500">(${b[1]})</span>
-            </span>
-            `;
-        }).join('')
-        : '<span class="text-xs text-slate-400">No clicks yet</span>';
-
-    let sortedPros = Object.values(proStats).sort((a,b)=>b.total - a.total);
-    document.getElementById('pro-tracker-list').innerHTML = sortedPros.length > 0 
-        ? sortedPros.map(p => {
-            let pendingClass = p.pending > 0 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600';
-            return `
-            <tr class="border-b">
-                <td class="p-2 pl-4 font-bold text-slate-800">${p.name}<br><span class="text-[9px] font-normal text-slate-500">${p.phone}</span></td>
-                <td class="p-2 font-black text-blue-600 text-center">${p.total}</td>
-                <td class="p-2 text-center">
-                    <span class="px-2 py-1 rounded text-[10px] font-bold ${pendingClass}">${p.pending}</span>
-                </td>
-                <td class="p-2 text-center font-bold text-green-600">${p.completed}</td>
-                <td class="p-2 text-center">
-                    <button onclick="exportProDocs('${p.phone}')" class="bg-slate-200 px-2 py-1 rounded text-[9px] font-bold text-slate-600 hover:bg-slate-300">EXPORT</button>
-                </td>
-            </tr>
-            `;
-        }).join('')
-        : '<tr><td colspan="5" class="p-4 text-center text-xs text-slate-400">No Call Requests Yet</td></tr>';
-
-    if(docLogs.length > 0) {
-        let lastLog = docLogs.reduce((latest, current) => new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest);
-        document.getElementById('last-campaign-date').innerText = new Date(lastLog.createdAt).toLocaleString();
-    } else {
-        document.getElementById('last-campaign-date').innerText = 'N/A';
-    }
-}
-
-function openGPReport() {
-    const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
-    const reportMap = {};
-
-    docLogs.forEach(l => {
-        const dateStr = getStrictDateString(new Date(l.createdAt));
-        const [y, m, d] = dateStr.split('-');
-        const displayDate = `${d}-${m}-${y}`;
-
-        if (!reportMap[dateStr]) {
-            reportMap[dateStr] = {
-                date: displayDate,
-                rawDate: new Date(l.createdAt),
-                discounts: new Set(),
-                shoots: 0,
-                redeemed: 0,
-                callReqs: 0,
-                pros: new Set(),
-                branches: new Set(),
-                buttons: {}
-            };
         }
 
-        const rep = reportMap[dateStr];
-        rep.shoots++;
-        if (l.discountPercentage) rep.discounts.add(l.discountPercentage);
-        if (l.isUsed) {
-            rep.redeemed++;
-            if (l.branchRedeemed) rep.branches.add(l.branchRedeemed);
-        }
-        if (l.requestCallAt) rep.callReqs++;
-        
-        if (l.proPhone) {
-            let pName = MANUAL_PRO_MAP[l.proPhone] || "Unknown PRO";
-            let matched = proList.find(p => p.phone === l.proPhone);
-            if (matched) pName = matched.name;
-            rep.pros.add(pName);
+        function logout() { 
+            localStorage.removeItem('role'); 
+            location.reload(); 
         }
 
-        if (l.buttonClicked) {
-            const btns = l.buttonClicked.split(',');
-            btns.forEach(b => {
-                const btnTrim = b.trim();
-                if(btnTrim) {
-                    rep.buttons[btnTrim] = (rep.buttons[btnTrim] || 0) + 1;
+        function showApp(role) {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+            document.getElementById('role-badge').innerText = role.toUpperCase();
+            
+            if(role === 'admin') { 
+                document.getElementById('admin-dashboard').classList.remove('hidden'); 
+                loadAdminData(); 
+                fetchCustomTemplates();
+                
+                checkSystemHealth();
+                setInterval(checkSystemHealth, 60000); 
+                setInterval(loadActivityLogs, 5000);
+                setInterval(loadAdminData, 10000); 
+            } else { 
+                document.getElementById('user-dashboard').classList.remove('hidden'); 
+                loadUserData();
+            }
+        }
+
+        async function checkSystemHealth() {
+            try {
+                const res = await fetch('/api/admin/system-health').then(r => r.json());
+                if(res.isMemoryFull) {
+                    document.getElementById('memory-warning').classList.remove('hidden');
+                } else {
+                    document.getElementById('memory-warning').classList.add('hidden');
+                }
+            } catch(e){}
+        }
+
+        function switchTab(type) {
+            document.getElementById('doctor-section').classList.add('hidden');
+            document.getElementById('patient-section').classList.add('hidden');
+            document.getElementById('dental-section').classList.add('hidden');
+            document.getElementById('sales-section').classList.add('hidden');
+            
+            const defaultClass = "px-6 py-2 rounded-full font-bold bg-slate-200 text-slate-600 hover:bg-slate-300 transition whitespace-nowrap";
+            document.getElementById('tab-doc').className = defaultClass;
+            document.getElementById('tab-pat').className = defaultClass;
+            document.getElementById('tab-den').className = defaultClass;
+            document.getElementById('tab-sales').className = defaultClass;
+
+            if(type === 'doctor') {
+                document.getElementById('doctor-section').classList.remove('hidden');
+                document.getElementById('tab-doc').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap";
+            } else if (type === 'dental') {
+                document.getElementById('dental-section').classList.remove('hidden');
+                document.getElementById('tab-den').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap";
+            } else if (type === 'patient') {
+                document.getElementById('patient-section').classList.remove('hidden');
+                document.getElementById('tab-pat').className = "px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow-md whitespace-nowrap";
+            } else if (type === 'sales') {
+                document.getElementById('sales-section').classList.remove('hidden');
+                document.getElementById('tab-sales').className = "px-6 py-2 rounded-full font-bold bg-amber-500 text-white shadow-md whitespace-nowrap";
+                loadSalesData();
+            }
+        }
+
+        function switchSetupTab(tabName) {
+            document.getElementById('template-tab').classList.add('hidden');
+            document.getElementById('bot-tab').classList.add('hidden');
+            
+            document.getElementById('btn-template-tab').className = "px-4 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition";
+            document.getElementById('btn-bot-tab').className = "px-4 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition";
+
+            if(tabName === 'template-tab') {
+                document.getElementById('template-tab').classList.remove('hidden');
+                document.getElementById('template-tab').classList.add('block');
+                document.getElementById('btn-template-tab').className = "px-4 py-1 rounded bg-blue-600 text-white text-xs font-bold transition";
+                fetchCustomTemplates();
+            } else if (tabName === 'bot-tab') {
+                document.getElementById('bot-tab').classList.remove('hidden');
+                document.getElementById('bot-tab').classList.add('grid');
+                document.getElementById('btn-bot-tab').className = "px-4 py-1 rounded bg-blue-600 text-white text-xs font-bold transition";
+                fetchTeamSetup();
+                loadBotConfigList();
+            }
+        }
+
+        async function resetSystemData() {
+            const pass = prompt("Enter RESET PASSWORD to delete ALL coupons:");
+            if(!pass) return;
+            const res = await fetch('/api/admin/reset-data', {
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({password: pass})
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert("DATABASE CLEARED SUCCESSFULLY!");
+                loadAdminData();
+            } else { 
+                alert(data.message); 
+            }
+        }
+
+        async function loadActivityLogs() {
+            const res = await fetch('/api/admin/activity-logs');
+            const logs = await res.json();
+            
+            document.getElementById('activity-logs').innerHTML = logs.map(l => {
+                const exactTime = new Date(l.timestamp).toLocaleString('en-IN', { 
+                    day: '2-digit', month: 'short', 
+                    hour: '2-digit', minute:'2-digit', second:'2-digit' 
+                });
+                return `
+                    <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
+                        <td class="p-2 text-blue-400 font-bold whitespace-nowrap w-32">${exactTime}</td>
+                        <td class="p-2 font-black text-slate-300 uppercase w-32">${l.user}</td>
+                        <td class="p-2 text-green-400 font-bold tracking-wide">${l.action}</td>
+                        <td class="p-2 text-slate-400">${l.details}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function loadAdminData() {
+            const agents = await fetch('/api/agents').then(r => r.json());
+            document.getElementById('agents-list').innerHTML = agents.map(a => {
+                return `
+                    <div class="border p-3 rounded-lg flex justify-between items-center ${a.isOnline ? 'bg-green-50' : 'bg-slate-50 opacity-60'}">
+                        <span class="text-xs font-bold">${a.name}</span>
+                        <input type="checkbox" ${a.isOnline ? 'checked' : ''} onchange="toggleAgent('${a._id}', this.checked)" class="w-4 h-4 cursor-pointer">
+                    </div>
+                `;
+            }).join('');
+
+            proList = await fetch('/api/sales/team').then(r => r.json());
+            globalLogs = await fetch('/api/admin/logs').then(r => r.json());
+            
+            const docLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
+            const patLogs = globalLogs.filter(l => l.audienceType === 'Patient');
+            const denLogs = globalLogs.filter(l => l.audienceType === 'Dental' || l.audienceType === 'CGHS_Dental'); 
+            
+            document.getElementById('stat-total-sent').innerText = globalLogs.length;
+            document.getElementById('stat-total-redeemed').innerText = globalLogs.filter(l => l.isUsed).length;
+            
+            document.getElementById('stat-doc-sent').innerText = docLogs.length;
+            document.getElementById('stat-doc-redeemed').innerText = docLogs.filter(l => l.isUsed).length;
+            
+            document.getElementById('stat-pat-sent').innerText = patLogs.length;
+            document.getElementById('stat-pat-redeemed').innerText = patLogs.filter(l => l.isUsed).length;
+
+            document.getElementById('stat-den-sent').innerText = denLogs.length;
+            document.getElementById('stat-den-redeemed').innerText = denLogs.filter(l => l.isUsed).length;
+
+            if(!document.getElementById('date-from').value) {
+                const todayStr = getStrictDateString(new Date()); 
+                document.getElementById('date-from').value = todayStr;
+                document.getElementById('date-to').value = todayStr;
+            }
+
+            applyFilters();
+            
+            if(!document.getElementById('sales-section').classList.contains('hidden')) {
+                loadSalesData();
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('search-filter').value = '';
+            document.getElementById('date-from').value = '';
+            document.getElementById('date-to').value = '';
+            document.getElementById('status-filter').value = '';
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('search-filter').value.toLowerCase();
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+            const status = document.getElementById('status-filter').value;
+            
+            filteredLogs = globalLogs.filter(item => {
+                let matchSearch = true;
+                if (search) {
+                    const searchStr = `${item.targetName || ''} ${item.doctorPhone || ''} ${item.code || ''} ${item.proPhone || ''} ${item.agentAssigned || ''} ${item.buttonClicked || ''} ${item.branchRedeemed || ''} ${item.patientRegNo || ''} ${item.source || ''}`.toLowerCase();
+                    matchSearch = searchStr.includes(search);
+                }
+                
+                let matchDate = true;
+                if (dateFrom || dateTo) {
+                    const cDate = getStrictDateString(new Date(item.createdAt));
+                    const uDate = getStrictDateString(new Date(item.updatedAt || item.createdAt));
+                    
+                    let cMatch = true;
+                    if (dateFrom && cDate < dateFrom) cMatch = false;
+                    if (dateTo && cDate > dateTo) cMatch = false;
+                    
+                    let uMatch = true;
+                    if (dateFrom && uDate < dateFrom) uMatch = false;
+                    if (dateTo && uDate > dateTo) uMatch = false;
+                    
+                    if (!cMatch && !uMatch) matchDate = false;
+                }
+                
+                let matchStatus = true;
+                if (status) {
+                    if (status === 'Redeemed' && !item.isUsed) matchStatus = false;
+                    if (status === 'Active' && item.isUsed) matchStatus = false;
+                    if (status === 'PendingCall' && item.callStatus !== 'Pending') matchStatus = false;
+                    if (status === 'CallCompleted' && item.callStatus !== 'Completed' && item.callStatus !== 'Call Done') matchStatus = false;
+                    if (status === 'Failed (No Answer)' && item.callStatus !== 'Failed (No Answer)') matchStatus = false;
+                }
+                
+                return matchSearch && matchDate && matchStatus;
+            });
+            
+            filteredLogs.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+            
+            renderTables();
+            renderAnalytics();
+        }
+
+        function renderAnalytics() {
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
+            if (!docLogs) return;
+
+            let r5=0, r4=0, r3=0, r2=0, r1=0; 
+            let moreCoupons = 0; 
+            let btnCounts = {}; 
+            let branchCounts = {}; 
+            let proStats = {};
+
+            const fullDocLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
+            document.getElementById('stat-total-dr-shoot').innerText = fullDocLogs.length;
+            document.getElementById('stat-total-dr-redeem').innerText = fullDocLogs.filter(l => l.isUsed).length;
+
+            docLogs.forEach(l => {
+                if(l.rating === 5) r5++; 
+                else if(l.rating === 4) r4++; 
+                else if(l.rating === 3) r3++; 
+                else if(l.rating === 2) r2++; 
+                else if(l.rating === 1) r1++;
+                
+                if(l.buttonClicked) {
+                    const bl = l.buttonClicked.toLowerCase();
+                    if(bl.includes('more coupon') || bl.includes('વધુ કૂપન') || bl.includes('3 coupon')) moreCoupons++;
+                    
+                    l.buttonClicked.split(',').forEach(b => { 
+                        let btn = b.trim(); 
+                        if(btn) btnCounts[btn] = (btnCounts[btn] || 0) + 1; 
+                    });
+                }
+                
+                if(l.isUsed && l.branchRedeemed) { 
+                    branchCounts[l.branchRedeemed] = (branchCounts[l.branchRedeemed] || 0) + 1; 
+                }
+                
+                if(l.requestCallAt && l.proPhone) {
+                    if(!proStats[l.proPhone]) {
+                        // 🚨 MANUAL MAP CHECK FOR PRO NAME
+                        let pName = MANUAL_PRO_MAP[l.proPhone] || "Unknown PRO";
+                        let matched = proList.find(p => p.phone === l.proPhone);
+                        if(matched) pName = matched.name;
+                        
+                        proStats[l.proPhone] = { phone: l.proPhone, name: pName, total: 0, pending: 0, completed: 0, data: [] };
+                    }
+                    proStats[l.proPhone].total++;
+                    if(l.callStatus === 'Pending') proStats[l.proPhone].pending++;
+                    if(l.callStatus === 'Completed' || l.callStatus === 'Call Done') proStats[l.proPhone].completed++; 
                 }
             });
-        }
-    });
 
-    const reportArr = Object.values(reportMap).sort((a,b) => b.rawDate - a.rawDate);
-    const tbody = document.getElementById('gp-report-tbody');
+            let activeBranches = Object.keys(branchCounts).join(', ');
+            document.getElementById('stat-active-branches').innerText = activeBranches || '- None -';
 
-    tbody.innerHTML = reportArr.map(r => {
-        const discStr = Array.from(r.discounts).join(', ');
-        const proStr = Array.from(r.pros).join(', ');
-        const branchStr = Array.from(r.branches).join(', ');
-        
-        const topBtns = Object.entries(r.buttons)
-            .sort((a,b) => b[1] - a[1])
-            .slice(0,3)
-            .map(b => `<span class="bg-purple-50 border border-purple-200 px-1 py-0.5 rounded mr-1">${b[0]}(${b[1]})</span>`)
-            .join('');
+            document.getElementById('stat-r5').innerText = r5; 
+            document.getElementById('stat-r4').innerText = r4; 
+            document.getElementById('stat-r3').innerText = r3; 
+            document.getElementById('stat-r2').innerText = r2; 
+            document.getElementById('stat-r1').innerText = r1;
+            document.getElementById('stat-more-coupons').innerText = moreCoupons;
 
-        return `
-        <tr class="border-b border-slate-200 hover:bg-slate-50 transition">
-            <td class="border border-slate-200 p-2 font-black text-slate-800">${r.date}</td>
-            <td class="border border-slate-200 p-2 text-blue-600 font-bold">${discStr}%</td>
-            <td class="border border-slate-200 p-2 font-black text-center text-slate-700">${r.shoots}</td>
-            <td class="border border-slate-200 p-2 font-black text-center text-green-600">${r.redeemed}</td>
-            <td class="border border-slate-200 p-2 font-black text-center text-orange-600">${r.callReqs}</td>
-            <td class="border border-slate-200 p-2 text-[10px] font-bold text-slate-600">${proStr}</td>
-            <td class="border border-slate-200 p-2 text-[10px] font-bold text-slate-600">${branchStr}</td>
-            <td class="border border-slate-200 p-2 text-[9px]">${topBtns}</td>
-        </tr>
-        `;
-    }).join('');
+            let sortedBranches = Object.entries(branchCounts).sort((a,b)=>b[1]-a[1]);
+            document.getElementById('branch-leaderboard').innerHTML = sortedBranches.length 
+                ? sortedBranches.map(b => {
+                    return `
+                        <div class="flex justify-between text-xs border-b py-1">
+                            <span>${b[0]}</span>
+                            <span class="font-bold text-green-600">${b[1]}</span>
+                        </div>
+                    `;
+                }).join('') 
+                : '<span class="text-xs text-slate-400">No redemptions yet</span>';
 
-    document.getElementById('gp-report-modal').classList.remove('hidden');
-}
+            let sortedBtns = Object.entries(btnCounts).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+            document.getElementById('top-buttons').innerHTML = sortedBtns.length 
+                ? sortedBtns.map(b => {
+                    return `
+                        <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded m-1 inline-block">
+                            ${b[0]} <span class="text-blue-500">(${b[1]})</span>
+                        </span>
+                    `;
+                }).join('') 
+                : '<span class="text-xs text-slate-400">No clicks yet</span>';
 
-function closeGPReport() {
-    document.getElementById('gp-report-modal').classList.add('hidden');
-}
+            let sortedPros = Object.values(proStats).sort((a,b)=>b.total - a.total);
+            document.getElementById('pro-tracker-list').innerHTML = sortedPros.length 
+                ? sortedPros.map(p => {
+                    let pendingClass = p.pending > 0 ? 'bg-red-100 text-red-700 animate-pulse border-red-300' : 'bg-green-50 text-green-700 border-green-200';
+                    return `
+                        <tr class="border-b">
+                            <td class="p-2 pl-4 font-bold text-slate-800">${p.name}<br><span class="text-[9px] text-slate-500 font-normal">${p.phone}</span></td>
+                            <td class="p-2 font-black text-blue-600 text-center">${p.total}</td>
+                            <td class="p-2 text-center">
+                                <span class="px-2 py-1 rounded text-[10px] font-bold border ${pendingClass}">${p.pending} Pending</span>
+                            </td>
+                            <td class="p-2 text-center font-bold text-green-600">${p.completed} Done</td>
+                            <td class="p-2 text-center">
+                                <button onclick="exportProDocs('${p.phone}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3 py-1 rounded shadow">⬇️ Excel</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('') 
+                : '<tr><td colspan="5" class="p-4 text-center text-xs text-slate-400">No Call Requests</td></tr>';
 
-function exportGPReportExcel() {
-    const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
-    if(docLogs.length === 0) {
-        alert("No data available to export based on current filters.");
-        return;
-    }
-
-    let csv = "Date,Campaign_Name,Doctor Name,Doctor Phone,PRO Name,Discount,Redeemed,Branch,Patient_Reg_No\n";
-    
-    docLogs.forEach(i => {
-        const dateStr = getStrictDateString(new Date(i.createdAt));
-        const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
-        const cName = i.source || i.audienceType;
-        
-        let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO";
-        if(i.proPhone) {
-            let matched = proList.find(p => p.phone === i.proPhone);
-            if(matched) pName = matched.name;
-        }
-
-        const redeemedStatus = i.isUsed ? 'Yes' : 'No';
-        csv += `"${dateStr}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${pName}","${disc}","${redeemedStatus}","${i.branchRedeemed || ''}","${i.patientRegNo || ''}"\n`;
-    });
-
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    link.download = `GP_Campaign_Data_${getStrictDateString(new Date())}.csv`;
-    link.click();
-}
-
-function exportProDocs(proPhone) {
-    const dataToExport = filteredLogs.filter(i => i.proPhone === proPhone);
-    if(dataToExport.length === 0) return alert("No data for this PRO in current filter!");
-
-    let csv = "Created_Date,Doctor_Name,Doctor_Phone,Code,Discount,Call_Status\n";
-    dataToExport.forEach(i => {
-        const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
-        csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.callStatus || '-'}"\n`;
-    });
-
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    link.download = `PRO_${proPhone}_Requests.csv`;
-    link.click();
-}
-
-function getTableRowsHTML(logsArray) {
-    return logsArray.map(i => {
-        let stars = i.rating > 0 ? '⭐'.repeat(i.rating) : '<span class="text-slate-300">Unrated</span>';
-        let statusBadge = '';
-        
-        if(i.isUsed) statusBadge += '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded block mb-1">✅ Redeemed</span>';
-        
-        if(i.callStatus === 'Pending') statusBadge += '<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded block whitespace-nowrap">📞 Pending Call</span>';
-        else if(i.callStatus === 'Call Done') statusBadge += '<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded block whitespace-nowrap">📞 Call Done</span>';
-        else if(i.callStatus === 'Failed (No Answer)') statusBadge += '<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded block whitespace-nowrap">📵 Failed (No Answer)</span>';
-        else if(i.callStatus === 'Completed') statusBadge += '<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded block whitespace-nowrap">📞 Call Completed</span>';
-        else if(i.callStatus === 'Failed') statusBadge += '<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded block whitespace-nowrap">📵 Failed</span>';
-        
-        if(!statusBadge) statusBadge = '-';
-
-        const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT Service' : `${i.discountPercentage}%`;
-        const cName = i.source || i.audienceType;
-
-        let actionHTML = '';
-        if (i.buttonClicked && i.buttonClicked.trim() !== '') {
-            let buttons = i.buttonClicked.split(',');
-            actionHTML = buttons.map(btn => `
-                <span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[9px] mb-1 inline-block">
-                    ${btn.trim()}
-                </span>
-            `).join('');
-        } else {
-            actionHTML = `
-                <span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[9px] inline-block">
-                    ✅ Template Sent
-                </span>
-            `;
+            if(docLogs.length > 0) {
+                let lastLog = docLogs.reduce((latest, current) => new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest);
+                document.getElementById('last-campaign-date').innerText = new Date(lastLog.createdAt).toLocaleString('en-IN');
+            } else { 
+                document.getElementById('last-campaign-date').innerText = 'N/A'; 
+            }
         }
 
-        let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO";
-        if(i.proPhone) {
-            let matched = proList.find(p => p.phone === i.proPhone);
-            if(matched) pName = matched.name;
+        function openGPReport() {
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
+            const reportMap = {};
+
+            docLogs.forEach(l => {
+                const dateStr = getStrictDateString(new Date(l.createdAt)); 
+                
+                const [y, m, d] = dateStr.split('-');
+                const displayDate = `${d}-${m}-${y}`;
+
+                if (!reportMap[dateStr]) {
+                    reportMap[dateStr] = {
+                        date: displayDate,
+                        rawDate: new Date(l.createdAt),
+                        discounts: new Set(),
+                        shoots: 0,
+                        redeemed: 0,
+                        callReqs: 0,
+                        pros: new Set(),
+                        branches: new Set(),
+                        buttons: {}
+                    };
+                }
+
+                const rep = reportMap[dateStr];
+                rep.shoots++;
+                
+                if (l.discountPercentage) rep.discounts.add(l.discountPercentage === 'CBCT' ? 'CBCT' : l.discountPercentage + '%');
+                
+                if (l.isUsed) {
+                    rep.redeemed++;
+                    if (l.branchRedeemed) rep.branches.add(l.branchRedeemed);
+                }
+                
+                if (l.requestCallAt) rep.callReqs++;
+                
+                if (l.proPhone) {
+                    // 🚨 MANUAL MAP CHECK FOR GP REPORT
+                    let pName = MANUAL_PRO_MAP[l.proPhone] || "Unknown PRO";
+                    let matched = proList.find(p => p.phone === l.proPhone);
+                    if (matched) pName = matched.name;
+                    rep.pros.add(pName);
+                }
+
+                if (l.buttonClicked) {
+                    const btns = l.buttonClicked.split(',');
+                    btns.forEach(b => {
+                        const btnTrim = b.trim();
+                        if(btnTrim) {
+                            rep.buttons[btnTrim] = (rep.buttons[btnTrim] || 0) + 1;
+                        }
+                    });
+                }
+            });
+
+            const reportArr = Object.values(reportMap).sort((a,b) => b.rawDate - a.rawDate);
+
+            const tbody = document.getElementById('gp-report-tbody');
+            tbody.innerHTML = reportArr.map(r => {
+                const discStr = Array.from(r.discounts).join(', ');
+                const proStr = Array.from(r.pros).join(', ');
+                const branchStr = Array.from(r.branches).join(', ');
+                
+                const topBtns = Object.entries(r.buttons)
+                    .sort((a,b) => b[1] - a[1])
+                    .slice(0,3) 
+                    .map(b => `<span class="bg-purple-50 border border-purple-200 text-purple-700 px-1 py-0.5 rounded mr-1 inline-block">${b[0]}(${b[1]})</span>`)
+                    .join('');
+
+                return `
+                    <tr class="border-b border-slate-200 hover:bg-slate-50 transition">
+                        <td class="border border-slate-200 p-2 font-black text-slate-700">${r.date}</td>
+                        <td class="border border-slate-200 p-2 text-blue-600 font-bold">${discStr}</td>
+                        <td class="border border-slate-200 p-2 font-black text-slate-800 text-center text-lg">${r.shoots}</td>
+                        <td class="border border-slate-200 p-2 font-black text-green-600 text-center text-lg">${r.redeemed}</td>
+                        <td class="border border-slate-200 p-2 font-black text-red-600 text-center text-lg">${r.callReqs}</td>
+                        <td class="border border-slate-200 p-2 text-[10px] font-bold text-slate-600 leading-relaxed">${proStr || '-'}</td>
+                        <td class="border border-slate-200 p-2 text-[10px] font-bold text-indigo-600">${branchStr || '-'}</td>
+                        <td class="border border-slate-200 p-2 text-[9px]">${topBtns || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('gp-report-modal').classList.remove('hidden');
         }
 
-        return `
-        <tr class="border-b hover:bg-slate-50 transition">
-            <td class="p-4 font-semibold text-slate-800">${i.targetName || '-'} <br><span class="text-[10px] text-slate-500 font-bold">${i.doctorPhone || ''}</span></td>
-            <td class="p-4">
-                <span class="font-mono font-bold text-blue-600 tracking-widest block mb-1">${i.code}</span>
-                <span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded">${cName}</span>
-                <span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">${discountDisplay}</span>
-            </td>
-            <td class="p-4 font-bold text-slate-800">${pName}<br><span class="text-[9px] text-slate-500">${i.proPhone || '-'}</span></td>
-            <td class="p-4 text-xs">${stars}</td>
-            <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal leading-relaxed">${actionHTML}</td>
-            <td class="p-4">
-                <div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${i.requestCallAt ? new Date(i.requestCallAt).toLocaleTimeString() : '-'}</div>
-                <div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Act:</span> ${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleTimeString() : '-'}</div>
-            </td>
-            <td class="p-4">${statusBadge}</td>
-            <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
-            <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
-        </tr>
-        `;
-    }).join('');
-}
-
-function renderTables() {
-    const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
-    document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(docLogs.slice(0, 500));
-
-    const denLogs = filteredLogs.filter(l => l.audienceType === 'Dental' || l.audienceType === 'CGHS_Dental');
-    document.getElementById('dental-logs').innerHTML = getTableRowsHTML(denLogs.slice(0, 500));
-
-    const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
-    document.getElementById('patient-logs').innerHTML = patLogs.slice(0, 500).map(i => {
-        
-        let callBadge = '';
-        if(i.callStatus === 'Pending') callBadge = '<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded whitespace-nowrap">📞 Call Requested</span>';
-        else if(i.callStatus === 'Completed' || i.callStatus === 'Call Done') callBadge = '<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded whitespace-nowrap">📞 Connected</span>';
-        else if(i.callStatus === 'Failed' || i.callStatus === 'Failed (No Answer)') callBadge = '<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded whitespace-nowrap">📵 Failed</span>';
-        else callBadge = '-';
-
-        const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT Service' : `${i.discountPercentage}%`;
-        const cName = i.source || i.audienceType;
-
-        let actionHTML = '';
-        if (i.buttonClicked && i.buttonClicked.trim() !== '') {
-            actionHTML = i.buttonClicked.split(',').map(btn => `
-                <span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[9px] mb-1 inline-block">
-                    ${btn.trim()}
-                </span>
-            `).join('');
-        } else {
-            actionHTML = `
-                <span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[9px] inline-block">
-                    ✅ Template Sent
-                </span>
-            `;
+        function closeGPReport() {
+            document.getElementById('gp-report-modal').classList.add('hidden');
         }
 
-        return `
-        <tr class="border-b hover:bg-slate-50 transition">
-            <td class="p-4 font-semibold text-slate-800">${i.targetName || '-'}</td>
-            <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || ''}</td>
-            <td class="p-4">
-                <span class="font-mono font-bold text-blue-600 tracking-widest block mb-1">${i.code}</span>
-                <span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded">${cName}</span>
-                <span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
-            </td>
-            <td class="p-4">${i.agentAssigned ? `<span class="bg-blue-50 border border-blue-200 font-bold text-blue-700 px-2 py-1 rounded text-xs">${i.agentAssigned}</span>` : '-'}</td>
-            <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal leading-relaxed">${actionHTML}</td>
-            <td class="p-4">${callBadge}</td>
-            <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded">✅ Redeemed</span>' : '-'}</td>
-            <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
-            <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
-        </tr>
-        `;
-    }).join('');
-}
-
-async function toggleAgent(id, isOnline) {
-    await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) });
-    loadAdminData();
-}
-
-async function exportFilteredExcel(type) {
-    const dataToExport = filteredLogs.filter(i => type === 'Dental' ? (i.audienceType === 'Dental' || i.audienceType === 'CGHS_Dental') : i.audienceType === type);
-    
-    if(dataToExport.length === 0) {
-        alert("No data to export based on current filters.");
-        return;
-    }
-
-    let csv = "";
-    if (type === 'Doctor' || type === 'Dental') {
-        csv = "Created_Date,Campaign_Name,Name,Phone,Code,Service_Discount,PRO_Name,Redeemed,Branch,Patient_Reg_No\n";
-        dataToExport.forEach(i => {
-            const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
-            const cName = i.source || i.audienceType;
-            
-            let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO";
-            if(i.proPhone) {
-                let matched = proList.find(p => p.phone === i.proPhone);
-                if(matched) pName = matched.name;
+        function exportGPReportExcel() {
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
+            if(docLogs.length === 0) {
+                alert("No data available to export based on current filters.");
+                return;
             }
             
-            const isRedeemed = i.isUsed ? 'Yes' : 'No';
-            csv += `"${new Date(i.createdAt).toLocaleString()}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code || ''}","${disc}","${pName}","${isRedeemed}","${i.branchRedeemed || ''}","${i.patientRegNo || ''}"\n`;
-        });
-    } else {
-        csv = "Created_Date,Campaign_Name,Patient_Name,Phone,Code,Discount,Redeemed,Branch,Patient_Reg_No\n";
-        dataToExport.forEach(i => {
-            const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
-            const cName = i.source || i.audienceType;
-            const isRedeemed = i.isUsed ? 'Yes' : 'No';
-
-            csv += `"${new Date(i.createdAt).toLocaleString()}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code || ''}","${disc}","${isRedeemed}","${i.branchRedeemed || ''}","${i.patientRegNo || ''}"\n`;
-        });
-    }
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `UIC_${type}_Filtered_Report.csv`;
-    link.click();
-}
-
-async function fetchCustomTemplates() {
-    try {
-        const res = await fetch('/api/templates');
-        customTemplates = await res.json();
-        
-        document.getElementById('custom-template-list').innerHTML = customTemplates.map(t => `
-            <tr class="border-b hover:bg-slate-50">
-                <td class="p-3 font-bold text-slate-700">${t.name}</td>
-                <td class="p-3 text-blue-600 font-bold">${t.discountPercentage}%</td>
-                <td class="p-3 font-mono text-xs">${t.watiTemplateId}</td>
-                <td class="p-3 text-right">
-                    <button onclick="deleteCustomTemplate('${t._id}')" class="text-red-500 hover:text-red-700 font-bold text-xs">Delete</button>
-                </td>
-            </tr>
-        `).join('');
-
-        const group = document.getElementById('dynamic-templates-group');
-        if(group) {
-            group.innerHTML = customTemplates.map(t => `
-                <option value="dynamic_${t._id}">${t.name} (${t.discountPercentage}%)</option>
-            `).join('');
+            let csv = "Date,Campaign_Name,Doctor Name,Doctor Phone,PRO Name,Discount %,Redeemed Status,Patient Reg No,Branch Name\n";
+            
+            docLogs.forEach(i => {
+                const dateStr = getStrictDateString(new Date(i.createdAt));
+                const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                const cName = i.source || i.audienceType;
+                
+                // 🚨 EXCEL MANUAL MAP CHECK
+                let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO"; 
+                if(i.proPhone) { 
+                    let matched = proList.find(p => p.phone === i.proPhone); 
+                    if(matched) pName = matched.name; 
+                }
+                
+                const redeemedStatus = i.isUsed ? 'Yes' : 'No';
+                
+                csv += `"${dateStr}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${pName}","${disc}","${redeemedStatus}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+            });
+            
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            link.download = `GP_Campaign_Data_${getStrictDateString(new Date())}.csv`;
+            link.click();
         }
-    } catch(e) {}
-}
 
-async function saveCustomTemplate() {
-    const name = document.getElementById('tpl-name').value;
-    const disc = document.getElementById('tpl-discount').value;
-    const wati = document.getElementById('tpl-wati-id').value;
+        function exportProDocs(proPhone) {
+            const dataToExport = filteredLogs.filter(i => i.proPhone === proPhone && i.requestCallAt && i.audienceType === 'Doctor');
+            
+            if(dataToExport.length === 0) return alert("No data for this PRO in current date filter.");
+            
+            let csv = "Created_Date,Doctor_Name,Doctor_Phone,Code,Discount,Call_Status,Req_Call_At\n";
+            
+            dataToExport.forEach(i => {
+                const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                csv += `"${new Date(i.createdAt).toLocaleString()}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.callStatus || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}"\n`;
+            });
+            
+            const link = document.createElement("a"); 
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); 
+            link.download = `PRO_${proPhone}_Requests.csv`; 
+            link.click();
+        }
 
-    if(!name || !disc || !wati) return alert("All fields are required!");
+        // 🚨 MODIFIED FOR NEW CALL STATUS BADGES & PRO NAME FIX 🚨
+        function getTableRowsHTML(logsArray) {
+            return logsArray.map(i => {
+                let stars = i.rating > 0 ? '⭐'.repeat(i.rating) : '<span class="text-slate-300 text-[10px]">None</span>';
+                
+                let statusBadge = '';
+                if(i.isUsed) statusBadge += '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-0.5 rounded block mb-1">✅ REDEEMED</span>';
+                
+                // 🚨 UPDATE: Enhanced call statuses matching the dynamic PRO auto-routing logic
+                if(i.callStatus === 'Pending') statusBadge += '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] block border border-orange-200 shadow-sm">⏳ PENDING CALL</span>';
+                else if(i.callStatus === 'Call Done') statusBadge += '<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold text-[10px] block border border-indigo-200 shadow-sm">📞 PRO CALL DONE</span>';
+                else if(i.callStatus === 'Failed (No Answer)') statusBadge += '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] block border border-red-300">📵 NOT RECEIVED (PRO)</span>';
+                else if(i.callStatus === 'Completed') statusBadge += '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] block border border-blue-200 shadow-sm">📞 CALL COMPLETED</span>';
+                else if(i.callStatus === 'Failed') statusBadge += '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] block border border-red-200 shadow-sm">❌ SYSTEM FAILED</span>';
+                
+                if(!statusBadge) statusBadge = '-';
 
-    await fetch('/api/templates', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ name, discountPercentage: disc, watiTemplateId: wati, isActive: true })
-    });
+                const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
+                const cName = i.source || i.audienceType;
 
-    document.getElementById('tpl-name').value = '';
-    document.getElementById('tpl-discount').value = '';
-    document.getElementById('tpl-wati-id').value = '';
-    fetchCustomTemplates();
-    alert("Custom Template Saved Successfully!");
-}
+                let actionHTML = '';
+                if (i.buttonClicked && i.buttonClicked.trim() !== '') {
+                    let buttons = i.buttonClicked.split(',');
+                    actionHTML = buttons.map(btn => `
+                        <span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">
+                            ${btn.trim()}
+                        </span>
+                    `).join('');
+                } else {
+                    actionHTML = `
+                        <span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">
+                            ✅ Template Sent
+                        </span>
+                    `;
+                }
 
-async function deleteCustomTemplate(id) {
-    if(!confirm("Are you sure you want to delete this template?")) return;
-    await fetch(`/api/templates/${id}`, { method: 'DELETE' });
-    fetchCustomTemplates();
-}
+                // 🚨 TABLE MANUAL MAP CHECK
+                let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO";
+                if(i.proPhone) { 
+                    let matched = proList.find(p => p.phone === i.proPhone); 
+                    if(matched) pName = matched.name; 
+                }
 
-function autoFillCampaign() {
-    const type = document.getElementById('aud-type').value;
-    const discEl = document.getElementById('disc');
-    const hiddenId = document.getElementById('dynamic-template-id');
+                return `
+                    <tr class="border-b hover:bg-slate-50 transition">
+                        <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}<br><span class="text-[10px] text-slate-500 font-normal">${i.doctorPhone || '-'}</span></td>
+                        <td class="p-4">
+                            <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
+                            <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
+                            <span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded mt-1 inline-block ml-1">${cName}</span>
+                        </td>
+                        <td class="p-4 font-bold text-slate-800">${pName}<br><span class="text-[9px] text-slate-500 font-normal">${i.proPhone || '-'}</span></td>
+                        <td class="p-4 text-xs">${stars}</td>
+                        <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
+                        <td class="p-4">
+                            <div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">Req:</span> ${formatDate(i.requestCallAt)}</div>
+                            <div class="text-[10px] text-slate-500 mt-1"><span class="font-bold text-slate-700">Call:</span> ${formatDate(i.proCallClickedAt)}</div>
+                        </td>
+                        <td class="p-4">${statusBadge}</td>
+                        <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
+                        <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
 
-    if(type.startsWith('dynamic_')) {
-        const id = type.split('_')[1];
-        const matched = customTemplates.find(t => t._id === id);
-        
-        if(matched) {
-            let exists = Array.from(discEl.options).some(o => o.value === matched.discountPercentage);
-            if(!exists) {
-                let newOption = new Option(`${matched.discountPercentage}% (Custom)`, matched.discountPercentage);
-                discEl.add(newOption);
+        function renderTables() {
+            // HANG FIX: Slice limits nodes creation, exports intact
+            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
+            document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(docLogs.slice(0, 200));
+            
+            const denLogs = filteredLogs.filter(l => l.audienceType === 'Dental' || l.audienceType === 'CGHS_Dental');
+            document.getElementById('dental-logs').innerHTML = getTableRowsHTML(denLogs.slice(0, 200));
+            
+            const patLogs = filteredLogs.filter(l => l.audienceType === 'Patient');
+            document.getElementById('patient-logs').innerHTML = patLogs.slice(0, 200).map(i => {
+                let callBadge = '';
+                
+                // 🚨 UPDATE: Same status badge enhancements for patient
+                if(i.callStatus === 'Pending') callBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold text-[10px] border border-orange-200 shadow-sm">⏳ PENDING</span>';
+                else if(i.callStatus === 'Completed' || i.callStatus === 'Call Done') callBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold text-[10px] shadow border border-blue-200">📞 CALL DONE</span>';
+                else if(i.callStatus === 'Failed' || i.callStatus === 'Failed (No Answer)') callBadge = '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold text-[10px] border border-red-300">📵 NO ANSWER</span>';
+                else callBadge = '-';
+
+                const discountDisplay = i.discountPercentage === 'CBCT' ? 'CBCT SERVICE' : `${i.discountPercentage}% DISCOUNT`;
+                const cName = i.source || i.audienceType; 
+                
+                let actionHTML = '';
+                if (i.buttonClicked && i.buttonClicked.trim() !== '') {
+                    actionHTML = i.buttonClicked.split(',').map(btn => `
+                        <span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-[10px] border border-blue-200 capitalize shadow-sm inline-block m-0.5 leading-tight">
+                            ${btn.trim()}
+                        </span>
+                    `).join('');
+                } else { 
+                    actionHTML = `
+                        <span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-1 rounded text-[10px] border border-emerald-200 shadow-sm inline-block leading-tight">
+                            ✅ Template Sent
+                        </span>
+                    `; 
+                }
+
+                return `
+                    <tr class="border-b hover:bg-slate-50 transition">
+                        <td class="p-4 font-semibold text-slate-800">${i.targetName || 'N/A'}</td>
+                        <td class="p-4 text-slate-500 font-medium">${i.doctorPhone || '-'}</td>
+                        <td class="p-4">
+                            <span class="font-mono font-bold text-blue-600 tracking-wider">${i.code}</span><br>
+                            <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded mt-1 inline-block">${discountDisplay}</span>
+                            <span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded mt-1 inline-block ml-1">${cName}</span>
+                        </td>
+                        <td class="p-4">${i.agentAssigned ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold text-[10px] shadow-sm">🎧 ' + i.agentAssigned + '</span>' : '-'}</td>
+                        <td class="p-4 min-w-[150px] max-w-[250px] whitespace-normal flex flex-wrap gap-1 items-center">${actionHTML}</td>
+                        <td class="p-4">${callBadge}</td>
+                        <td class="p-4">${i.isUsed ? '<span class="text-green-600 font-bold text-[10px] bg-green-100 px-2 py-1 rounded shadow-sm">✅ REDEEMED</span>' : '<span class="text-slate-500 font-bold text-[10px] bg-slate-200 px-2 py-1 rounded">⏳ ACTIVE</span>'}</td>
+                        <td class="p-4 font-bold text-slate-700">${i.patientRegNo || '-'}</td>
+                        <td class="p-4 font-bold text-slate-700">${i.branchRedeemed || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function toggleAgent(id, isOnline) {
+            await fetch('/api/agents/toggle', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, isOnline}) });
+            loadAdminData();
+        }
+
+        async function exportFilteredExcel(type) {
+            const dataToExport = filteredLogs.filter(i => type === 'Dental' ? (i.audienceType === 'Dental' || i.audienceType === 'CGHS_Dental') : i.audienceType === type);
+            if(dataToExport.length === 0) {
+                alert("No data to export based on current filters.");
+                return;
             }
-            discEl.value = matched.discountPercentage;
-            discEl.disabled = true;
-            hiddenId.value = matched.watiTemplateId;
-        }
-    } else {
-        discEl.disabled = false;
-        hiddenId.value = "";
-        if(type === 'Doctor') discEl.value = "30";
-        if(type === 'Patient') discEl.value = "20";
-        if(type === 'Dental' || type === 'CGHS_Dental') discEl.value = "CBCT";
-    }
-}
+            
+            let csv = "";
+            if (type === 'Doctor' || type === 'Dental') {
+                csv = "Created_Date,Campaign_Name,Name,Phone,Code,Service/Discount,PRO_Name,PRO_Number,Button_Clicked,Req_Call_At,PRO_Call_At,Call_Status,Rating,Patient_Reg_No,Branch_Redeemed\n";
+                dataToExport.forEach(i => {
+                    const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                    const cName = i.source || i.audienceType;
+                    
+                    let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO"; 
+                    if(i.proPhone) { 
+                        let matched = proList.find(p => p.phone === i.proPhone); 
+                        if(matched) pName = matched.name; 
+                    }
 
-function updateScheduleText() {
-    const time = document.getElementById('schedule-time').value;
-    const date = document.getElementById('exp').value;
-    const notify = document.getElementById('schedule-notify');
-    const span = document.getElementById('s-dt');
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${pName}","${i.proPhone || ''}","${i.buttonClicked || ''}","${i.requestCallAt ? new Date(i.requestCallAt).toLocaleString() : ''}","${i.proCallClickedAt ? new Date(i.proCallClickedAt).toLocaleString() : ''}","${i.callStatus || ''}","${i.rating || 0}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+                });
+            } else {
+                csv = "Created_Date,Campaign_Name,Patient_Name,Phone,Code,Discount,Agent_Assigned,Button_Clicked,Call_Status,Coupon_Status,Patient_Reg_No,Branch_Redeemed\n";
+                dataToExport.forEach(i => {
+                    const disc = i.discountPercentage === 'CBCT' ? 'CBCT' : `${i.discountPercentage}%`;
+                    const cName = i.source || i.audienceType;
+                    csv += `"${new Date(i.createdAt).toLocaleString()}","${cName}","${i.targetName || ''}","${i.doctorPhone || ''}","${i.code}","${disc}","${i.agentAssigned || ''}","${i.buttonClicked || ''}","${i.callStatus || ''}","${i.isUsed ? 'Redeemed' : 'Active'}","${i.patientRegNo || ''}","${i.branchRedeemed || ''}"\n`;
+                });
+            }
 
-    if(time) {
-        notify.classList.remove('hidden');
-        span.innerText = `${date || 'Today'} at ${time}`;
-    } else {
-        notify.classList.add('hidden');
-    }
-}
-
-function shoot() {
-    const f = document.getElementById('csv').files[0];
-    const btn = document.getElementById('btn-shoot');
-    const audTypeEl = document.getElementById('aud-type');
-    const typeVal = audTypeEl.value;
-    const campaignName = audTypeEl.options[audTypeEl.selectedIndex].text;
-
-    if(!f || !document.getElementById('exp').value) return alert("Upload CSV and set Expiry Date!");
-
-    btn.innerText = "STARTING..."; btn.disabled = true;
-
-    let isDynamic = typeVal.startsWith('dynamic_');
-    let finalType = isDynamic ? 'Doctor' : typeVal;
-    let dynamicTplId = document.getElementById('dynamic-template-id').value;
-    let scheduleTime = document.getElementById('schedule-time').value;
-
-    Papa.parse(f, { header: true, skipEmptyLines: true, complete: async function(res) {
-        const validTargets = res.data.filter(row => row.phone && row.phone.trim() !== '');
-        
-        if(validTargets.length === 0) {
-            alert("No valid phone numbers found in CSV!");
-            btn.innerText = "SHOOT 🚀"; btn.disabled = false; return;
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `UIC_${type}_Filtered_Report.csv`;
+            link.click();
         }
 
-        try {
-            const req = await fetch('/api/campaign/shoot', {
+        async function fetchCustomTemplates() {
+            try {
+                const res = await fetch('/api/templates');
+                customTemplates = await res.json();
+                
+                // Update Table List
+                document.getElementById('custom-template-list').innerHTML = customTemplates.map(t => `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-3 font-bold text-slate-700">${t.name}</td>
+                        <td class="p-3 text-blue-600 font-bold">${t.discountPercentage}%</td>
+                        <td class="p-3 font-mono text-xs">${t.watiTemplateId}</td>
+                        <td class="p-3 text-right">
+                            <button onclick="deleteCustomTemplate('${t._id}')" class="text-red-500 font-bold hover:underline">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Update Smart Dropdown
+                const group = document.getElementById('dynamic-templates-group');
+                if(group) {
+                    group.innerHTML = customTemplates.map(t => `
+                        <option value="dynamic_${t._id}">${t.name} (${t.discountPercentage}%)</option>
+                    `).join('');
+                }
+            } catch(e) {}
+        }
+
+        async function saveCustomTemplate() {
+            const name = document.getElementById('tpl-name').value;
+            const disc = document.getElementById('tpl-discount').value;
+            const wati = document.getElementById('tpl-wati-id').value;
+
+            if(!name || !disc || !wati) return alert("All fields are required!");
+
+            await fetch('/api/templates', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    targetList: validTargets,
-                    discount: document.getElementById('disc').value,
-                    expiryDate: document.getElementById('exp').value,
-                    audienceType: finalType,
-                    isDynamic: isDynamic,
-                    dynamicTemplateId: dynamicTplId,
-                    scheduleTime: scheduleTime,
-                    campaignName: isDynamic ? campaignName : finalType
-                })
+                body: JSON.stringify({ name, discountPercentage: disc, watiTemplateId: wati })
             });
-            const resData = await req.json();
-            alert(resData.message || 'Campaign Started Safely in Background!');
+
+            document.getElementById('tpl-name').value = '';
+            document.getElementById('tpl-discount').value = '';
+            document.getElementById('tpl-wati-id').value = '';
             
-            document.getElementById('csv').value = '';
-            document.getElementById('schedule-time').value = '';
-            document.getElementById('schedule-notify').classList.add('hidden');
-            loadAdminData();
-        } catch(e) {
-            alert('Error starting campaign!');
-        } finally {
-            btn.innerText = "SHOOT 🚀"; btn.disabled = false;
+            fetchCustomTemplates();
+            alert("Custom Template Saved Successfully!");
         }
-    }});
-}
 
-async function loadSalesData() {
-    try {
-        let from = document.getElementById('s-from').value;
-        let to = document.getElementById('s-to').value;
-        let url = '/api/sales/tracker';
-        if(from && to) url += `?from=${from}&to=${to}`;
-
-        const res = await fetch(url).then(r => r.json());
-        salesReportData = res.report;
-        allBotsConfig = res.bots;
-        allTeamMembers = res.team;
-        renderSalesTable();
-    } catch(e) {}
-}
-
-function renderSalesSummary(filteredData) {
-    const persons = {};
-    filteredData.forEach(row => {
-        if(!persons[row.phone]) {
-            persons[row.phone] = { name: row.name, phone: row.phone, team: row.team, replies: {} };
+        async function deleteCustomTemplate(id) {
+            if(!confirm("Are you sure you want to delete this template?")) return;
+            await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+            fetchCustomTemplates();
         }
-        if(row.status === 'Replied') {
-            persons[row.phone].replies[row.keyword] = true;
+
+        function autoFillCampaign() {
+            const type = document.getElementById('aud-type').value;
+            const discEl = document.getElementById('disc');
+            const hiddenId = document.getElementById('dynamic-template-id');
+
+            if(type.startsWith('dynamic_')) {
+                const id = type.split('_')[1];
+                const matched = customTemplates.find(t => t._id === id);
+                if(matched) {
+                    let exists = Array.from(discEl.options).some(o => o.value == matched.discountPercentage);
+                    if(!exists) {
+                        let newOption = new Option(`${matched.discountPercentage}%`, matched.discountPercentage);
+                        discEl.add(newOption);
+                    }
+                    discEl.value = matched.discountPercentage;
+                    discEl.disabled = true; 
+                    hiddenId.value = matched.watiTemplateId;
+                }
+            } else {
+                discEl.disabled = false;
+                hiddenId.value = "";
+                if(type === 'Doctor') discEl.value = "30";
+                if(type === 'Patient') discEl.value = "20";
+                if(type === 'Dental' || type === 'CGHS_Dental') discEl.value = "CBCT";
+            }
         }
-    });
 
-    const ssBots = allBotsConfig.filter(b => b.team === 'SS').sort((a,b)=> (a.time > b.time ? 1 : -1));
-    const bBots = allBotsConfig.filter(b => b.team === 'B').sort((a,b)=> (a.time > b.time ? 1 : -1));
+        function updateScheduleText() {
+            const time = document.getElementById('schedule-time').value;
+            const date = document.getElementById('exp').value;
+            const notify = document.getElementById('schedule-notify');
+            const span = document.getElementById('s-dt');
 
-    document.getElementById('th-ss-summary').innerHTML = `
-        <tr>
-            <th class="p-2 pl-3">Name</th>
-            <th class="p-2">Phone</th>
-            ${ssBots.map(b=>{
-                let displayKw = b.keyword.toUpperCase().replace('YES I WILL REPLY ', '');
-                return `<th class="p-2 text-center" title="${b.time}">${displayKw}</th>`;
-            }).join('')}
-        </tr>
-    `;
+            if(time) {
+                notify.classList.remove('hidden');
+                span.innerText = `${date || 'Today'} at ${time}`;
+            } else {
+                notify.classList.add('hidden');
+            }
+        }
 
-    document.getElementById('th-b-summary').innerHTML = `
-        <tr>
-            <th class="p-2 pl-3">Name</th>
-            <th class="p-2">Phone</th>
-            ${bBots.map(b=>{
-                let displayKw = b.keyword.toUpperCase().replace('YES I WILL REPLY ', '');
-                return `<th class="p-2 text-center" title="${b.time}">${displayKw}</th>`;
-            }).join('')}
-        </tr>
-    `;
+        function shoot() {
+            const f = document.getElementById('csv').files[0];
+            const btn = document.getElementById('btn-shoot');
+            const audTypeEl = document.getElementById('aud-type');
+            const typeVal = audTypeEl.value;
+            const campaignName = audTypeEl.options[audTypeEl.selectedIndex].text; 
+            
+            if(!f || !document.getElementById('exp').value) return alert("Upload CSV and select expiry date!");
+            
+            btn.innerText = "STARTING..."; btn.disabled = true;
 
-    const yesBadge = '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded">✅ YES</span>';
-    const noBadge = '<span class="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded">❌ NO</span>';
+            let isDynamic = typeVal.startsWith('dynamic_');
+            let finalType = isDynamic ? 'Doctor' : typeVal; 
+            let dynamicTplId = document.getElementById('dynamic-template-id').value;
+            let scheduleTime = document.getElementById('schedule-time').value; 
+            
+            Papa.parse(f, { header: true, skipEmptyLines: true, complete: async (res) => {
+                const validTargets = res.data.filter(row => row.phone && row.phone.trim() !== '');
+                if(validTargets.length === 0) { 
+                    alert("No valid phone numbers found in CSV!"); 
+                    btn.innerText = "SHOOT 🚀"; btn.disabled = false; return; 
+                }
+                
+                try {
+                    const req = await fetch('/api/campaign/shoot', { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify({ 
+                            targetList: validTargets, 
+                            discount: document.getElementById('disc').value, 
+                            expiryDate: document.getElementById('exp').value, 
+                            audienceType: finalType,
+                            isDynamic: isDynamic,
+                            dynamicTemplateId: dynamicTplId,
+                            scheduleTime: scheduleTime,
+                            campaignName: isDynamic ? campaignName : finalType 
+                        }) 
+                    });
+                    const resData = await req.json();
+                    
+                    alert(resData.message || 'Campaign Started Safely in Background!'); 
+                    document.getElementById('csv').value = ''; 
+                    document.getElementById('schedule-time').value = '';
+                    document.getElementById('schedule-notify').classList.add('hidden');
+                    loadAdminData(); 
+                } catch(e) { 
+                    alert('Error starting campaign!'); 
+                } finally { 
+                    btn.innerText = "SHOOT 🚀"; btn.disabled = false; 
+                }
+            }});
+        }
 
-    let ssHTML = '', bHTML = '';
-    
-    Object.values(persons).forEach(p => {
-        if(p.team === 'SS') {
-            ssHTML += `
-            <tr class="border-b hover:bg-slate-50">
-                <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
-                <td class="p-2 text-slate-500">${p.phone}</td>
-                ${ssBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}
-            </tr>
+        async function loadSalesData() {
+            try {
+                let from = document.getElementById('s-from').value;
+                let to = document.getElementById('s-to').value;
+                let url = '/api/sales/tracker';
+                if(from && to) url += `?from=${from}&to=${to}`;
+
+                const res = await fetch(url).then(r => r.json());
+                salesReportData = res.report; 
+                allBotsConfig = res.bots; 
+                allTeamMembers = res.team;
+                renderSalesTable();
+            } catch(e) {}
+        }
+
+        function renderSalesSummary(filteredData) {
+            const persons = {};
+            filteredData.forEach(row => {
+                if(!persons[row.phone]) {
+                    persons[row.phone] = { name: row.name, phone: row.phone, team: row.team, replies: {} };
+                }
+                if(row.status === 'Replied') {
+                    persons[row.phone].replies[row.keyword] = true;
+                }
+            });
+
+            const ssBots = allBotsConfig.filter(b => b.team === 'SS').sort((a,b)=>a.time.localeCompare(b.time));
+            const bBots = allBotsConfig.filter(b => b.team === 'B').sort((a,b)=>a.time.localeCompare(b.time));
+
+            document.getElementById('th-ss-summary').innerHTML = `
+                <tr>
+                    <th class="p-2 pl-3">Name</th>
+                    <th class="p-2">Phone</th>
+                    ${ssBots.map(b=>{
+                        let displayKw = b.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
+                        return `<th class="p-2 text-center" title="${b.time}">${displayKw}</th>`;
+                    }).join('')}
+                </tr>
             `;
-        } else if(p.team === 'B') {
-            bHTML += `
-            <tr class="border-b hover:bg-slate-50">
-                <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
-                <td class="p-2 text-slate-500">${p.phone}</td>
-                ${bBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}
-            </tr>
+            
+            document.getElementById('th-b-summary').innerHTML = `
+                <tr>
+                    <th class="p-2 pl-3">Name</th>
+                    <th class="p-2">Phone</th>
+                    ${bBots.map(b=>{
+                        let displayKw = b.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
+                        return `<th class="p-2 text-center" title="${b.time}">${displayKw}</th>`;
+                    }).join('')}
+                </tr>
             `;
+
+            const yesBadge = '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-200">Yes</span>';
+            const noBadge = '<span class="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-200">No</span>';
+
+            let ssHTML = '', bHTML = '';
+            Object.values(persons).forEach(p => {
+                if(p.team === 'SS') {
+                    ssHTML += `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
+                            <td class="p-2 text-slate-500">${p.phone}</td>
+                            ${ssBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}
+                        </tr>
+                    `;
+                } else if(p.team === 'B') {
+                    bHTML += `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-2 pl-3 font-bold text-slate-700">${p.name}</td>
+                            <td class="p-2 text-slate-500">${p.phone}</td>
+                            ${bBots.map(b=>`<td class="p-2 text-center">${p.replies[b.keyword] ? yesBadge : noBadge}</td>`).join('')}
+                        </tr>
+                    `;
+                }
+            });
+
+            document.getElementById('summary-ss').innerHTML = ssHTML || `<tr><td colspan="10" class="p-4 text-center text-slate-400 italic">No Activity Found</td></tr>`;
+            document.getElementById('summary-b').innerHTML = bHTML || `<tr><td colspan="10" class="p-4 text-center text-slate-400 italic">No Activity Found</td></tr>`;
         }
-    });
 
-    document.getElementById('summary-ss').innerHTML = ssHTML || `<tr><td colspan="10" class="p-4 text-center text-slate-400">No Data</td></tr>`;
-    document.getElementById('summary-b').innerHTML = bHTML || `<tr><td colspan="10" class="p-4 text-center text-slate-400">No Data</td></tr>`;
-}
-
-async function syncWatiHistory(phone, date, keyword) {
-    try {
-        alert("Intelligent Sync Started! Checking WATI Backlog to auto-fill missed answers...");
-        const res = await fetch('/api/sales/sync-history', {
-            method: 'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({phone, dateStr: date, keyword})
-        });
-        const data = await res.json();
-        
-        if(data.success) {
-            alert("Fix Complete! Data reconstructed successfully.\n\n" + data.message);
-            loadSalesData();
-        } else {
-            alert("Sync Result: " + data.message);
+        async function syncWatiHistory(phone, date, keyword) {
+            try {
+                alert("Intelligent Sync Started! Checking WATI Backlog to auto-fix answers...");
+                const res = await fetch('/api/sales/sync-history', { 
+                    method: 'POST', 
+                    headers:{'Content-Type':'application/json'}, 
+                    body: JSON.stringify({phone, dateStr: date, keyword}) 
+                });
+                const data = await res.json();
+                
+                if(data.success) { 
+                    alert("Fix Complete! Data reconstructed successfully.\n\n" + data.message); 
+                    loadSalesData(); 
+                } else { 
+                    alert("Sync Result: " + data.message); 
+                }
+            } catch(e) { 
+                alert("Network Error during sync."); 
+            }
         }
-    } catch(e) {
-        alert("Network Error during sync.");
-    }
-}
 
-function renderSalesTable() {
-    const search = document.getElementById('s-search').value.toLowerCase();
-    
-    const filtered = salesReportData.filter(r => 
-        r.name.toLowerCase().includes(search) || 
-        r.team.toLowerCase().includes(search) ||
-        r.date.includes(search)
-    );
+        function renderSalesTable() {
+            const search = document.getElementById('s-search').value.toLowerCase();
+            const filtered = salesReportData.filter(r => 
+                r.name.toLowerCase().includes(search) || 
+                r.team.toLowerCase().includes(search) ||
+                r.date.includes(search)
+            );
 
-    renderSalesSummary(filtered);
+            renderSalesSummary(filtered);
 
-    document.getElementById('sales-logs').innerHTML = filtered.slice(0, 1000).map(r => {
-        let statusBadge = r.status === 'Replied' 
-            ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded">✅ Replied</span>` 
-            : `<span class="bg-red-50 text-red-600 font-bold px-2 py-1 rounded border border-red-100">⏳ Pending</span>`;
+            document.getElementById('sales-logs').innerHTML = filtered.slice(0, 200).map(r => {
+                let statusBadge = r.status === 'Replied' 
+                    ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 shadow-sm">✅ Replied</span><br><span class="text-[10px] text-slate-500 ml-1 font-bold mt-1 inline-block">⏱️ ${new Date(r.time).toLocaleTimeString()}</span>` 
+                    : `<span class="bg-red-50 text-red-600 font-bold px-2 py-1 rounded border border-red-200 shadow-sm">❌ Not Reply</span>`;
+                
+                let qaHTML = '<div class="text-[10px] space-y-2 whitespace-normal">';
+                if(r.answers && r.answers.length > 0) {
+                    r.answers.forEach((ans, idx) => {
+                        let q = r.questions && r.questions[idx] ? r.questions[idx] : `Question ${idx+1}`;
+                        let formattedAns = ans.replace(/\n/g, '<br>');
+                        qaHTML += `
+                            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                                <p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p>
+                                <p class="text-blue-700 font-semibold leading-relaxed">👉 ${formattedAns}</p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    qaHTML += `<span class="text-slate-400 italic">No answers recorded.</span>`;
+                }
+                qaHTML += '</div>';
 
-        let qaHTML = '<div class="text-[10px] space-y-2 whitespace-normal leading-relaxed">';
-        if(r.answers && r.answers.length > 0) {
-            r.answers.forEach((ans, idx) => {
-                let q = r.questions && r.questions[idx] ? r.questions[idx].replace(/\n/g, ' ') : `Question ${idx+1}`;
-                let formattedAns = ans.replace(/\n/g, '<br>');
-                qaHTML += `
-                <div class="bg-slate-50 p-2 rounded border border-slate-200">
-                    <p class="font-bold text-slate-700 mb-0.5">Q: ${q}</p>
-                    <p class="text-blue-700 font-semibold leading-relaxed">A: ${formattedAns}</p>
-                </div>
+                let replyHTML = r.adminReply 
+                    ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] block font-semibold whitespace-normal shadow-inner border border-blue-200 mb-1">Feedback: ${r.adminReply}</span>`
+                    : '';
+                
+                replyHTML += `
+                    <div class="flex flex-col gap-2 mt-1">
+                        <div class="flex gap-1">
+                            <input type="text" id="reply-${r.phone}-${r.keyword}-${r.date}" placeholder="Type feedback..." class="border border-slate-300 p-1.5 rounded text-xs w-28 outline-blue-500">
+                            <button onclick="sendSalesReply('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm">Send</button>
+                        </div>
+                        <button onclick="syncWatiHistory('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-purple-600 hover:bg-purple-700 transition text-white px-2 py-1.5 rounded text-[10px] font-bold shadow-sm flex items-center justify-center gap-1 w-[150px]">
+                            🔄 Auto-Fix Sync
+                        </button>
+                    </div>
                 `;
-            });
-        } else {
-            qaHTML += `<span class="text-slate-400 italic">No answers recorded yet.</span>`;
-        }
-        qaHTML += '</div>';
 
-        let replyHTML = r.adminReply 
-            ? `<span class="bg-blue-50 text-blue-700 p-2 rounded text-[10px] font-bold block whitespace-normal leading-relaxed border border-blue-200">Admin: ${r.adminReply}</span>` 
-            : '';
-            
-        replyHTML += `
-            <div class="flex flex-col gap-2 mt-1">
-                <div class="flex gap-1">
-                    <input type="text" id="reply-${r.phone}-${r.keyword}-${r.date}" placeholder="Type reply..." class="border p-1 text-[10px] rounded w-full">
-                    <button onclick="sendSalesReply('${r.phone}', '${r.date}', '${r.keyword}')" class="bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-bold">SEND</button>
-                </div>
-                <button onclick="syncWatiHistory('${r.phone}', '${r.date}', '${r.keyword}')" class="text-[9px] bg-slate-100 border border-slate-300 text-slate-600 font-bold px-2 py-1 rounded hover:bg-slate-200 transition">
-                    🔄 Auto-Fix Sync
-                </button>
-            </div>
-        `;
+                let displayKw = r.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
+                let kwBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded tracking-wider text-[10px] block w-max">${displayKw}</span>`;
+                if(r.delayStr && r.delayStr !== '-') {
+                    let color = r.delayStr.includes('Early') ? 'text-green-600' : 'text-orange-600';
+                    kwBadge += `<span class="text-[10px] font-bold ${color} mt-1 block">${r.delayStr}</span>`;
+                }
 
-        let displayKw = r.keyword.toUpperCase().replace('YES I WILL REPLY ', '');
-        let kwBadge = `<span class="bg-slate-800 text-white font-bold px-2 py-1 rounded block text-center mb-1">${displayKw}</span>`;
-        
-        if(r.delayStr && r.delayStr !== '-') {
-            let color = r.delayStr.includes('Early') ? 'text-green-600' : (r.delayStr.includes('mins') ? 'text-orange-600' : 'text-red-600');
-            kwBadge += `<span class="text-[10px] font-bold ${color} mt-1 block text-center">${r.delayStr}</span>`;
+                return `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td>
+                        <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] text-slate-500 font-normal">${r.phone}</span><br><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[9px] font-black tracking-widest mt-1 inline-block">${r.team}</span></td>
+                        <td class="p-4">${kwBadge}</td>
+                        <td class="p-4">${statusBadge}</td>
+                        <td class="p-4">${qaHTML}</td>
+                        <td class="p-4">${replyHTML}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        return `
-        <tr class="border-b hover:bg-slate-50">
-            <td class="p-4 font-bold text-slate-600 tracking-wider">${r.date}</td>
-            <td class="p-4 font-bold text-slate-800">${r.name}<br><span class="text-[10px] font-normal text-slate-500">${r.phone} | Team: ${r.team}</span></td>
-            <td class="p-4">${kwBadge}</td>
-            <td class="p-4">${statusBadge}</td>
-            <td class="p-4">${qaHTML}</td>
-            <td class="p-4">${replyHTML}</td>
-        </tr>
-        `;
-    }).join('');
-}
-
-async function sendSalesReply(phone, date, keyword) {
-    const val = document.getElementById(`reply-${phone}-${keyword}-${date}`).value;
-    if(!val.trim()) return;
-
-    try {
-        await fetch('/api/sales/reply', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone, text: val, date, keyword}) });
-        alert("Feedback sent successfully!");
-        loadSalesData();
-    } catch(e) {
-        alert("Failed to send reply");
-    }
-}
-
-async function openSetupModal(tab) {
-    document.getElementById('setup-modal').classList.remove('hidden');
-    switchSetupTab(tab || 'template-tab');
-}
-
-async function fetchTeamSetup() {
-    const team = await fetch('/api/sales/team').then(r=>r.json());
-    proList = team;
-    document.getElementById('setup-team-list').innerHTML = team.map(t => {
-        return `
-        <tr class="border-b ${!t.isActive?'opacity-50 bg-red-50':''}">
-            <td class="p-2 font-bold">${t.name} <span class="bg-slate-200 text-slate-600 px-1 rounded ml-1">${t.team}</span></td>
-            <td class="p-2">${t.phone}</td>
-            <td class="p-2 text-right">
-                <button onclick="toggleSalesPerson('${t._id}', ${!t.isActive})" class="text-blue-600 hover:text-blue-800 font-bold mr-2">${t.isActive ? 'Disable' : 'Enable'}</button>
-                <button onclick="deleteSalesPerson('${t._id}')" class="text-red-500 hover:text-red-700 font-bold">Delete</button>
-            </td>
-        </tr>
-        `;
-    }).join('');
-}
-
-async function addSalesPerson() {
-    const data = {
-        name: document.getElementById('nt-name').value,
-        phone: document.getElementById('nt-phone').value,
-        team: document.getElementById('nt-team').value
-    };
-    if(!data.name || !data.phone) return alert("Fill name and phone");
-    await fetch('/api/sales/team', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    fetchTeamSetup(); loadSalesData(); loadAdminData();
-}
-
-async function toggleSalesPerson(id, state) {
-    await fetch(`/api/sales/team/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({isActive: state})});
-    fetchTeamSetup(); loadSalesData(); loadAdminData();
-}
-
-async function deleteSalesPerson(id) {
-    if(confirm("Delete this person?")) {
-        await fetch(`/api/sales/team/${id}`, {method:'DELETE'});
-        fetchTeamSetup(); loadSalesData(); loadAdminData();
-    }
-}
-
-function loadBotConfigList() {
-    const sel = document.getElementById('sb-select');
-    sel.innerHTML = `<option value="">-- Setup New Bot --</option>` + allBotsConfig.map(b => `<option value="${b.keyword}">${b.keyword} (${b.team})</option>`).join('');
-    clearBotForm();
-}
-
-function clearBotForm() {
-    document.getElementById('nb-keyword').value = '';
-    document.getElementById('nb-team').value = 'SS';
-    document.getElementById('nb-time').value = '09:00';
-    document.getElementById('dynamic-q-container').innerHTML = '';
-    addQuestionField();
-}
-
-function addQuestionField(val = '') {
-    const div = document.createElement('div'); div.className = "flex gap-2 items-center";
-    div.innerHTML = `
-        <input type="text" value="${val}" class="dyn-q border p-1.5 text-xs rounded w-full" placeholder="Enter question...">
-        <button onclick="this.parentElement.remove()" class="text-red-500 font-bold text-xl hover:text-red-700">&times;</button>
-    `;
-    document.getElementById('dynamic-q-container').appendChild(div);
-}
-
-function loadBotConfig() {
-    const kw = document.getElementById('sb-select').value;
-    if(!kw) return clearBotForm();
-    const bot = allBotsConfig.find(b=>b.keyword === kw);
-    if(bot) {
-        document.getElementById('nb-keyword').value = bot.keyword;
-        document.getElementById('nb-team').value = bot.team;
-        document.getElementById('nb-time').value = bot.time;
-        document.getElementById('dynamic-q-container').innerHTML = '';
-        bot.questions.forEach(q => addQuestionField(q));
-        if(bot.questions.length === 0) addQuestionField();
-    }
-}
-
-async function saveBot() {
-    const keyword = document.getElementById('nb-keyword').value.toUpperCase();
-    const team = document.getElementById('nb-team').value;
-    const time = document.getElementById('nb-time').value;
-    
-    let questions = [];
-    document.querySelectorAll('.dyn-q').forEach(inp => { if(inp.value.trim()!=='') questions.push(inp.value.trim()); });
-
-    if(!keyword || !time) return alert("Keyword and Time required!");
-
-    await fetch('/api/sales/questions', { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({keyword, team, time, questions}) });
-    alert('Bot saved!'); loadSalesData(); openSetupModal('bot-tab');
-}
-
-async function deleteBot() {
-    const kw = document.getElementById('nb-keyword').value;
-    const bot = allBotsConfig.find(b=>b.keyword === kw);
-    if(!bot || !confirm(`Delete Bot ${kw}?`)) return;
-
-    await fetch(`/api/sales/questions/${bot._id}`, { method: 'DELETE' });
-    alert('Deleted!'); loadSalesData(); openSetupModal('bot-tab');
-}
-
-function exportSalesExcel() {
-    if(salesReportData.length === 0) return alert("No data to export");
-
-    let maxQ = 0;
-    salesReportData.forEach(r => {
-        if(r.questions && r.questions.length > maxQ) maxQ = r.questions.length;
-        if(r.answers && r.answers.length > maxQ) maxQ = r.answers.length;
-    });
-
-    if (maxQ < 4) maxQ = 4;
-
-    let csv = "Date,Name,Phone,Team,Status,Keyword,Delay,Reply Time,Admin Feedback";
-    for(let i=0; i<maxQ; i++) csv += `,Q${i+1},Ans${i+1}`;
-    csv += "\n";
-
-    salesReportData.forEach(r => {
-        let replyTime = r.time ? new Date(r.time).toLocaleTimeString('en-IN') : '';
-        let adminRep = r.adminReply ? r.adminReply.replace(/"/g, '""') : '';
-        let delay = r.delayStr && r.delayStr !== '-' ? r.delayStr : '';
-        let pureKw = r.keyword.toUpperCase().replace('YES I WILL REPLY ', '');
-
-        let row = `"${r.date}","${r.name}","${r.phone}","${r.team}","${r.status}","${pureKw}","${delay}","${replyTime}","${adminRep}"`;
-        
-        for(let i=0; i<maxQ; i++) {
-            let q = r.questions && r.questions[i] ? r.questions[i].replace(/"/g, '""') : '';
-            let ans = r.answers && r.answers[i] ? r.answers[i].replace(/"/g, '""').replace(/\n/g, ' ') : '';
-            row += `,"${q}","${ans}"`;
+        async function sendSalesReply(phone, date, keyword) {
+            const val = document.getElementById(`reply-${phone}-${keyword}-${date}`).value;
+            if(!val.trim()) return;
+            try {
+                await fetch('/api/sales/reply', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone, text: val, date, keyword}) });
+                alert("Feedback sent successfully!");
+                loadSalesData();
+            } catch(e) { 
+                alert("Failed to send reply"); 
+            }
         }
-        csv += row + "\n";
-    });
 
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `UIC_Sales_Tracker_${getStrictDateString(new Date())}.csv`;
-    link.click();
-}
+        async function openSetupModal(tab) {
+            document.getElementById('setup-modal').classList.remove('hidden');
+            switchSetupTab(tab || 'template-tab');
+        }
 
-let currentValidCode = null;
+        async function fetchTeamSetup() {
+            const team = await fetch('/api/sales/team').then(r=>r.json());
+            proList = team; 
+            document.getElementById('setup-team-list').innerHTML = team.map(t => {
+                return `
+                    <tr class="border-b ${!t.isActive?'opacity-50 bg-red-50':''}">
+                        <td class="p-2 font-bold">${t.name} <span class="bg-slate-200 px-1 rounded">${t.team}</span></td>
+                        <td class="p-2">${t.phone}</td>
+                        <td class="p-2 text-right">
+                            <button onclick="toggleSalesPerson('${t._id}', ${!t.isActive})" class="px-2 py-1 rounded text-white ${t.isActive?'bg-red-500':'bg-green-500'}">${t.isActive?'Disable':'Enable'}</button>
+                            <button onclick="deleteSalesPerson('${t._id}')" class="px-2 py-1 text-slate-500 hover:text-red-600">❌</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
 
-async function verifyCode() {
-    const code = document.getElementById('verify-code').value;
-    const resBox = document.getElementById('verify-result');
-    
-    if(!code) return;
+        async function addSalesPerson() {
+            const data = { 
+                name: document.getElementById('nt-name').value, 
+                phone: document.getElementById('nt-phone').value, 
+                team: document.getElementById('nt-team').value 
+            };
+            if(!data.name || !data.phone) return alert("Fill name and phone");
+            await fetch('/api/sales/team', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+            fetchTeamSetup(); loadSalesData(); loadAdminData();
+        }
 
-    const res = await fetch('/api/coupon/validate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ code }) });
-    const data = await res.json();
+        async function toggleSalesPerson(id, state) {
+            await fetch(`/api/sales/team/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({isActive:state})});
+            fetchTeamSetup(); loadSalesData(); loadAdminData();
+        }
 
-    resBox.classList.remove('hidden');
+        async function deleteSalesPerson(id) {
+            if(confirm("Delete this person?")) {
+                await fetch(`/api/sales/team/${id}`, {method:'DELETE'});
+                fetchTeamSetup(); loadSalesData(); loadAdminData();
+            }
+        }
 
-    if(data.valid) {
-        currentValidCode = code;
-        let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
-        const displayDiscount = data.discount === 'CBCT' ? 'CBCT Special' : `${data.discount}% OFF`;
-        const testName = data.campaignName ? data.campaignName.toUpperCase() : 'UIC CAMPAIGN';
+        function loadBotConfigList() {
+            const sel = document.getElementById('sb-select');
+            sel.innerHTML = `<option value="">-- Setup New Bot --</option>` + allBotsConfig.map(b => `<option value="${b.keyword}">${b.keyword} (${b.team})</option>`).join('');
+            clearBotForm();
+        }
 
-        resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-400 bg-green-50 shadow-inner";
-        resBox.innerHTML = `
-            <p class="text-green-700 font-black text-2xl mb-2">✅ VALID COUPON</p>
-            <div class="bg-yellow-100 border-2 border-yellow-400 p-4 rounded-lg mb-6 shadow-sm">
-                <p class="text-xs font-bold text-slate-500 tracking-widest uppercase mb-1">COUPON CODE</p>
-                <p class="text-blue-800 font-black text-3xl leading-tight tracking-widest">${code}</p>
-                <p class="text-red-600 font-black text-xl mt-1">${displayDiscount}</p>
-            </div>
-            
-            <p class="text-slate-800 font-bold mb-6 text-center">Doctor: <span class="text-blue-600 uppercase underline">${data.name || 'UNKNOWN'}</span> <br><span class="text-[10px] text-slate-500">${testName}</span></p>
+        function clearBotForm() {
+            document.getElementById('nb-keyword').value = '';
+            document.getElementById('nb-team').value = 'SS';
+            document.getElementById('nb-time').value = '09:00';
+            document.getElementById('dynamic-q-container').innerHTML = '';
+            addQuestionField();
+        }
 
-            <label class="text-xs font-black tracking-widest text-slate-500 block mb-2 text-left">SELECT REDEEMING BRANCH</label>
-            <select id="redeem-branch" class="w-full border-2 border-slate-300 p-4 rounded-xl mb-4 font-bold text-slate-700 bg-white shadow-sm focus:border-blue-500 outline-none">
-                <option value="">-- Choose Branch --</option>
-                ${branchOptions}
-            </select>
-
-            <label class="text-xs font-black tracking-widest text-slate-500 block mb-2 text-left">PATIENT REG NO. / NAME</label>
-            <input type="text" id="redeem-regno" placeholder="Enter Registration No." class="w-full border-2 border-slate-300 p-4 rounded-xl mb-6 font-bold text-slate-700 bg-white shadow-sm focus:border-blue-500 outline-none">
-
-            <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-green-700 transition tracking-widest">CONFIRM REDEMPTION</button>
-        `;
-    } else {
-        resBox.className = "mt-6 w-full p-4 rounded-xl border-2 border-red-400 bg-red-50";
-        resBox.innerHTML = `<p class="text-red-700 font-bold text-center">${data.message || 'INVALID CODE'}</p>`;
-    }
-}
-
-async function redeemCode() {
-    const branch = document.getElementById('redeem-branch').value;
-    const regNo = document.getElementById('redeem-regno').value;
-
-    if(!branch) return alert("Please select a branch first!");
-    if(!regNo || regNo.trim() === '') return alert("Please enter Patient Reg No!");
-
-    await fetch('/api/coupon/redeem', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            code: currentValidCode,
-            branch: branch,
-            patientRegNo: regNo.trim()
-        })
-    });
-
-    document.getElementById('verify-code').value = '';
-    document.getElementById('verify-result').classList.add('hidden');
-    loadUserData(); 
-    
-    if (typeof loadAdminData === 'function' && document.getElementById('admin-dashboard') && !document.getElementById('admin-dashboard').classList.contains('hidden')) {
-        loadAdminData();
-    }
-    alert(`Success! Redeemed at ${branch} with Reg No: ${regNo}`);
-}
-
-async function loadUserData() {
-    try {
-        const res = await fetch('/api/user/redeemed-today');
-        const logs = await res.json();
-        document.getElementById('redeemed-list').innerHTML = logs.map(l => {
-            const time = l.redeemedAt ? new Date(l.redeemedAt).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}) : '-';
-            return `
-            <tr class="border-b hover:bg-slate-50 transition">
-                <td class="p-4 font-black tracking-widest text-blue-600">${l.code || '-'}</td>
-                <td class="p-4 font-semibold text-slate-700">${l.targetName || 'Doctor'}</td>
-                <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
-                <td class="p-4 font-bold text-slate-600">${l.patientRegNo || '-'}</td>
-                <td class="p-4 text-[10px] font-bold text-slate-500">${time}</td>
-            </tr>
+        function addQuestionField(val = '') {
+            const div = document.createElement('div'); div.className = "flex gap-1";
+            div.innerHTML = `
+                <input type="text" value="${val}" class="dyn-q border p-1.5 text-xs rounded w-full outline-blue-500" placeholder="Type question...">
+                <button onclick="this.parentElement.remove()" class="text-red-500 px-2 font-bold">X</button>
             `;
-        }).join('');
-    } catch (e) {
-        console.error("Failed to load user data:", e);
-    }
-}
-</script>
+            document.getElementById('dynamic-q-container').appendChild(div);
+        }
+
+        function loadBotConfig() {
+            const kw = document.getElementById('sb-select').value;
+            if(!kw) return clearBotForm();
+            const bot = allBotsConfig.find(b=>b.keyword === kw);
+            if(bot) {
+                document.getElementById('nb-keyword').value = bot.keyword;
+                document.getElementById('nb-team').value = bot.team;
+                document.getElementById('nb-time').value = bot.time;
+                document.getElementById('dynamic-q-container').innerHTML = '';
+                bot.questions.forEach(q => addQuestionField(q));
+                if(bot.questions.length === 0) addQuestionField();
+            }
+        }
+
+        async function saveBot() {
+            const keyword = document.getElementById('nb-keyword').value.toUpperCase();
+            const team = document.getElementById('nb-team').value;
+            const time = document.getElementById('nb-time').value;
+            let questions = []; 
+            document.querySelectorAll('.dyn-q').forEach(inp => { if(inp.value.trim()) questions.push(inp.value.trim()); });
+            
+            if(!keyword || !time) return alert("Keyword and Time required!");
+            await fetch('/api/sales/questions', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({keyword, team, time, questions}) });
+            alert('Bot saved!'); loadSalesData(); openSetupModal('bot-tab');
+        }
+
+        async function deleteBot() {
+            const kw = document.getElementById('nb-keyword').value;
+            const bot = allBotsConfig.find(b=>b.keyword === kw);
+            if(!bot || !confirm(`Delete Bot ${kw}?`)) return;
+            await fetch(`/api/sales/questions/${bot._id}`, { method: 'DELETE' });
+            alert('Deleted!'); loadSalesData(); openSetupModal('bot-tab');
+        }
+
+        function exportSalesExcel() {
+            if(salesReportData.length === 0) return alert("No data to export");
+            
+            let maxQ = 0; 
+            salesReportData.forEach(r => { 
+                if(r.questions && r.questions.length > maxQ) maxQ = r.questions.length; 
+                if(r.answers && r.answers.length > maxQ) maxQ = r.answers.length;
+            });
+            if (maxQ < 4) maxQ = 4; 
+            
+            let csv = "Date,Name,Phone,Team,Status,Keyword,Delay,Reply Time,Admin Feedback";
+            for(let i=0; i<maxQ; i++) csv += `,Q${i+1},Ans${i+1}`; 
+            csv += "\n";
+
+            salesReportData.forEach(r => {
+                let replyTime = r.time ? new Date(r.time).toLocaleTimeString('en-IN') : '';
+                let adminRep = r.adminReply ? r.adminReply.replace(/"/g, '""').replace(/\n/g, ' ') : '';
+                let delay = r.delayStr && r.delayStr !== '-' ? r.delayStr : '';
+                let pureKw = r.keyword.toUpperCase().replace('YES I WILL REPLY', '').trim();
+                
+                let row = `"${r.date}","${r.name}","${r.phone}","${r.team}","${r.status}","${pureKw}","${delay}","${replyTime}","${adminRep}"`;
+                
+                for(let i=0; i<maxQ; i++) {
+                    let q = r.questions && r.questions[i] ? r.questions[i].replace(/"/g, '""').replace(/\n/g, ' | ') : '';
+                    let ans = r.answers && r.answers[i] ? r.answers[i].replace(/"/g, '""').replace(/\n/g, ' | ') : '';
+                    row += `,"${q}","${ans}"`;
+                }
+                csv += row + "\n";
+            });
+            
+            const link = document.createElement("a"); 
+            link.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' })); 
+            link.download = `UIC_Sales_Tracker_${getStrictDateString(new Date())}.csv`; 
+            link.click();
+        }
+
+        let currentValidCode = null;
+        async function verifyCode() {
+            const code = document.getElementById('verify-code').value;
+            const resBox = document.getElementById('verify-result');
+            if(!code) return;
+            
+            const res = await fetch('/api/coupon/validate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code}) });
+            const data = await res.json();
+            resBox.classList.remove('hidden');
+            
+            if(data.valid) {
+                currentValidCode = code;
+                let branchOptions = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join('');
+                
+                const displayDiscount = data.discount === 'CBCT' ? 'CBCT Special' : `${data.discount}% OFF`;
+                const testName = data.campaignName ? data.campaignName.toUpperCase() : 'GENERAL CAMPAIGN';
+
+                resBox.className = "mt-6 w-full p-6 rounded-xl border-2 border-green-500 bg-green-50";
+                resBox.innerHTML = `
+                    <p class="text-green-700 font-black text-2xl mb-2">✅ VALID COUPON</p>
+                    
+                    <div class="bg-yellow-100 border-2 border-yellow-400 p-4 rounded-lg mb-4 shadow-inner text-center">
+                        <p class="text-xs font-bold text-slate-500 tracking-widest uppercase mb-1">TEST / CAMPAIGN DETAILS</p>
+                        <p class="text-blue-800 font-black text-3xl leading-tight uppercase">${testName}</p>
+                        <p class="text-red-600 font-black text-xl mt-1">${displayDiscount}</p>
+                    </div>
+
+                    <p class="text-slate-800 font-bold mb-6 text-center">Doctor / Patient: <span class="font-normal">${data.name}</span></p>
+                    
+                    <label class="text-xs font-black tracking-widest text-slate-600 block mb-2">SELECT BRANCH *</label>
+                    <select id="redeem-branch" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-4 font-bold text-slate-700 focus:outline-none focus:border-blue-500"><option value="">-- Select Here --</option>${branchOptions}</select>
+                    
+                    <label class="text-xs font-black tracking-widest text-slate-600 block mb-2 mt-2">PATIENT REG. NO *</label>
+                    <input type="text" id="redeem-regno" placeholder="Enter Reg No" class="w-full border-2 border-slate-300 p-3 rounded-lg mb-6 font-bold text-slate-700 focus:outline-none focus:border-blue-500">
+                    
+                    <button onclick="redeemCode()" class="w-full bg-green-600 text-white font-black tracking-wider py-4 rounded-xl shadow-lg hover:bg-green-700 transition">CONFIRM & REDEEM</button>
+                `;
+            } else { 
+                resBox.className = "mt-6 w-full p-4 rounded-xl border-2 border-red-500 bg-red-50"; 
+                resBox.innerHTML = `<p class="text-red-700 font-bold text-center">❌ ${data.message}</p>`; 
+            }
+        }
+
+        async function redeemCode() {
+            const branch = document.getElementById('redeem-branch').value;
+            const regNo = document.getElementById('redeem-regno').value;
+            
+            if(!branch) return alert("Please select a branch first!");
+            if(!regNo || regNo.trim() === '') return alert("Please enter Patient Reg. No!");
+
+            await fetch('/api/coupon/redeem', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({
+                    code: currentValidCode, 
+                    branch: branch, 
+                    patientRegNo: regNo.trim()
+                }) 
+            });
+            
+            document.getElementById('verify-code').value = ''; 
+            document.getElementById('verify-result').classList.add('hidden');
+            loadUserData(); loadAdminData(); 
+            alert(`Success! Redeemed at ${branch} with Reg No: ${regNo}`);
+        }
+
+        async function loadUserData() {
+            const logs = await fetch('/api/user/redeemed-today').then(r => r.json());
+            document.getElementById('redeemed-list').innerHTML = logs.map(l => {
+                return `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-black tracking-widest text-blue-600">${l.code}</td>
+                        <td class="p-4 font-semibold text-slate-700">${l.targetName || 'N/A'}</td>
+                        <td class="p-4 font-bold text-slate-800">${l.branchRedeemed || '-'}</td>
+                        <td class="p-4 font-bold text-slate-600">${l.patientRegNo || '-'}</td>
+                        <td class="p-4 text-[10px] font-bold text-slate-500">${formatDate(l.redeemedAt)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    </script>
 </body>
 </html>
