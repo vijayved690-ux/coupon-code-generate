@@ -894,6 +894,110 @@ app.get('/api/admin/logs', async (req, res) => {
 
 app.get('/api/user/redeemed-today', async (req, res) => { const start = new Date(); start.setHours(0, 0, 0, 0); res.json(await Coupon.find({ isUsed: true, redeemedAt: { $gte: start } }).sort({ redeemedAt: -1 }).lean()); });
 
+// =========================================================================
+// 🚨 BRANCH REDEMPTION LEADERBOARD (ROBUST — MongoDB-side aggregation)
+// -------------------------------------------------------------------------
+//  1) Count DIRECTLY DB se -> 20,000 frontend limit ka koi asar nahi.
+//  2) SAARE audiences (Doctor + Patient + Dental + CGHS) — sirf Doctor nahi.
+//  3) Branch naam NORMALIZE (trim + UPPERCASE) -> casing/space variants merge.
+//  4) ALL-TIME mode (koi date nahi): sirf isUsed + branchRedeemed dekhta hai,
+//     redeemedAt ki zaroorat NAHI -> purane records bhi ginenge.
+//  5) RANGE mode: effective date = redeemedAt || updatedAt || createdAt.
+//   /api/admin/redemption-leaderboard                       -> ALL-TIME total
+//   /api/admin/redemption-leaderboard?from=YYYY-MM-DD&to=YYYY-MM-DD  -> range
+// =========================================================================
+app.get('/api/admin/redemption-leaderboard', async (req, res) => {
+    try {
+        const { from, to } = req.query;
+        const hasRange = !!(from || to);
+
+        const pipeline = [
+            { $match: { isUsed: true, branchRedeemed: { $exists: true, $nin: [null, ''] } } },
+            { $addFields: {
+                effDate: { $ifNull: ['$redeemedAt', { $ifNull: ['$updatedAt', '$createdAt'] }] },
+                branchNorm: { $toUpper: { $trim: { input: '$branchRedeemed' } } }
+            }}
+        ];
+
+        if (hasRange) {
+            const start = from ? new Date(from + 'T00:00:00.000+05:30') : new Date('2000-01-01T00:00:00.000Z');
+            const end   = to   ? new Date(to   + 'T23:59:59.999+05:30') : new Date();
+            pipeline.push({ $match: { effDate: { $gte: start, $lte: end } } });
+        }
+
+        pipeline.push(
+            { $group: {
+                _id: '$branchNorm',
+                display: { $first: '$branchRedeemed' },
+                count: { $sum: 1 },
+                doctors:  { $sum: { $cond: [{ $eq: ['$audienceType', 'Doctor'] }, 1, 0] } },
+                patients: { $sum: { $cond: [{ $eq: ['$audienceType', 'Patient'] }, 1, 0] } },
+                dental:   { $sum: { $cond: [{ $in: ['$audienceType', ['Dental', 'CGHS_Dental']] }, 1, 0] } },
+                noRedeemedAt: { $sum: { $cond: [{ $eq: [{ $ifNull: ['$redeemedAt', null] }, null] }, 1, 0] } }
+            }},
+            { $sort: { count: -1 } }
+        );
+
+        const rows = await Coupon.aggregate(pipeline);
+        const total = rows.reduce((s, r) => s + r.count, 0);
+
+        res.json({
+            success: true,
+            mode: hasRange ? 'range' : 'alltime',
+            total,
+            branches: rows.map(r => ({
+                branch: r.display, count: r.count,
+                doctors: r.doctors, patients: r.patients, dental: r.dental,
+                noRedeemedAt: r.noRedeemedAt
+            }))
+        });
+    } catch (err) {
+        console.error('Leaderboard error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// =========================================================================
+// 🔍 DIAGNOSTIC — browser mein kholo: /api/admin/redemption-debug
+// DB ki asli sacchai: kitne redeem hue, kitno mein branch/redeemedAt missing,
+// aur har RAW branch naam (jaisa DB mein pada hai) ka count + audience breakdown.
+// =========================================================================
+app.get('/api/admin/redemption-debug', async (req, res) => {
+    try {
+        const totalCoupons  = await Coupon.countDocuments();
+        const totalRedeemed = await Coupon.countDocuments({ isUsed: true });
+        const redeemedNoBranch = await Coupon.countDocuments({ isUsed: true, $or: [ { branchRedeemed: { $exists: false } }, { branchRedeemed: null }, { branchRedeemed: '' } ] });
+        const redeemedNoDate   = await Coupon.countDocuments({ isUsed: true, $or: [ { redeemedAt: { $exists: false } }, { redeemedAt: null } ] });
+
+        const rawBranches = await Coupon.aggregate([
+            { $match: { isUsed: true } },
+            { $group: {
+                _id: '$branchRedeemed',
+                count: { $sum: 1 },
+                withRedeemedAt: { $sum: { $cond: [{ $ne: [{ $ifNull: ['$redeemedAt', null] }, null] }, 1, 0] } },
+                doctors:  { $sum: { $cond: [{ $eq: ['$audienceType', 'Doctor'] }, 1, 0] } },
+                patients: { $sum: { $cond: [{ $eq: ['$audienceType', 'Patient'] }, 1, 0] } },
+                dental:   { $sum: { $cond: [{ $in: ['$audienceType', ['Dental', 'CGHS_Dental']] }, 1, 0] } },
+                earliest: { $min: '$redeemedAt' },
+                latest:   { $max: '$redeemedAt' }
+            }},
+            { $sort: { count: -1 } }
+        ]);
+
+        res.json({
+            success: true,
+            summary: { totalCoupons, totalRedeemed, redeemedNoBranch, redeemedMissingRedeemedAt: redeemedNoDate },
+            rawBranches: rawBranches.map(b => ({
+                branchExactlyAsInDB: b._id, totalRedeemed: b.count, withRedeemedAt: b.withRedeemedAt,
+                doctors: b.doctors, patients: b.patients, dental: b.dental,
+                earliestRedeem: b.earliest, latestRedeem: b.latest
+            }))
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 // 🚨 GLOBAL CRASH PROTECTION (Fixes EPIPE server crash)
