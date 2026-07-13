@@ -897,6 +897,73 @@ app.get('/api/user/redeemed-today', async (req, res) => {
     } catch(e) { res.status(500).json({error: e.message}); }
 });
 
+// =========================================================================
+// 🚨 BRANCH REDEMPTION LEADERBOARD (ACCURATE — MongoDB-side aggregation)
+// -------------------------------------------------------------------------
+// FIX: Count directly from DB (no 20,000 frontend limit), counts ALL
+// audiences (Doctor + Patient + Dental + CGHS), and filters on the ACTUAL
+// redemption time (redeemedAt) — not createdAt.
+//   /api/admin/redemption-leaderboard                       -> last 1 year total
+//   /api/admin/redemption-leaderboard?from=YYYY-MM-DD&to=YYYY-MM-DD
+// =========================================================================
+app.get('/api/admin/redemption-leaderboard', async (req, res) => {
+    try {
+        const { from, to } = req.query;
+
+        // Only coupons actually redeemed at a branch
+        const match = {
+            isUsed: true,
+            branchRedeemed: { $exists: true, $nin: [null, ''] }
+        };
+
+        // Date window on the ACTUAL redeem time (redeemedAt)
+        let start, end;
+        if (from) {
+            start = new Date(from + 'T00:00:00.000+05:30'); // IST day start
+        } else {
+            start = new Date();
+            start.setFullYear(start.getFullYear() - 1); // default: last 1 year
+        }
+        if (to) {
+            end = new Date(to + 'T23:59:59.999+05:30'); // IST day end
+        } else {
+            end = new Date();
+        }
+        match.redeemedAt = { $gte: start, $lte: end };
+
+        const rows = await Coupon.aggregate([
+            { $match: match },
+            { $group: {
+                _id: '$branchRedeemed',
+                count: { $sum: 1 },
+                doctors:  { $sum: { $cond: [{ $eq: ['$audienceType', 'Doctor'] }, 1, 0] } },
+                patients: { $sum: { $cond: [{ $eq: ['$audienceType', 'Patient'] }, 1, 0] } },
+                dental:   { $sum: { $cond: [{ $in: ['$audienceType', ['Dental', 'CGHS_Dental']] }, 1, 0] } }
+            }},
+            { $sort: { count: -1 } }
+        ]);
+
+        const total = rows.reduce((s, r) => s + r.count, 0);
+
+        res.json({
+            success: true,
+            from: start,
+            to: end,
+            total,
+            branches: rows.map(r => ({
+                branch: r._id,
+                count: r.count,
+                doctors: r.doctors,
+                patients: r.patients,
+                dental: r.dental
+            }))
+        });
+    } catch (err) {
+        console.error('Leaderboard error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // This must be last
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
