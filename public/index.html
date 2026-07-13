@@ -1139,10 +1139,35 @@
             document.getElementById('gp-report-modal').classList.add('hidden');
         }
 
-        function exportGPReportExcel() {
-            const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
+        async function exportGPReportExcel() {
+            // 🚨 FIX: FULL dataset backend se (no 20,000 limit) — all-time by default.
+            let all;
+            try {
+                all = await fetch('/api/admin/logs?export=true').then(r => r.json());
+            } catch(e) {
+                alert("Data fetch failed. Try again.");
+                return;
+            }
+
+            const dateFrom = document.getElementById('date-from') ? document.getElementById('date-from').value : '';
+            const dateTo   = document.getElementById('date-to') ? document.getElementById('date-to').value : '';
+            let useRange = false;
+            if (dateFrom || dateTo) {
+                useRange = confirm(`Date filter active hai (${dateFrom || 'start'} → ${dateTo || 'now'}).\n\nOK  = sirf is range ka data\nCancel = SAARA data (all-time)`);
+            }
+
+            let docLogs = all.filter(l => l.audienceType === 'Doctor');
+            if (useRange) {
+                docLogs = docLogs.filter(i => {
+                    const eff = getStrictDateString(new Date(i.redeemedAt || i.updatedAt || i.createdAt));
+                    if (dateFrom && eff < dateFrom) return false;
+                    if (dateTo && eff > dateTo) return false;
+                    return true;
+                });
+            }
+
             if(docLogs.length === 0) {
-                alert("No data available to export based on current filters.");
+                alert("No data available to export.");
                 return;
             }
             
@@ -1317,9 +1342,36 @@
         }
 
         async function exportFilteredExcel(type) {
-            const dataToExport = filteredLogs.filter(i => type === 'Dental' ? (i.audienceType === 'Dental' || i.audienceType === 'CGHS_Dental') : i.audienceType === type);
+            // 🚨 FIX: FULL dataset backend se (no 20,000 limit, date-independent) taaki
+            // Excel bilkul leaderboard jaisa poora data de. Date filter active ho to choice.
+            let all;
+            try {
+                all = await fetch('/api/admin/logs?export=true').then(r => r.json());
+            } catch(e) {
+                alert("Data fetch failed. Try again.");
+                return;
+            }
+
+            const dateFrom = document.getElementById('date-from') ? document.getElementById('date-from').value : '';
+            const dateTo   = document.getElementById('date-to') ? document.getElementById('date-to').value : '';
+            let useRange = false;
+            if (dateFrom || dateTo) {
+                useRange = confirm(`Date filter active hai (${dateFrom || 'start'} → ${dateTo || 'now'}).\n\nOK  = sirf is range ka data\nCancel = SAARA data (all-time)`);
+            }
+
+            let dataToExport = all.filter(i => type === 'Dental' ? (i.audienceType === 'Dental' || i.audienceType === 'CGHS_Dental') : i.audienceType === type);
+
+            if (useRange) {
+                dataToExport = dataToExport.filter(i => {
+                    const eff = getStrictDateString(new Date(i.redeemedAt || i.updatedAt || i.createdAt));
+                    if (dateFrom && eff < dateFrom) return false;
+                    if (dateTo && eff > dateTo) return false;
+                    return true;
+                });
+            }
+
             if(dataToExport.length === 0) {
-                alert("No data to export based on current filters.");
+                alert("No data to export.");
                 return;
             }
             
@@ -1350,7 +1402,7 @@
             const blob = new Blob([csv], { type: 'text/csv' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `UIC_${type}_Filtered_Report.csv`;
+            link.download = `UIC_${type}_${useRange ? 'Range' : 'AllTime'}_Report.csv`;
             link.click();
         }
 
