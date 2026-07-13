@@ -37,41 +37,41 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     <div class="flex gap-4">
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">TOTAL PROMOTIONS SENT</p>
+                            <p class="text-[10px] font-bold text-slate-400">ALL TIME SENT</p>
                             <h2 id="stat-total-sent" class="text-2xl font-bold text-slate-800">0</h2>
                         </div>
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">TOTAL REDEEMED</p>
+                            <p class="text-[10px] font-bold text-slate-400">ALL TIME REDEEMED</p>
                             <h2 id="stat-total-redeemed" class="text-2xl font-bold text-green-600">0</h2>
                         </div>
                     </div>
                     <div class="flex gap-4">
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">DOCTORS SENT</p>
+                            <p class="text-[10px] font-bold text-slate-400">ALL TIME DOC SENT</p>
                             <h2 id="stat-doc-sent" class="text-2xl font-bold text-slate-800">0</h2>
                         </div>
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-emerald-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">DOCTORS REDEEMED</p>
+                            <p class="text-[10px] font-bold text-slate-400">ALL TIME DOC REDEEMED</p>
                             <h2 id="stat-doc-redeemed" class="text-2xl font-bold text-emerald-600">0</h2>
                         </div>
                     </div>
                     <div class="flex gap-4">
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">DENTAL SENT</p>
+                            <p class="text-[10px] font-bold text-slate-400">ALL TIME DEN SENT</p>
                             <h2 id="stat-den-sent" class="text-2xl font-bold text-slate-800">0</h2>
                         </div>
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-fuchsia-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">DENTAL REDEEMED</p>
+                            <p class="text-[10px] font-bold text-slate-400">ALL TIME DEN REDEEMED</p>
                             <h2 id="stat-den-redeemed" class="text-2xl font-bold text-fuchsia-600">0</h2>
                         </div>
                     </div>
                     <div class="flex gap-4">
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-amber-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">PATIENTS SENT</p>
+                            <p class="text-[10px] font-bold text-slate-400">ALL TIME PAT SENT</p>
                             <h2 id="stat-pat-sent" class="text-2xl font-bold text-slate-800">0</h2>
                         </div>
                         <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500 flex-1">
-                            <p class="text-[10px] font-bold text-slate-400">PATIENTS REDEEMED</p>
+                            <p class="text-[10px] font-bold text-slate-400">ALL TIME PAT REDEEMED</p>
                             <h2 id="stat-pat-redeemed" class="text-2xl font-bold text-orange-600">0</h2>
                         </div>
                     </div>
@@ -150,8 +150,8 @@
                 </div>
 
                 <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-wrap justify-between items-center gap-4">
-                    <h3 class="font-bold text-sm text-slate-800 w-full mb-1">🔍 Universal Deep Search Filter</h3>
-                    <input type="text" id="search-filter" placeholder="Search Name, Phone, Campaign..." class="border p-2 rounded w-full md:w-64 text-sm bg-slate-50">
+                    <h3 class="font-bold text-sm text-slate-800 w-full mb-1">🔍 Filter Database</h3>
+                    <input type="text" id="search-filter" placeholder="Search Name, Phone, Code, Reg No..." class="border p-2 rounded w-full md:w-64 text-sm bg-slate-50">
                     <div class="flex items-center gap-2">
                         <input type="date" id="date-from" class="border p-2 rounded text-sm bg-slate-50">
                         <span class="text-slate-400 text-xs font-bold">TO</span>
@@ -165,7 +165,7 @@
                         <option value="CallCompleted">📞 Call Completed</option>
                         <option value="Failed (No Answer)">📵 No Answer</option>
                     </select>
-                    <button onclick="applyFilters()" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-blue-700">APPLY</button>
+                    <button onclick="applyFilters()" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-blue-700">APPLY FILTER</button>
                     <button onclick="clearFilters()" class="bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2 rounded hover:bg-slate-300">CLEAR</button>
                 </div>
 
@@ -178,16 +178,26 @@
 
                 <div id="doctor-section" class="bg-transparent mb-6">
                     <div id="doctor-analytics" class="mb-6">
-                        <div class="bg-indigo-900 text-white p-5 rounded-xl shadow-lg flex justify-between items-center mb-4">
-                            <div>
-                                <p class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-1">TOTAL DOC COUPONS GENERATED</p>
-                                <h2 id="stat-total-dr-shoot" class="text-3xl font-black">0</h2>
+                        
+                        <!-- 🚨 ALL TIME VS FILTERED UI UPDATE -->
+                        <div class="bg-indigo-900 text-white p-5 rounded-xl shadow-lg flex flex-wrap justify-between items-center mb-4 gap-4">
+                            <div class="border-r border-indigo-700 pr-4">
+                                <p class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-1">ALL TIME GENERATED</p>
+                                <h2 id="stat-total-dr-shoot-all" class="text-2xl font-black">0</h2>
                             </div>
-                            <div>
-                                <p class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-1">TOTAL DOCTORS REDEEMED</p>
-                                <h2 id="stat-total-dr-redeem" class="text-3xl font-black text-green-400">0</h2>
+                            <div class="border-r border-indigo-700 pr-4">
+                                <p class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-1">ALL TIME REDEEMED</p>
+                                <h2 id="stat-total-dr-redeem-all" class="text-2xl font-black text-green-400">0</h2>
                             </div>
-                            <div class="max-w-md text-right">
+                            <div class="border-r border-indigo-700 pr-4 pl-2">
+                                <p class="text-[10px] font-bold text-yellow-300 uppercase tracking-widest mb-1">FILTERED GENERATED</p>
+                                <h2 id="stat-total-dr-shoot-filtered" class="text-3xl font-black text-yellow-400">0</h2>
+                            </div>
+                            <div class="pl-2">
+                                <p class="text-[10px] font-bold text-yellow-300 uppercase tracking-widest mb-1">FILTERED REDEEMED</p>
+                                <h2 id="stat-total-dr-redeem-filtered" class="text-3xl font-black text-yellow-400">0</h2>
+                            </div>
+                            <div class="max-w-md text-right ml-auto">
                                 <p class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-1">ACTIVE REDEEMING BRANCHES</p>
                                 <h2 id="stat-active-branches" class="text-sm font-bold text-indigo-200">-</h2>
                             </div>
@@ -771,6 +781,7 @@ function clearFilters() {
     applyFilters();
 }
 
+// 🚨 DATE FILTER LOGIC FIX: NOW CHECKS REDEEMED DATE AS WELL
 function applyFilters() {
     const search = document.getElementById('search-filter').value.toLowerCase();
     const dateFrom = document.getElementById('date-from').value;
@@ -787,7 +798,8 @@ function applyFilters() {
         let matchDate = true;
         if (dateFrom || dateTo) {
             const cDate = getStrictDateString(new Date(item.createdAt));
-            const uDate = getStrictDateString(new Date(item.updatedAt));
+            const uDate = item.updatedAt ? getStrictDateString(new Date(item.updatedAt)) : cDate;
+            const rDate = item.redeemedAt ? getStrictDateString(new Date(item.redeemedAt)) : null;
             
             let cMatch = true;
             if (dateFrom && cDate < dateFrom) cMatch = false;
@@ -797,7 +809,14 @@ function applyFilters() {
             if (dateFrom && uDate < dateFrom) uMatch = false;
             if (dateTo && uDate > dateTo) uMatch = false;
 
-            if (!cMatch && !uMatch) matchDate = false;
+            let rMatch = false;
+            if (rDate) {
+                rMatch = true;
+                if (dateFrom && rDate < dateFrom) rMatch = false;
+                if (dateTo && rDate > dateTo) rMatch = false;
+            }
+
+            if (!cMatch && !uMatch && !rMatch) matchDate = false;
         }
 
         let matchStatus = true;
@@ -828,9 +847,13 @@ function renderAnalytics() {
     let branchCounts = {};
     let proStats = {};
 
+    // 🚨 ALL TIME VS FILTERED UI UPDATE
     const fullDocLogs = globalLogs.filter(l => l.audienceType === 'Doctor');
-    document.getElementById('stat-total-dr-shoot').innerText = fullDocLogs.length;
-    document.getElementById('stat-total-dr-redeem').innerText = fullDocLogs.filter(l=>l.isUsed).length;
+    document.getElementById('stat-total-dr-shoot-all').innerText = fullDocLogs.length;
+    document.getElementById('stat-total-dr-redeem-all').innerText = fullDocLogs.filter(l=>l.isUsed).length;
+
+    document.getElementById('stat-total-dr-shoot-filtered').innerText = docLogs.length;
+    document.getElementById('stat-total-dr-redeem-filtered').innerText = docLogs.filter(l=>l.isUsed).length;
 
     docLogs.forEach(l => {
         if(l.rating === 5) r5++;
@@ -855,7 +878,6 @@ function renderAnalytics() {
 
         if(l.requestCallAt && l.proPhone) {
             if(!proStats[l.proPhone]) {
-                // 🚨 MANUAL MAP CHECK FOR PRO NAME
                 let pName = MANUAL_PRO_MAP[l.proPhone] || "Unknown PRO";
                 let matched = proList.find(p => p.phone === l.proPhone);
                 if(matched) pName = matched.name;
@@ -962,7 +984,6 @@ function openGPReport() {
         if (l.requestCallAt) rep.callReqs++;
         
         if (l.proPhone) {
-            // 🚨 MANUAL MAP CHECK FOR GP REPORT
             let pName = MANUAL_PRO_MAP[l.proPhone] || "Unknown PRO";
             let matched = proList.find(p => p.phone === l.proPhone);
             if (matched) pName = matched.name;
@@ -1015,7 +1036,6 @@ function closeGPReport() {
     document.getElementById('gp-report-modal').classList.add('hidden');
 }
 
-// 🚨 EXCEL EXPORT COLUMNS FIX: REDEEMED, BRANCH, REG NO ADDED PROPERLY
 function exportGPReportExcel() {
     const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
     if(docLogs.length === 0) {
@@ -1069,7 +1089,6 @@ function getTableRowsHTML(logsArray) {
         
         if(i.isUsed) statusBadge += '<span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded block mb-1">✅ Redeemed</span>';
         
-        // 🚨 UPDATE: Advanced Call Badges setup
         if(i.callStatus === 'Pending') statusBadge += '<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded block whitespace-nowrap">📞 Pending Call</span>';
         else if(i.callStatus === 'Call Done') statusBadge += '<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded block whitespace-nowrap">📞 Call Done</span>';
         else if(i.callStatus === 'Failed (No Answer)') statusBadge += '<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded block whitespace-nowrap">📵 Failed (No Answer)</span>';
@@ -1097,7 +1116,6 @@ function getTableRowsHTML(logsArray) {
             `;
         }
 
-        // 🚨 TABLE MANUAL MAP CHECK
         let pName = MANUAL_PRO_MAP[i.proPhone] || "Unknown PRO";
         if(i.proPhone) {
             let matched = proList.find(p => p.phone === i.proPhone);
@@ -1127,7 +1145,6 @@ function getTableRowsHTML(logsArray) {
     }).join('');
 }
 
-// 🚨 DOM SLICE FIX APLIED HERE
 function renderTables() {
     const docLogs = filteredLogs.filter(l => l.audienceType === 'Doctor');
     document.getElementById('doctor-logs').innerHTML = getTableRowsHTML(docLogs.slice(0, 500));
@@ -1187,7 +1204,6 @@ async function toggleAgent(id, isOnline) {
     loadAdminData();
 }
 
-// 🚨 EXCEL EXPORT FIX: COLUMNS (REDEEMED, BRANCH, PATIENT REG NO) PROPERLY ADDED
 async function exportFilteredExcel(type) {
     const dataToExport = filteredLogs.filter(i => type === 'Dental' ? (i.audienceType === 'Dental' || i.audienceType === 'CGHS_Dental') : i.audienceType === type);
     
@@ -1489,7 +1505,6 @@ function renderSalesTable() {
 
     renderSalesSummary(filtered);
 
-    // 🚨 DOM SLICE FIX APLIED HERE
     document.getElementById('sales-logs').innerHTML = filtered.slice(0, 1000).map(r => {
         let statusBadge = r.status === 'Replied' 
             ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-1 rounded">✅ Replied</span>` 
@@ -1772,14 +1787,12 @@ async function redeemCode() {
     document.getElementById('verify-result').classList.add('hidden');
     loadUserData(); 
     
-    // If admin is logged in concurrently, refresh data silently
     if (typeof loadAdminData === 'function' && document.getElementById('admin-dashboard') && !document.getElementById('admin-dashboard').classList.contains('hidden')) {
         loadAdminData();
     }
     alert(`Success! Redeemed at ${branch} with Reg No: ${regNo}`);
 }
 
-// 🚨 FIX: FULLY RESTORED USER DATA API FETCH AND MAPPING
 async function loadUserData() {
     try {
         const res = await fetch('/api/user/redeemed-today');
